@@ -1391,10 +1391,13 @@ function loadData(){
     'Closure_x0020_Probability','Expected_x0020_Contract_x0020_Si','Actual_x0020_Contract_x0020_Sign',
     'Proposed_x0020_Date','No_x0020_Bid_x002f_Lost_x002f_Ca','BilledDate','Lost_x0020_Reason',
     'CustomerCode','Complexity','BidManager','ProjectManager0','field5','field8',
-    'Building_x0020_Status','Bid_x0020_Request','Comments_x002f_Remarks',
-    'POC_x0020_Name','POC_x0020_Email_x0020_ID','Contact_x0020_No',
-    'MNP','Churn_x0020_Reasons','Third_x0020_Party','Vendor_x0020_Name',
-    'GA_x0020_Lines','RFP_x0020_Submission_x0020_Date','Solution_x0020_Assigned_x0020_Date',
+    'BidRequest','Comments_x002f_Remarks','POCName','POCEmailID','ContactNo',
+    'MNP','Third_x0020_Party','Vendor_x0020_Name','GA_x0020_Lines',
+    'RFP_x0020_Submission_x0020_Date','SolutionAssignedDate',
+    'Building_x0020_Name','Building_x0020_Unit','Building_x0020_Floor','field3','field6','field4',
+    'BidManagerRequired','SolutionManagerRequired','ServiceRequirement','RFPs',
+    'M2M_x0020_Use_x0020_Case','M2M_x0020_Customer_x0020_Type','M2M_x0020_Industry_x0020_Vertica',
+    'My_x0020_ID','UserName','BMassingedDate',
     'Created','Modified',
     'group/Title','group/EMail'
   ].join(',');
@@ -1457,13 +1460,19 @@ function loadData(){
     customerCode:it.CustomerCode||'—',complexity:it.Complexity||'—',
     bidManager:it.BidManager||'—',projectManager:it.ProjectManager0||'—',
     pcv:num(it.field5),prepaidPostpaid:it.field8||'—',
-    buildingStatus:it.Building_x0020_Status||'—',bidRequest:it.Bid_x0020_Request||'—',
-    comments:it.Comments_x002f_Remarks||'—',pocName:it.POC_x0020_Name||'—',
-    pocEmail:it.POC_x0020_Email_x0020_ID||'—',contactNo:it.Contact_x0020_No||'—',
-    mnp:it.MNP||'—',churnReason:it.Churn_x0020_Reasons||'—',
-    thirdParty:it.Third_x0020_Party||'—',vendorName:it.Vendor_x0020_Name||'—',
+    bidRequest:it.BidRequest||'—',comments:it.Comments_x002f_Remarks||'—',
+    pocName:it.POCName||'—',pocEmail:it.POCEmailID||'—',contactNo:it.ContactNo||'—',
+    mnp:it.MNP||'—',thirdParty:it.Third_x0020_Party||'—',vendorName:it.Vendor_x0020_Name||'—',
     gaLines:num(it.GA_x0020_Lines),rfpSubmissionDate:it.RFP_x0020_Submission_x0020_Date||null,
-    solutionAssignedDate:it.Solution_x0020_Assigned_x0020_Date||null,
+    solutionAssignedDate:it.SolutionAssignedDate||null,
+    buildingName:it.Building_x0020_Name||'—',buildingUnit:it.Building_x0020_Unit||'—',
+    buildingFloor:it.Building_x0020_Floor||'—',buildingStatus:it.field3||'—',
+    churnReason:it.field6||'—',pocJobRole:it.field4||'—',
+    bidManagerRequired:it.BidManagerRequired||'—',solutionManagerRequired:it.SolutionManagerRequired||'—',
+    serviceRequirement:it.ServiceRequirement||'—',rfps:it.RFPs||'—',
+    m2mUseCase:it.M2M_x0020_Use_x0020_Case||'—',m2mCustomerType:it.M2M_x0020_Customer_x0020_Type||'—',
+    m2mIndustryVertical:it.M2M_x0020_Industry_x0020_Vertica||'—',
+    myId:it.My_x0020_ID||'—',userName:it.UserName||'—',bmAssignedDate:it.BMassingedDate||null,
     amName:it.group?(it.group.Title||'—'):'—',amEmail:it.group?(it.group.EMail||''):'',
     created:it.Created||null,modified:it.Modified||null,
   };
@@ -3067,16 +3076,30 @@ function renderGrid(){
     {field:'solutionManager',headerName:'Solution Manager',width:140},
     {field:'bidManager',headerName:'Bid Manager',width:140},
     {field:'projectManager',headerName:'Project Manager',width:140},
+    {field:'buildingName',headerName:'Building Name',width:130},
+    {field:'buildingUnit',headerName:'Building Unit',width:110},
+    {field:'buildingFloor',headerName:'Building Floor',width:110},
     {field:'buildingStatus',headerName:'Building Status',width:120},
     {field:'bidRequest',headerName:'Bid Request',width:110},
     {field:'gaLines',headerName:'GA Lines',width:90,type:'numericColumn'},
     {field:'mnp',headerName:'MNP',width:80},
-    {field:'churnReason',headerName:'Churn Reason',width:130},
+    {field:'churnReason',headerName:'Churn Reasons',width:130},
     {field:'thirdParty',headerName:'Third Party',width:100},
     {field:'vendorName',headerName:'Vendor Name',width:130},
     {field:'pocName',headerName:'POC Name',width:130},
+    {field:'pocJobRole',headerName:'POC Job Role',width:130},
     {field:'pocEmail',headerName:'POC Email',width:160},
     {field:'contactNo',headerName:'Contact No',width:115},
+    {field:'serviceRequirement',headerName:'Service Requirement',width:150},
+    {field:'bidManagerRequired',headerName:'BM Required',width:110},
+    {field:'solutionManagerRequired',headerName:'SM Required',width:110},
+    {field:'rfps',headerName:'RFPs',width:90},
+    {field:'m2mUseCase',headerName:'M2M Use Case',width:130},
+    {field:'m2mCustomerType',headerName:'M2M Customer Type',width:130},
+    {field:'m2mIndustryVertical',headerName:'M2M Industry',width:130},
+    {field:'myId',headerName:'My ID',width:100},
+    {field:'userName',headerName:'User Name',width:120},
+    {field:'bmAssignedDate',headerName:'BM Assigned Date',width:130,valueFormatter:p=>fmtDate(p.value)},
     {field:'rfpSubmissionDate',headerName:'RFP Submission Date',width:140,valueFormatter:p=>fmtDate(p.value)},
     {field:'solutionAssignedDate',headerName:'Solution Assigned Date',width:150,valueFormatter:p=>fmtDate(p.value)},
     {field:'comments',headerName:'Comments/Remarks',width:200},
@@ -3101,11 +3124,11 @@ function gridSearch(v){ if(GRID_API) GRID_API.setGridOption('quickFilterText',v)
 // ══════════════════════════════════════════════════════════════════
 function exportExcel(){
   const data=getViewBids();
-  const cols=['headDirector','accountDirector','amName','customerName','typeOfRequest','typeOfContract','vertical','productFamily','productCategory','services','gaPoints','mrc','otc','tcv','pcv','status','closureProb','complexity','created','proposedDate','expectedActivation','contractSigned','billedDate','lostDate','lostReason','duration','customerCode','solutionManager','bidManager','projectManager','buildingStatus','bidRequest','gaLines','mnp','churnReason','thirdParty','vendorName','pocName','pocEmail','contactNo','rfpSubmissionDate','solutionAssignedDate','comments','prepaidPostpaid','modified'];
-  const headers=['Head Director','Account Director','Account Manager','Customer','Type of Request','Type of Contract','Vertical','Product Family','Product Category','Services','GA Points','MRC','OTC','TCV','Cat. Value','Status','Closure Prob.','Complexity','Created','Proposed Date','Expected Activation','Contract Signed','Billed Date','Lost Date','Lost Reason','Duration','Customer Code','Solution Manager','Bid Manager','Project Manager','Building Status','Bid Request','GA Lines','MNP','Churn Reason','Third Party','Vendor Name','POC Name','POC Email','Contact No','RFP Submission Date','Solution Assigned Date','Comments/Remarks','Pre/Postpaid','Modified'];
+  const cols=['headDirector','accountDirector','amName','customerName','typeOfRequest','typeOfContract','vertical','productFamily','productCategory','services','gaPoints','mrc','otc','tcv','pcv','status','closureProb','complexity','created','proposedDate','expectedActivation','contractSigned','billedDate','lostDate','lostReason','duration','customerCode','solutionManager','bidManager','projectManager','buildingName','buildingUnit','buildingFloor','buildingStatus','bidRequest','gaLines','mnp','churnReason','thirdParty','vendorName','pocName','pocJobRole','pocEmail','contactNo','serviceRequirement','bidManagerRequired','solutionManagerRequired','rfps','m2mUseCase','m2mCustomerType','m2mIndustryVertical','myId','userName','bmAssignedDate','rfpSubmissionDate','solutionAssignedDate','comments','prepaidPostpaid','modified'];
+  const headers=['Head Director','Account Director','Account Manager','Customer','Type of Request','Type of Contract','Vertical','Product Family','Product Category','Services','GA Points','MRC','OTC','TCV','Cat. Value','Status','Closure Prob.','Complexity','Created','Proposed Date','Expected Activation','Contract Signed','Billed Date','Lost Date','Lost Reason','Duration','Customer Code','Solution Manager','Bid Manager','Project Manager','Building Name','Building Unit','Building Floor','Building Status','Bid Request','GA Lines','MNP','Churn Reasons','Third Party','Vendor Name','POC Name','POC Job Role','POC Email','Contact No','Service Requirement','BM Required','SM Required','RFPs','M2M Use Case','M2M Customer Type','M2M Industry','My ID','User Name','BM Assigned Date','RFP Submission Date','Solution Assigned Date','Comments/Remarks','Pre/Postpaid','Modified'];
   let html='<html><head><meta charset="utf-8"></head><body><table border="1" cellpadding="4" cellspacing="0">';
   html+='<tr>'+headers.map(h=>'<th style="background:#a855f7;color:white;font-weight:bold;padding:10px;">'+h+'</th>').join('')+'</tr>';
-  const dateCols=['created','proposedDate','expectedActivation','contractSigned','billedDate','lostDate','rfpSubmissionDate','solutionAssignedDate','modified'];
+  const dateCols=['created','proposedDate','expectedActivation','contractSigned','billedDate','lostDate','bmAssignedDate','rfpSubmissionDate','solutionAssignedDate','modified'];
   const numCols=['mrc','otc','tcv','pcv','gaPoints','gaLines'];
   data.forEach((row,i)=>{
     const bg=i%2===0?'#f9f0ff':'#ffffff';
