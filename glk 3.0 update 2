@@ -1196,23 +1196,19 @@ function glkBridgeBarLabel(name,value){
   if(value<=0&&name==='—') return '—';
   return name==='Others'?'Others':(name.length>13?name.slice(0,11)+'…':name);
 }
-function glkBridgeFloatBar(b,idx){
-  return {x:idx,y:[b.displayStart,b.displayEnd]};
+function glkBridgeFloatBar(b){
+  return [b.displayStart,b.displayEnd];
 }
 function glkBridgeMinPxPlugin(bars,minPx){
-  minPx=minPx||32;
+  minPx=minPx||42;
   return {id:'glkBridgeMinPx',afterLayout:function(chart){
     var meta=chart.getDatasetMeta(0);
     if(!meta||!meta.data) return;
     meta.data.forEach(function(bar,i){
       var b=bars[i];
-      if(!b||b.type!=='step') return;
-      var top=Math.min(bar.y,bar.base),bot=Math.max(bar.y,bar.base),h=bot-top;
-      if(h<minPx){
-        bar.y=top;
-        bar.base=top+minPx;
-        bar.height=minPx;
-      }
+      if(!b||(b.type!=='step'&&b.type!=='won')) return;
+      var h=Math.abs(bar.base-bar.y);
+      if(h<minPx) bar.y=bar.base-minPx;
     });
   }};
 }
@@ -3115,11 +3111,11 @@ function renderBridge(bids,c){
   var forecastM=forecastVal/1e6;
   var gap=forecastVal-targetVal,over=gap>=0;
   var targetOffScale=targetM>forecastM*2;
-  // Fixed chunky display height per pipeline item (always visible, like Oracle).
-  var BASE_DISP=4.8;
-  var STEP_H=1.35;
+  // Display-only scale (NOT real AED) — y-axis locked to these units; AED on bars/tooltips.
+  var WON_DISP=5.5;
+  var STEP_H=2.2;
   var hasPipe=nz>0;
-  var wonDispEnd=hasPipe?BASE_DISP:wonM;
+  var wonDispEnd=hasPipe?WON_DISP:wonM;
   var dispTop=wonDispEnd;
   var bars=[],barMeta=[],sectionGroups=[];
   var truePipeRunning=0;
@@ -3156,18 +3152,17 @@ function renderBridge(bids,c){
   var targetDisp=null,targetLabel='Target '+fmt(targetVal);
   if(!targetOffScale&&hasPipe){
     var pipeDispSpan=forecastDispTop-wonDispEnd;
-    var pipeTotalM=pipeTotal/1e6;
     var aboveScale=pipeTotalM>0?pipeDispSpan/pipeTotalM:STEP_H;
-    if(targetM<=wonM&&wonM>0) targetDisp=(targetM/wonM)*BASE_DISP;
+    if(targetM<=wonM&&wonM>0) targetDisp=(targetM/wonM)*WON_DISP;
     else targetDisp=wonDispEnd+(targetM-wonM)*aboveScale;
   }else if(!targetOffScale&&!hasPipe){
     targetDisp=targetM;
   }
-  var floatData=bars.map(function(b,i){return glkBridgeFloatBar(b,i);});
+  var floatData=bars.map(glkBridgeFloatBar);
   var bg=bars.map(function(b){return b.color;});
-  var yMax=Math.max(forecastDispTop,targetDisp||0,0.001)*1.08;
+  var yMax=Math.max(forecastDispTop,targetDisp||0,0.001)*1.06;
   var bridgePlugins=[
-    glkBridgeMinPxPlugin(bars,34),
+    glkBridgeMinPxPlugin(bars,42),
     glkBridgeBarLabelPlugin(bars),
     glkBridgeGroupPlugin(sectionGroups,c),
     glkBridgeConnectorPlugin(bars)
@@ -3179,7 +3174,6 @@ function renderBridge(bids,c){
     data:{labels:labelList,glkBars:bars,datasets:[{
       label:(metric==='mrc'?'MRC':'TCV'),
       data:floatData,
-      parsing:false,
       backgroundColor:bg,
       borderRadius:5,
       borderSkipped:false,
@@ -3210,9 +3204,8 @@ function renderBridge(bids,c){
       },
       scales:{
         x:{ticks:{display:false},grid:{display:false},border:{display:true,color:c.grid||'rgba(148,163,184,.3)'}},
-        y:{ticks:{display:!hasPipe,color:c.text,font:{size:11},callback:function(v){return v+'M';}},grid:{color:c.grid},border:{display:false},beginAtZero:true,
-          suggestedMax:yMax,
-          title:{display:true,text:hasPipe?'Equal-height pipeline steps · AED on bars':'AED (M)',color:c.text,font:{size:9,weight:'600'}}}
+        y:{min:0,max:yMax,grace:'0%',ticks:{display:false},grid:{color:c.grid},border:{display:false},
+          title:{display:true,text:'AED values shown on bars',color:c.text,font:{size:9,weight:'600'}}}
       }
     }
   });
