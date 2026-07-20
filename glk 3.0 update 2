@@ -874,7 +874,9 @@ body[data-theme="dark"] .badge-warning,body[data-theme="duralux-dark"] .badge-wa
                   <div><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#15803d;margin-right:6px;"></span>Commit — top 3 customers + Others</div>
                   <div><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#2563eb;margin-right:6px;"></span>ML No Risk — top 3 + Others</div>
                   <div><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#7c3aed;margin-right:6px;"></span>Upside Bring Home — top 3 + Others</div>
-                  <div><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#1e40af;margin-right:6px;"></span>Target — your goal</div>
+                  <div><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#0ea5e9;margin-right:6px;"></span>Forecast total — green when over target</div>
+                  <div><span style="display:inline-block;width:14px;height:0;border-top:2px dashed #ef4444;margin-right:6px;vertical-align:middle;"></span>Target line — your goal</div>
+                  <div style="font-size:.66rem;color:var(--t3);margin-top:.35rem;opacity:.85;">Pipeline bars are scaled up for visibility — exact AED shown on each bar &amp; tooltip.</div>
                 </div>
               </div>
             </div>
@@ -1195,8 +1197,7 @@ function glkBridgeFourBars(bids,metric){
 }
 function glkBridgeBarLabel(name,value){
   if(value<=0&&name==='—') return '—';
-  var short=name==='Others'?'Others':(name.length>12?name.slice(0,10)+'…':name);
-  return fmt(value)+'\n'+short;
+  return name==='Others'?'Others':(name.length>13?name.slice(0,11)+'…':name);
 }
 function glkBridgeFloatBar(b){
   if(b.type==='won'||b.type==='target') return [0,b.displayEnd];
@@ -3020,6 +3021,26 @@ function renderForecastPie(bids,c){
   var wrap=el('forecastPieControlsWrap');
   if(wrap) wrap.innerHTML=glkChartControlsHtml('chartPeriodSelectPie','chartPeriodSelectPie');
 }
+function glkBridgeTargetLinePlugin(targetM,c){
+  return {id:'glkBridgeTargetLine',afterDatasetsDraw:function(chart){
+    var y=chart.scales.y,area=chart.chartArea,ctx=chart.ctx;
+    if(!y) return;
+    var py=y.getPixelForValue(targetM);
+    if(py<area.top||py>area.bottom) return;
+    ctx.save();
+    ctx.strokeStyle='#ef4444';
+    ctx.lineWidth=1.5;
+    ctx.setLineDash([6,4]);
+    ctx.beginPath();ctx.moveTo(area.left,py);ctx.lineTo(area.right,py);ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle='#ef4444';
+    ctx.font='bold 10px Inter';
+    ctx.textAlign='left';
+    ctx.textBaseline='bottom';
+    ctx.fillText('Target '+targetM.toFixed(1)+'M',area.left+6,py-3);
+    ctx.restore();
+  }};
+}
 function renderBridge(bids,c){
   destroyChart('bridge');
   var scoped=glkFilterByChartPeriod(bids,chartPeriod);
@@ -3031,83 +3052,76 @@ function renderBridge(bids,c){
   var wonBids=scoped.filter(function(b){return b.forecastCategory==='Closed Won'||STATUS_WON.includes(b.status);});
   var wonVal=wonBids.reduce(function(s,b){return s+glkBidMetric(b,metric);},0);
   var wonM=wonVal/1e6;
-  var pipeTotal=0;
+  // Collect non-zero pipeline bars first so we can allocate a readable visual band.
+  var pipeItems=[];
   BRIDGE_SECTIONS.forEach(function(sec){
     if(sec.key==='won') return;
-    glkBridgeFourBars(scoped.filter(sec.filter),metric).forEach(function(cb){
-      if(cb.value>0) pipeTotal+=cb.value;
+    glkBridgeFourBars(scoped.filter(sec.filter),metric).forEach(function(cb,ci){
+      if(cb.value<=0) return;
+      pipeItems.push({name:cb.name,value:cb.value,color:sec.colors[ci]||sec.colors[sec.colors.length-1],secLabel:sec.label,secKey:sec.key});
     });
   });
-  var pipeTotalM=pipeTotal/1e6;
-  var yMaxRough=Math.max(wonM+pipeTotalM,targetM,0.5);
-  var minStepM=Math.max(yMaxRough*0.04,0.15);
-  function pushWon(label,value,color,meta){
+  var pipeTotal=pipeItems.reduce(function(s,p){return s+p.value;},0);
+  var nz=pipeItems.length;
+  // Pipeline gets its own prominent display band (>=60% of Won height) so small
+  // per-customer bars are visible chunky steps. Real values shown in labels/tooltips.
+  var pipeBandM=Math.max(pipeTotal/1e6,wonM*0.6,targetM*0.25,1);
+  function pipeDisplayInc(val){
+    if(nz<=0) return 0;
+    var floor=pipeBandM*0.45/nz;                 // baseline visibility for every bar
+    var prop=pipeTotal>0?pipeBandM*0.55*(val/pipeTotal):0; // proportional to real size
+    return floor+prop;
+  }
+  function pushWon(){
     var idx=bars.length;
-    bars.push({label:label,value:value,trueEnd:value,displayStart:0,displayEnd:wonM,color:color,type:'won'});
-    barMeta.push({label:meta||label});
+    bars.push({value:wonVal,trueEnd:wonVal,displayStart:0,displayEnd:wonM,color:'#16a34a',type:'won'});
+    barMeta.push({label:'Won · '+fmt(wonVal)});
     sectionGroups.push({key:'won',label:'Won',startIdx:idx,endIdx:idx});
   }
-  function pushPipe(label,value,color,meta,groupLabel,groupKey){
+  function pushPipe(p){
     var idx=bars.length;
-    var trueStart=wonVal+truePipeRunning;
-    var trueEnd=trueStart+value;
-    var incM=value/1e6;
-    var dispInc=incM>0?Math.max(incM,minStepM):0;
-    var dispStart=wonM+displayPipeRunning;
-    var dispEnd=dispStart+dispInc;
-    bars.push({
-      label:label,value:value,trueStart:trueStart,trueEnd:trueEnd,
-      displayStart:dispStart,displayEnd:dispEnd,color:color,type:'step'
-    });
-    barMeta.push({label:meta||label});
-    truePipeRunning+=value;
-    displayPipeRunning+=dispInc;
-    if(sectionGroups.length&&sectionGroups[sectionGroups.length-1].key===groupKey){
+    var trueStart=wonVal+truePipeRunning,trueEnd=trueStart+p.value;
+    var dispInc=pipeDisplayInc(p.value);
+    var dispStart=wonM+displayPipeRunning,dispEnd=dispStart+dispInc;
+    bars.push({value:p.value,trueStart:trueStart,trueEnd:trueEnd,displayStart:dispStart,displayEnd:dispEnd,color:p.color,type:'step'});
+    barMeta.push({label:p.secLabel+': '+p.name+' · '+fmt(p.value)});
+    truePipeRunning+=p.value;displayPipeRunning+=dispInc;
+    if(sectionGroups.length&&sectionGroups[sectionGroups.length-1].key===p.secKey){
       sectionGroups[sectionGroups.length-1].endIdx=idx;
     }else{
-      sectionGroups.push({key:groupKey,label:groupLabel,startIdx:idx,endIdx:idx});
+      sectionGroups.push({key:p.secKey,label:p.secLabel,startIdx:idx,endIdx:idx});
     }
   }
-  pushWon(glkBridgeBarLabel('Won',wonVal),wonVal,'#16a34a','Won · '+fmt(wonVal));
-  BRIDGE_SECTIONS.forEach(function(sec){
-    if(sec.key==='won') return;
-    var secBids=scoped.filter(sec.filter);
-    var four=glkBridgeFourBars(secBids,metric);
-    four.forEach(function(cb,ci){
-      if(cb.value<=0) return;
-      pushPipe(
-        glkBridgeBarLabel(cb.name,cb.value),
-        cb.value,
-        sec.colors[ci]||sec.colors[sec.colors.length-1],
-        sec.label+': '+(cb.name==='Others'?'Others':cb.name)+' · '+fmt(cb.value),
-        sec.label,
-        sec.key
-      );
-    });
-  });
-  var tIdx=bars.length;
-  sectionGroups.push({key:'target',label:'Target',startIdx:tIdx,endIdx:tIdx});
-  bars.push({label:fmt(targetVal)+'\nTarget',value:targetVal,trueEnd:targetVal,displayStart:0,displayEnd:targetM,color:BRIDGE_TARGET_COLOR,type:'target'});
-  barMeta.push({label:'Target · '+fmt(targetVal)});
-  var labels=bars.map(function(b){return b.label;});
+  pushWon();
+  var labelList=['Won'];
+  pipeItems.forEach(function(p){pushPipe(p);labelList.push(glkBridgeBarLabel(p.name,p.value));});
+  // Final Forecast vs Target bar — green if at/over target, amber if short.
+  var forecastVal=wonVal+truePipeRunning,forecastM=forecastVal/1e6;
+  var gap=forecastVal-targetVal;
+  var over=gap>=0;
+  var fIdx=bars.length;
+  bars.push({value:forecastVal,trueEnd:forecastVal,displayStart:0,displayEnd:forecastM,color:over?'#0ea5e9':'#f59e0b',type:'forecast',gap:gap,over:over});
+  barMeta.push({label:'Forecast '+fmt(forecastVal)+(over?' · +'+fmt(gap)+' over target':' · '+fmt(Math.abs(gap))+' short')});
+  sectionGroups.push({key:'forecast',label:'Forecast',startIdx:fIdx,endIdx:fIdx});
+  labelList.push('Forecast');
   var floatData=bars.map(glkBridgeFloatBar);
   var bg=bars.map(function(b){return b.color;});
-  var yMax=Math.max(wonM+displayPipeRunning,targetM,0.001)*1.08;
+  var yMax=Math.max(wonM+displayPipeRunning,forecastM,targetM,0.001)*1.15;
   CHARTS.bridge=new Chart(el('chartBridge'),{
     type:'bar',
-    plugins:[glkBridgeBarLabelPlugin(bars),glkBridgeGroupPlugin(sectionGroups,c),glkBridgeConnectorPlugin(bars)],
-    data:{labels:labels,glkBars:bars,datasets:[{
+    plugins:[glkBridgeBarLabelPlugin(bars),glkBridgeGroupPlugin(sectionGroups,c),glkBridgeConnectorPlugin(bars),glkBridgeTargetLinePlugin(targetM,c)],
+    data:{labels:labelList,glkBars:bars,datasets:[{
       label:(metric==='mrc'?'MRC':'TCV'),
       data:floatData,
       backgroundColor:bg,
       borderRadius:4,
       borderSkipped:false,
-      barPercentage:.72,
-      categoryPercentage:.88,
-      maxBarThickness:48
+      barPercentage:.9,
+      categoryPercentage:.92,
+      maxBarThickness:60
     }]},
     options:{responsive:true,maintainAspectRatio:false,
-      layout:{padding:{bottom:24,top:10,left:6,right:10}},
+      layout:{padding:{bottom:24,top:14,left:6,right:10}},
       plugins:{
         legend:{display:false},
         tooltip:{backgroundColor:'rgba(15,10,30,.88)',padding:14,cornerRadius:12,titleFont:{size:12,weight:'700'},bodyFont:{size:12},
@@ -3116,7 +3130,7 @@ function renderBridge(bids,c){
             label:function(ctx){
               var b=bars[ctx.dataIndex];
               if(b.type==='won') return '  Won '+fmt(b.value);
-              if(b.type==='target') return '  Target '+fmt(b.value);
+              if(b.type==='forecast') return b.over?('  '+fmt(b.value)+'  (+'+fmt(b.gap)+' over target)'):('  '+fmt(b.value)+'  ('+fmt(Math.abs(b.gap))+' short)');
               return '  +'+fmt(b.value);
             },
             afterBody:function(items){
@@ -3137,8 +3151,9 @@ function renderBridge(bids,c){
   });
   var wrap=el('bridgeControlsWrap');
   if(wrap){
+    var gapTxt=over?('<span style="color:#0ea5e9;">+'+fmt(gap)+' over target</span>'):('<span style="color:#f59e0b;">'+fmt(Math.abs(gap))+' short of target</span>');
     wrap.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center;margin-top:.65rem;flex-wrap:wrap;gap:.5rem;">'+
-      '<div style="font-size:.68rem;color:var(--t3);font-weight:600;">Won '+fmt(wonVal)+' · Pipeline +'+fmt(truePipeRunning)+' · Forecast '+fmt(wonVal+truePipeRunning)+' · Target '+fmt(targetVal)+'</div>'+
+      '<div style="font-size:.68rem;color:var(--t3);font-weight:600;">Won '+fmt(wonVal)+' · Pipeline +'+fmt(truePipeRunning)+' · Forecast '+fmt(forecastVal)+' · Target '+fmt(targetVal)+' · '+gapTxt+'</div>'+
       '<div style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;">'+glkChartMetricBtns()+glkChartPeriodSelect('chartPeriodSelectBridge')+'</div></div>';
   }
 }
