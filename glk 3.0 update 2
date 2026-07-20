@@ -226,6 +226,8 @@ body[data-theme="dark"] .status-dot,body[data-theme="duralux-dark"] .status-dot{
 .content{flex:1;overflow-y:auto;min-width:0;background:var(--bg-content);padding:1.1rem 1.25rem}
 .dashboard-section{animation:fadeSection .25s ease;padding:.5rem 0}
 @keyframes fadeSection{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+.glk-spinner{width:52px;height:52px;border-radius:50%;border:4px solid rgba(255,255,255,.14);border-top-color:var(--acc,#c026d3);animation:glkSpin .8s linear infinite}
+@keyframes glkSpin{to{transform:rotate(360deg)}}
 
 /* ═══════ SECTION TITLE ══════════════════════════════════════════════════ */
 .section-title{
@@ -721,6 +723,12 @@ body[data-theme="dark"] .badge-warning,body[data-theme="duralux-dark"] .badge-wa
   </div>
 </div>
 
+<!-- ═══════ PAGE LOAD SPINNER ═════════════════════════════════════════ -->
+<div id="glkLoader" style="display:none;position:fixed;inset:0;z-index:100000;background:var(--bg,#0b0714);backdrop-filter:blur(2px);align-items:center;justify-content:center;flex-direction:column;gap:1rem;">
+  <div class="glk-spinner"></div>
+  <div id="glkLoaderText" style="font-size:.85rem;font-weight:700;color:var(--t2,#c9c6d6);letter-spacing:.02em;">Loading your pipeline…</div>
+</div>
+
 <!-- ═══════ MAIN DASHBOARD ════════════════════════════════════════════ -->
 <div class="portal-shell" id="dashboardContent" style="display:none;">
   <!-- Header -->
@@ -1028,8 +1036,8 @@ const FORECAST_TO_PROB={
   'Upside - Bring Home No':'50%','Not Forecasted':'25%'
 };
 const PROB_TO_FORECAST={
-  '100%':'Closed Won','0%':'Closed Lost','75%':'Commit',
-  '50%':'Upside - Bring Home Yes','25%':'Not Forecasted'
+  '100%':'Closed Won','0%':'Closed Lost','75%':'Most Likely - No Risk',
+  '50%':'Upside - Bring Home No','25%':'Not Forecasted'
 };
 const FORECAST_TO_STATUS={'Closed Won':'Won','Closed Lost':'Lost'};
 const FORECAST_PIE_GROUPS=[
@@ -1043,7 +1051,7 @@ const BRIDGE_SECTIONS=[
   {key:'won',label:'Won',filter:b=>b.forecastCategory==='Closed Won'||STATUS_WON.includes(b.status),colors:['#16a34a','#22c55e']},
   {key:'commit',label:'Commit',filter:b=>b.forecastCategory==='Commit',colors:['#15803d','#16a34a','#22c55e','#4ade80']},
   {key:'mlnr',label:'ML No Risk',filter:b=>b.forecastCategory==='Most Likely - No Risk',colors:['#1d4ed8','#2563eb','#3b82f6','#60a5fa']},
-  {key:'upside',label:'Upside Bring Home',filter:b=>b.forecastCategory==='Upside - Bring Home Yes',colors:['#6d28d9','#7c3aed','#8b5cf6','#a78bfa']},
+  {key:'upside',label:'Upside Bring Home',filter:b=>b.forecastCategory==='Upside - Bring Home Yes'||b.forecastCategory==='Upside - Bring Home No',colors:['#6d28d9','#7c3aed','#8b5cf6','#a78bfa']},
 ];
 const BRIDGE_TARGET_COLOR='#1e40af';
 
@@ -1249,17 +1257,24 @@ function glkBridgeGroupPlugin(sectionGroups,c){
     var ctx=chart.ctx,meta=chart.getDatasetMeta(0),area=chart.chartArea;
     if(!meta||!meta.data||!sectionGroups.length) return;
     ctx.save();
-    ctx.strokeStyle=c.text||'#64748b';
-    ctx.fillStyle=c.text||'#64748b';
-    ctx.lineWidth=1;
+    ctx.lineWidth=1.2;
     ctx.font='bold 10px Inter';
     ctx.textAlign='center';
+    ctx.textBaseline='middle';
+    var y=area.bottom+12;
+    var rowRight=[]; // rightmost x used per stacking row (prevents label overlap)
     sectionGroups.forEach(function(g){
       var b0=meta.data[g.startIdx],b1=meta.data[g.endIdx];
       if(!b0||!b1) return;
-      var x1=b0.x-b0.width/2,x2=b1.x+b1.width/2,y=area.bottom+14;
+      var x1=b0.x-b0.width/2,x2=b1.x+b1.width/2,cx=(x1+x2)/2;
+      var col=g.color||c.text||'#64748b';
+      ctx.strokeStyle=col;ctx.fillStyle=col;
       ctx.beginPath();ctx.moveTo(x1,y);ctx.lineTo(x1,y+5);ctx.lineTo(x2,y+5);ctx.lineTo(x2,y);ctx.stroke();
-      ctx.fillText(g.label,(x1+x2)/2,y+16);
+      var w=ctx.measureText(g.label).width,half=w/2+5;
+      var row=0;
+      while(rowRight[row]!==undefined && (cx-half)<rowRight[row]) row++;
+      rowRight[row]=cx+half;
+      ctx.fillText(g.label,cx,y+15+row*13);
     });
     ctx.restore();
   }};
@@ -1461,8 +1476,11 @@ function populateLanding(){
   btn.onclick=launchDashboard;
   el('accessNote').innerHTML='<svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:#16a34a;fill:none;stroke-width:2"><polyline points="20 6 9 17 4 12"/></svg><span style="color:#16a34a;font-weight:600;">Access granted — click above to proceed</span>';
 }
+function glkShowLoader(msg){var l=el('glkLoader');if(!l)return;if(msg)el('glkLoaderText').textContent=msg;l.style.display='flex';}
+function glkHideLoader(){var l=el('glkLoader');if(l)l.style.display='none';}
 function launchDashboard(){
   incVisit(); saveLastVisit();
+  glkShowLoader('Loading your pipeline…');
 document.getElementById('landingPage').style.cssText='display:none!important';
 el('dashboardContent').style.display='flex';
 el('dashboardContent').style.flexDirection='column';
@@ -1742,10 +1760,12 @@ function loadData(){
         remapBlankHD();
         buildFilters();
         applyAll();
+        glkHideLoader();
         return;
       }
       allResults=allResults.concat(data.d.results);
       console.log('[GLK] Fetched so far:',allResults.length);
+      var lt=el('glkLoaderText'); if(lt) lt.textContent='Loading your pipeline… '+allResults.length+' records';
       if(data.d.__next){
         fetchPage(data.d.__next);
       } else {
@@ -1754,6 +1774,7 @@ function loadData(){
         remapBlankHD();
         buildFilters();
         applyAll();
+        glkHideLoader();
       }
     });
   }
@@ -3021,12 +3042,12 @@ function renderForecastPie(bids,c){
   var wrap=el('forecastPieControlsWrap');
   if(wrap) wrap.innerHTML=glkChartControlsHtml('chartPeriodSelectPie','chartPeriodSelectPie');
 }
-function glkBridgeTargetLinePlugin(targetM,c){
+function glkBridgeTargetLinePlugin(targetDispY,labelText,c){
   return {id:'glkBridgeTargetLine',afterDatasetsDraw:function(chart){
     var y=chart.scales.y,area=chart.chartArea,ctx=chart.ctx;
     if(!y) return;
-    var py=y.getPixelForValue(targetM);
-    if(py<area.top||py>area.bottom) return;
+    var py=y.getPixelForValue(targetDispY);
+    if(py<area.top-2||py>area.bottom+2) return;
     ctx.save();
     ctx.strokeStyle='#ef4444';
     ctx.lineWidth=1.5;
@@ -3035,9 +3056,9 @@ function glkBridgeTargetLinePlugin(targetM,c){
     ctx.setLineDash([]);
     ctx.fillStyle='#ef4444';
     ctx.font='bold 10px Inter';
-    ctx.textAlign='left';
+    ctx.textAlign='right';
     ctx.textBaseline='bottom';
-    ctx.fillText('Target '+targetM.toFixed(1)+'M',area.left+6,py-3);
+    ctx.fillText(labelText,area.right-6,py-3);
     ctx.restore();
   }};
 }
@@ -3046,70 +3067,73 @@ function renderBridge(bids,c){
   var scoped=glkFilterByChartPeriod(bids,chartPeriod);
   var metric=chartMetric;
   var targetVal=bridgeTarget;
-  var targetM=targetVal/1e6;
-  var truePipeRunning=0,displayPipeRunning=0;
-  var bars=[],barMeta=[],sectionGroups=[];
   var wonBids=scoped.filter(function(b){return b.forecastCategory==='Closed Won'||STATUS_WON.includes(b.status);});
   var wonVal=wonBids.reduce(function(s,b){return s+glkBidMetric(b,metric);},0);
   var wonM=wonVal/1e6;
-  // Collect non-zero pipeline bars first so we can allocate a readable visual band.
+  // Collect non-zero pipeline bars for ALL sections (Commit, ML No Risk, Upside).
   var pipeItems=[];
   BRIDGE_SECTIONS.forEach(function(sec){
     if(sec.key==='won') return;
     glkBridgeFourBars(scoped.filter(sec.filter),metric).forEach(function(cb,ci){
       if(cb.value<=0) return;
-      pipeItems.push({name:cb.name,value:cb.value,color:sec.colors[ci]||sec.colors[sec.colors.length-1],secLabel:sec.label,secKey:sec.key});
+      pipeItems.push({name:cb.name,value:cb.value,color:sec.colors[ci]||sec.colors[sec.colors.length-1],secLabel:sec.label,secKey:sec.key,secColor:sec.colors[1]||sec.colors[0]});
     });
   });
   var pipeTotal=pipeItems.reduce(function(s,p){return s+p.value;},0);
   var nz=pipeItems.length;
-  // Pipeline gets its own prominent display band (>=60% of Won height) so small
-  // per-customer bars are visible chunky steps. Real values shown in labels/tooltips.
-  var pipeBandM=Math.max(pipeTotal/1e6,wonM*0.6,targetM*0.25,1);
-  function pipeDisplayInc(val){
-    if(nz<=0) return 0;
-    var floor=pipeBandM*0.45/nz;                 // baseline visibility for every bar
-    var prop=pipeTotal>0?pipeBandM*0.55*(val/pipeTotal):0; // proportional to real size
+  // ── BROKEN AXIS ─────────────────────────────────────────────────────────
+  // Won (huge) is compressed into BASE_DISP units; the pipeline (tiny) is
+  // magnified into PIPE_DISP units so every step is a big, readable bar.
+  // Y-axis numbers are hidden (non-linear); real AED shown on every bar.
+  var BASE_DISP=4.5;
+  var PIPE_DISP=nz>0?9:0;
+  function stepDispInc(val){
+    var floor=PIPE_DISP*0.35/nz;                     // guaranteed visibility per bar
+    var prop=pipeTotal>0?PIPE_DISP*0.65*(val/pipeTotal):0;
     return floor+prop;
   }
-  function pushWon(){
-    var idx=bars.length;
-    bars.push({value:wonVal,trueEnd:wonVal,displayStart:0,displayEnd:wonM,color:'#16a34a',type:'won'});
-    barMeta.push({label:'Won · '+fmt(wonVal)});
-    sectionGroups.push({key:'won',label:'Won',startIdx:idx,endIdx:idx});
-  }
-  function pushPipe(p){
+  var bars=[],barMeta=[],sectionGroups=[];
+  var truePipeRunning=0,dispRunning=0;
+  // Won bar
+  bars.push({value:wonVal,trueEnd:wonVal,displayStart:0,displayEnd:BASE_DISP,color:'#16a34a',type:'won'});
+  barMeta.push({label:'Won · '+fmt(wonVal)});
+  sectionGroups.push({key:'won',label:'Won',color:'#16a34a',startIdx:0,endIdx:0});
+  var labelList=['Won'];
+  pipeItems.forEach(function(p){
     var idx=bars.length;
     var trueStart=wonVal+truePipeRunning,trueEnd=trueStart+p.value;
-    var dispInc=pipeDisplayInc(p.value);
-    var dispStart=wonM+displayPipeRunning,dispEnd=dispStart+dispInc;
-    bars.push({value:p.value,trueStart:trueStart,trueEnd:trueEnd,displayStart:dispStart,displayEnd:dispEnd,color:p.color,type:'step'});
+    var inc=stepDispInc(p.value);
+    var dStart=BASE_DISP+dispRunning,dEnd=dStart+inc;
+    bars.push({value:p.value,trueStart:trueStart,trueEnd:trueEnd,displayStart:dStart,displayEnd:dEnd,color:p.color,type:'step'});
     barMeta.push({label:p.secLabel+': '+p.name+' · '+fmt(p.value)});
-    truePipeRunning+=p.value;displayPipeRunning+=dispInc;
+    truePipeRunning+=p.value;dispRunning+=inc;
+    labelList.push(glkBridgeBarLabel(p.name,p.value));
     if(sectionGroups.length&&sectionGroups[sectionGroups.length-1].key===p.secKey){
       sectionGroups[sectionGroups.length-1].endIdx=idx;
     }else{
-      sectionGroups.push({key:p.secKey,label:p.secLabel,startIdx:idx,endIdx:idx});
+      sectionGroups.push({key:p.secKey,label:p.secLabel,color:p.secColor,startIdx:idx,endIdx:idx});
     }
-  }
-  pushWon();
-  var labelList=['Won'];
-  pipeItems.forEach(function(p){pushPipe(p);labelList.push(glkBridgeBarLabel(p.name,p.value));});
-  // Final Forecast vs Target bar — green if at/over target, amber if short.
-  var forecastVal=wonVal+truePipeRunning,forecastM=forecastVal/1e6;
-  var gap=forecastVal-targetVal;
-  var over=gap>=0;
+  });
+  var pipeSpanReal=truePipeRunning/1e6;
+  var aboveScale=pipeSpanReal>0?dispRunning/pipeSpanReal:0; // display units per real M above Won
+  // Forecast vs Target bar
+  var forecastVal=wonVal+truePipeRunning;
+  var gap=forecastVal-targetVal,over=gap>=0;
+  var forecastDispTop=BASE_DISP+dispRunning;
   var fIdx=bars.length;
-  bars.push({value:forecastVal,trueEnd:forecastVal,displayStart:0,displayEnd:forecastM,color:over?'#0ea5e9':'#f59e0b',type:'forecast',gap:gap,over:over});
+  bars.push({value:forecastVal,trueEnd:forecastVal,displayStart:0,displayEnd:forecastDispTop,color:over?'#0ea5e9':'#f59e0b',type:'forecast',gap:gap,over:over});
   barMeta.push({label:'Forecast '+fmt(forecastVal)+(over?' · +'+fmt(gap)+' over target':' · '+fmt(Math.abs(gap))+' short')});
-  sectionGroups.push({key:'forecast',label:'Forecast',startIdx:fIdx,endIdx:fIdx});
+  sectionGroups.push({key:'forecast',label:'Forecast',color:over?'#0ea5e9':'#f59e0b',startIdx:fIdx,endIdx:fIdx});
   labelList.push('Forecast');
+  // Target line mapped through the same broken axis
+  var targetM=targetVal/1e6;
+  var targetDisp=targetM<=wonM?(wonM>0?targetM/wonM*BASE_DISP:0):BASE_DISP+(targetM-wonM)*aboveScale;
   var floatData=bars.map(glkBridgeFloatBar);
   var bg=bars.map(function(b){return b.color;});
-  var yMax=Math.max(wonM+displayPipeRunning,forecastM,targetM,0.001)*1.15;
+  var yMax=Math.max(forecastDispTop,targetDisp,0.001)*1.15;
   CHARTS.bridge=new Chart(el('chartBridge'),{
     type:'bar',
-    plugins:[glkBridgeBarLabelPlugin(bars),glkBridgeGroupPlugin(sectionGroups,c),glkBridgeConnectorPlugin(bars),glkBridgeTargetLinePlugin(targetM,c)],
+    plugins:[glkBridgeBarLabelPlugin(bars),glkBridgeGroupPlugin(sectionGroups,c),glkBridgeConnectorPlugin(bars),glkBridgeTargetLinePlugin(targetDisp,'Target '+fmt(targetVal),c)],
     data:{labels:labelList,glkBars:bars,datasets:[{
       label:(metric==='mrc'?'MRC':'TCV'),
       data:floatData,
@@ -3118,10 +3142,10 @@ function renderBridge(bids,c){
       borderSkipped:false,
       barPercentage:.9,
       categoryPercentage:.92,
-      maxBarThickness:60
+      maxBarThickness:64
     }]},
     options:{responsive:true,maintainAspectRatio:false,
-      layout:{padding:{bottom:24,top:14,left:6,right:10}},
+      layout:{padding:{bottom:40,top:16,left:6,right:10}},
       plugins:{
         legend:{display:false},
         tooltip:{backgroundColor:'rgba(15,10,30,.88)',padding:14,cornerRadius:12,titleFont:{size:12,weight:'700'},bodyFont:{size:12},
@@ -3143,9 +3167,9 @@ function renderBridge(bids,c){
       },
       scales:{
         x:{ticks:{color:c.text,font:{size:10,weight:'600'},maxRotation:45,minRotation:0,autoSkip:false},grid:{display:false}},
-        y:{ticks:{color:c.text,font:{size:11},callback:function(v){return v+'M';}},grid:{color:c.grid},border:{dash:[4,4]},beginAtZero:true,
+        y:{ticks:{display:false},grid:{color:c.grid},border:{display:false},beginAtZero:true,
           suggestedMax:yMax,
-          title:{display:true,text:'AED (M)',color:c.text,font:{size:10,weight:'600'}}}
+          title:{display:true,text:'Won compressed · pipeline magnified',color:c.text,font:{size:9,weight:'600'}}}
       }
     }
   });
