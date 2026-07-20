@@ -1196,9 +1196,25 @@ function glkBridgeBarLabel(name,value){
   if(value<=0&&name==='—') return '—';
   return name==='Others'?'Others':(name.length>13?name.slice(0,11)+'…':name);
 }
-function glkBridgeFloatBar(b){
-  if(b.type==='won'||b.type==='target') return [0,b.displayEnd];
-  return [b.displayStart,b.displayEnd];
+function glkBridgeFloatBar(b,idx){
+  return {x:idx,y:[b.displayStart,b.displayEnd]};
+}
+function glkBridgeMinPxPlugin(bars,minPx){
+  minPx=minPx||32;
+  return {id:'glkBridgeMinPx',afterLayout:function(chart){
+    var meta=chart.getDatasetMeta(0);
+    if(!meta||!meta.data) return;
+    meta.data.forEach(function(bar,i){
+      var b=bars[i];
+      if(!b||b.type!=='step') return;
+      var top=Math.min(bar.y,bar.base),bot=Math.max(bar.y,bar.base),h=bot-top;
+      if(h<minPx){
+        bar.y=top;
+        bar.base=top+minPx;
+        bar.height=minPx;
+      }
+    });
+  }};
 }
 function glkBridgeConnectorPlugin(bars){
   return {id:'glkBridgeConnectors',afterDatasetsDraw:function(chart){
@@ -1229,19 +1245,28 @@ function glkBridgeBarLabelPlugin(bars){
     if(!meta||!meta.data) return;
     meta.data.forEach(function(bar,i){
       var b=bars[i]; if(!b||b.value<=0) return;
-      var midY=(bar.y+bar.base)/2;
-      if(Math.abs(bar.y-bar.base)<8) midY=bar.base-10;
+      var top=Math.min(bar.y,bar.base),bot=Math.max(bar.y,bar.base),h=bot-top;
+      var midY=top+h/2;
       ctx.save();
-      ctx.fillStyle='#fff';
-      ctx.font='bold 10px Inter';
-      ctx.textAlign='center';
-      ctx.textBaseline='middle';
-      ctx.fillText(fmt(b.value),bar.x,midY);
+      if(h<14&&b.type==='step'){
+        ctx.fillStyle=b.color||'#2563eb';
+        ctx.font='bold 9px Inter';
+        ctx.textAlign='center';
+        ctx.textBaseline='bottom';
+        ctx.fillText(fmt(b.value),bar.x,top-3);
+      }else{
+        if(h<10) midY=top-8;
+        ctx.fillStyle='#fff';
+        ctx.font='bold 10px Inter';
+        ctx.textAlign='center';
+        ctx.textBaseline='middle';
+        ctx.fillText(fmt(b.value),bar.x,midY);
+      }
       if(b.custName){
         ctx.fillStyle=chart.options.scales.x.ticks.color||'#94a3b8';
         ctx.font='600 9px Inter';
         ctx.textBaseline='top';
-        ctx.fillText(b.custName,bar.x,area.bottom+4);
+        ctx.fillText(b.custName,bar.x,area.bottom+18);
       }
       ctx.restore();
     });
@@ -1256,8 +1281,8 @@ function glkBridgeGroupPlugin(sectionGroups,c){
     ctx.font='bold 10px Inter';
     ctx.textAlign='center';
     ctx.textBaseline='middle';
-    var bracketY=area.bottom+22;
-    var labelY=area.bottom+36;
+    var bracketY=area.bottom+34;
+    var labelY=area.bottom+48;
     var rowRight=[];
     sectionGroups.forEach(function(g){
       var b0=meta.data[g.startIdx],b1=meta.data[g.endIdx];
@@ -3089,17 +3114,15 @@ function renderBridge(bids,c){
   var forecastVal=wonVal+pipeTotal;
   var forecastM=forecastVal/1e6;
   var gap=forecastVal-targetVal,over=gap>=0;
-  // Use broken axis only when Won dwarfs pipeline; otherwise linear (works for HD/AD/AM filters).
-  var useBroken=wonM>0&&pipeTotalM>0&&wonM/pipeTotalM>6;
   var targetOffScale=targetM>forecastM*2;
-  var estYMax=Math.max(forecastM,targetOffScale?forecastM:targetM,wonM+pipeTotalM,0.001);
-  // Every pipeline item gets at least this visual height (like Oracle) — real AED still on bar/tooltip.
-  var minStepM=Math.max(estYMax*0.055,0.15);
+  // Fixed chunky display height per pipeline item (always visible, like Oracle).
+  var BASE_DISP=4.8;
+  var STEP_H=1.35;
+  var hasPipe=nz>0;
+  var wonDispEnd=hasPipe?BASE_DISP:wonM;
+  var dispTop=wonDispEnd;
   var bars=[],barMeta=[],sectionGroups=[];
   var truePipeRunning=0;
-  var BASE_DISP=4.5;
-  var wonDispEnd=useBroken?BASE_DISP:wonM;
-  var dispTop=wonDispEnd;
   // Won
   bars.push({value:wonVal,trueEnd:wonVal,displayStart:0,displayEnd:wonDispEnd,color:'#16a34a',type:'won'});
   barMeta.push({label:'Won · '+fmt(wonVal)});
@@ -3108,9 +3131,7 @@ function renderBridge(bids,c){
   pipeItems.forEach(function(p){
     var idx=bars.length;
     var trueStart=wonVal+truePipeRunning,trueEnd=trueStart+p.value;
-    var valM=p.value/1e6;
-    var stepH=Math.max(valM,minStepM);
-    var dStart=dispTop,dEnd=dispTop+stepH;
+    var dStart=dispTop,dEnd=dispTop+STEP_H;
     dispTop=dEnd;
     bars.push({
       value:p.value,trueStart:trueStart,trueEnd:trueEnd,
@@ -3126,27 +3147,31 @@ function renderBridge(bids,c){
       sectionGroups.push({key:p.secKey,label:p.secLabel,color:p.secColor,startIdx:idx,endIdx:idx});
     }
   });
-  var forecastDispTop=dispTop;
+  var forecastDispTop=hasPipe?dispTop:forecastM;
   var fIdx=bars.length;
   bars.push({value:forecastVal,trueEnd:forecastVal,displayStart:0,displayEnd:forecastDispTop,color:over?'#0ea5e9':'#f59e0b',type:'forecast',gap:gap,over:over});
   barMeta.push({label:'Forecast '+fmt(forecastVal)+(over?' · +'+fmt(gap)+' over target':' · '+fmt(Math.abs(gap))+' short')});
   sectionGroups.push({key:'forecast',label:'Forecast',color:over?'#0ea5e9':'#f59e0b',startIdx:fIdx,endIdx:fIdx});
   labelList.push('');
   var targetDisp=null,targetLabel='Target '+fmt(targetVal);
-  if(!targetOffScale){
+  if(!targetOffScale&&hasPipe){
     var pipeDispSpan=forecastDispTop-wonDispEnd;
-    var aboveScale=pipeTotalM>0?pipeDispSpan/pipeTotalM:minStepM;
-    if(targetM<=wonM&&wonM>0){
-      targetDisp=useBroken?(targetM/wonM*BASE_DISP):targetM;
-    }else{
-      targetDisp=wonDispEnd+(targetM-wonM)*aboveScale;
-    }
+    var pipeTotalM=pipeTotal/1e6;
+    var aboveScale=pipeTotalM>0?pipeDispSpan/pipeTotalM:STEP_H;
+    if(targetM<=wonM&&wonM>0) targetDisp=(targetM/wonM)*BASE_DISP;
+    else targetDisp=wonDispEnd+(targetM-wonM)*aboveScale;
+  }else if(!targetOffScale&&!hasPipe){
+    targetDisp=targetM;
   }
-  var floatData=bars.map(glkBridgeFloatBar);
+  var floatData=bars.map(function(b,i){return glkBridgeFloatBar(b,i);});
   var bg=bars.map(function(b){return b.color;});
-  var yMax=Math.max(forecastDispTop,targetDisp||0,0.001)*1.12;
-  var yTitle=useBroken?'Won compressed · min bar height · AED on bars':'AED (M) · min bar height applied';
-  var bridgePlugins=[glkBridgeBarLabelPlugin(bars),glkBridgeGroupPlugin(sectionGroups,c),glkBridgeConnectorPlugin(bars)];
+  var yMax=Math.max(forecastDispTop,targetDisp||0,0.001)*1.08;
+  var bridgePlugins=[
+    glkBridgeMinPxPlugin(bars,34),
+    glkBridgeBarLabelPlugin(bars),
+    glkBridgeGroupPlugin(sectionGroups,c),
+    glkBridgeConnectorPlugin(bars)
+  ];
   if(targetDisp!=null) bridgePlugins.push(glkBridgeTargetLinePlugin(targetDisp,targetLabel,c));
   CHARTS.bridge=new Chart(el('chartBridge'),{
     type:'bar',
@@ -3154,15 +3179,16 @@ function renderBridge(bids,c){
     data:{labels:labelList,glkBars:bars,datasets:[{
       label:(metric==='mrc'?'MRC':'TCV'),
       data:floatData,
+      parsing:false,
       backgroundColor:bg,
-      borderRadius:4,
+      borderRadius:5,
       borderSkipped:false,
-      barPercentage:.88,
-      categoryPercentage:.9,
-      maxBarThickness:56
+      barPercentage:.92,
+      categoryPercentage:.88,
+      maxBarThickness:68
     }]},
     options:{responsive:true,maintainAspectRatio:false,
-      layout:{padding:{bottom:58,top:targetOffScale?22:14,left:6,right:10}},
+      layout:{padding:{bottom:72,top:targetOffScale?22:14,left:6,right:10}},
       plugins:{
         legend:{display:false},
         tooltip:{backgroundColor:'rgba(15,10,30,.88)',padding:14,cornerRadius:12,titleFont:{size:12,weight:'700'},bodyFont:{size:12},
@@ -3184,9 +3210,9 @@ function renderBridge(bids,c){
       },
       scales:{
         x:{ticks:{display:false},grid:{display:false},border:{display:true,color:c.grid||'rgba(148,163,184,.3)'}},
-        y:{ticks:{display:!useBroken,color:c.text,font:{size:11},callback:function(v){return v+'M';}},grid:{color:c.grid},border:{display:false},beginAtZero:true,
+        y:{ticks:{display:!hasPipe,color:c.text,font:{size:11},callback:function(v){return v+'M';}},grid:{color:c.grid},border:{display:false},beginAtZero:true,
           suggestedMax:yMax,
-          title:{display:true,text:yTitle,color:c.text,font:{size:9,weight:'600'}}}
+          title:{display:true,text:hasPipe?'Equal-height pipeline steps · AED on bars':'AED (M)',color:c.text,font:{size:9,weight:'600'}}}
       }
     }
   });
