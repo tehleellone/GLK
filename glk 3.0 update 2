@@ -859,14 +859,20 @@ body[data-theme="dark"] .badge-warning,body[data-theme="duralux-dark"] .badge-wa
             <div style="display:grid;grid-template-columns:1fr 1.4fr;gap:.85rem;margin-bottom:.85rem;">
               <div class="chart-card">
                 <div class="chart-title" style="justify-content:space-between;">
-                  <span style="display:flex;align-items:center;gap:.35rem;"><svg viewBox="0 0 24 24"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>Forecast Category Mix</span>
+                  <span style="display:flex;flex-direction:column;gap:.15rem;">
+                    <span style="display:flex;align-items:center;gap:.35rem;"><svg viewBox="0 0 24 24"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>Forecast Category Mix</span>
+                    <span style="font-size:.68rem;font-weight:600;color:var(--t3);">Follows dashboard filters · Period = relevant date window</span>
+                  </span>
                 </div>
                 <div class="chart-container" style="height:320px;"><canvas id="chartForecastPie"></canvas></div>
                 <div id="forecastPieControlsWrap"></div>
               </div>
               <div class="chart-card">
                 <div class="chart-title" style="justify-content:space-between;flex-wrap:wrap;gap:.5rem;">
-                  <span style="display:flex;align-items:center;gap:.35rem;"><svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>Forecast Bridge (Period to Date)</span>
+                  <span style="display:flex;flex-direction:column;gap:.15rem;">
+                    <span style="display:flex;align-items:center;gap:.35rem;"><svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>Forecast Bridge (Period to Date)</span>
+                    <span style="font-size:.68rem;font-weight:600;color:var(--t3);">Follows dashboard filters · Waterfall by forecast stage</span>
+                  </span>
                   <div style="display:flex;align-items:center;gap:.45rem;flex-wrap:wrap;">
                     <label style="font-size:.72rem;color:var(--t2);font-weight:700;">Target (AED)</label>
                     <input type="number" id="bridgeTargetInp" value="10000000" min="0" step="100000" onchange="glkSetBridgeTarget(this.value)" style="width:120px;padding:.28rem .5rem;border-radius:6px;border:1px solid var(--border);background:var(--bg-input);color:var(--t1);font-size:.72rem;font-weight:700;">
@@ -1010,18 +1016,20 @@ const PROB_TO_FORECAST={
 };
 const FORECAST_TO_STATUS={'Closed Won':'Won','Closed Lost':'Lost'};
 const FORECAST_PIE_GROUPS=[
-  {key:'won',label:'Won',color:'#10b981',match:b=>b.forecastCategory==='Closed Won'||STATUS_WON.includes(b.status)},
-  {key:'inForecast',label:'In Forecast',color:'#6366f1',match:b=>['Commit','Most Likely - No Risk','Upside - Bring Home Yes'].includes(b.forecastCategory)},
-  {key:'mlRisk',label:'ML Risk to Forecast',color:'#f59e0b',match:b=>b.forecastCategory==='Most Likely - Risk to Forecast'},
-  {key:'upsideNo',label:'Upside (No Bring Home)',color:'#f97316',match:b=>b.forecastCategory==='Upside - Bring Home No'},
-  {key:'notForecast',label:'Not Forecasted',color:'#94a3b8',match:b=>b.forecastCategory==='Not Forecasted'},
+  {key:'won',label:'Won',color:'#059669',match:b=>b.forecastCategory==='Closed Won'||STATUS_WON.includes(b.status)},
+  {key:'inForecast',label:'In Forecast',color:'#2563eb',match:b=>['Commit','Most Likely - No Risk','Upside - Bring Home Yes'].includes(b.forecastCategory)},
+  {key:'mlRisk',label:'ML Risk to Forecast',color:'#ca8a04',match:b=>b.forecastCategory==='Most Likely - Risk to Forecast'},
+  {key:'upsideNo',label:'Upside (No Bring Home)',color:'#ea580c',match:b=>b.forecastCategory==='Upside - Bring Home No'},
+  {key:'notForecast',label:'Not Forecasted',color:'#64748b',match:b=>b.forecastCategory==='Not Forecasted'},
 ];
 const BRIDGE_SECTIONS=[
-  {key:'won',label:'Won',filter:b=>b.forecastCategory==='Closed Won'||STATUS_WON.includes(b.status),color:'#10b981'},
-  {key:'commit',label:'Commit',filter:b=>b.forecastCategory==='Commit',color:'#6366f1'},
-  {key:'mlnr',label:'ML No Risk',filter:b=>b.forecastCategory==='Most Likely - No Risk',color:'#8b5cf6'},
-  {key:'upside',label:'Upside Bring Home',filter:b=>b.forecastCategory==='Upside - Bring Home Yes',color:'#a855f7'},
+  {key:'won',label:'Won',filter:b=>b.forecastCategory==='Closed Won'||STATUS_WON.includes(b.status),colors:['#16a34a','#22c55e']},
+  {key:'commit',label:'Commit',filter:b=>b.forecastCategory==='Commit',colors:['#15803d','#16a34a','#22c55e','#4ade80']},
+  {key:'mlnr',label:'ML No Risk',filter:b=>b.forecastCategory==='Most Likely - No Risk',colors:['#1d4ed8','#2563eb','#3b82f6','#60a5fa']},
+  {key:'upside',label:'Upside Bring Home',filter:b=>b.forecastCategory==='Upside - Bring Home Yes',colors:['#6d28d9','#7c3aed','#8b5cf6','#a78bfa']},
 ];
+const BRIDGE_END_COLOR='#1e3a8a';
+const BRIDGE_TARGET_COLOR='#dc2626';
 
 // ══════════════════════════════════════════════════════════════════
 //  STATE
@@ -1036,8 +1044,7 @@ let trendPeriod='M';
 let gaPeriod='M';
 let forecastPiePeriod='M';
 let bridgePeriod='YTD';
-let bridgeDateField='expectedActivation';
-let bridgeMetric='mrc';
+let chartMetric='mrc';
 let bridgeTarget=10000000;
 function selectPF(pf){
   selPF=pf;
@@ -1059,19 +1066,17 @@ function setBridgePeriod(p){
   bridgePeriod=p;
   const bids=getViewBids();const c=getChartColors();renderBridge(bids,c);
 }
-function setBridgeMetric(m){
-  bridgeMetric=m;
-  const bids=getViewBids();const c=getChartColors();renderBridge(bids,c);
+function setChartMetric(m){
+  chartMetric=m;
+  var bids=getViewBids(),c=getChartColors();
+  renderForecastPie(bids,c);
+  renderBridge(bids,c);
 }
 window.glkSetBridgeTarget=function(v){
   bridgeTarget=Math.max(0,num(v));
-  const inp=el('bridgeTargetInp'); if(inp) inp.value=bridgeTarget;
-  const bids=getViewBids();const c=getChartColors();renderBridge(bids,c);
+  var inp=el('bridgeTargetInp'); if(inp) inp.value=bridgeTarget;
+  renderBridge(getViewBids(),getChartColors());
 };
-function setBridgeDateField(f){
-  bridgeDateField=f;
-  const bids=getViewBids();const c=getChartColors();renderBridge(bids,c);
-}
 function setGAPeriod(p){
   gaPeriod=p;
   ['W','M','Y'].forEach(x=>el('gaBtn'+x)?.classList.toggle('active',x===p));
@@ -1132,23 +1137,73 @@ function getRelevantDate(bid){
   return bid.proposedDate||bid.contractSigned;
 }
 function glkBidMetric(b,k){ return k==='mrc'?b.mrc:k==='tcv'?b.tcv:k==='otc'?b.otc:b.gaPoints; }
-function glkFilterByChartPeriod(bids,period,dateField){
-  const now=new Date();
-  const df=dateField||'expectedActivation';
+function glkFilterByChartPeriod(bids,period){
+  var now=new Date();
   return (bids||[]).filter(function(b){
-    const iso=b[df]||getRelevantDate(b);
+    var iso=getRelevantDate(b);
     if(!iso) return false;
-    const d=new Date(iso);
+    var d=new Date(iso);
     if(isNaN(d)) return false;
     if(period==='YTD') return d.getFullYear()===now.getFullYear()&&d<=now;
     if(period==='Y') return d.getFullYear()===now.getFullYear();
     if(period==='Q') return d.getFullYear()===now.getFullYear()&&Math.ceil((d.getMonth()+1)/3)===Math.ceil((now.getMonth()+1)/3);
     if(period==='M') return d.getFullYear()===now.getFullYear()&&d.getMonth()===now.getMonth();
-    if(period==='W'){
-      return d.getFullYear()===now.getFullYear()&&getWeekOfYear(d)===getWeekOfYear(now);
-    }
+    if(period==='W') return d.getFullYear()===now.getFullYear()&&getWeekOfYear(d)===getWeekOfYear(now);
     return true;
   });
+}
+function glkChartPeriodBtns(activePeriod,fnName){
+  return ['W','M','Q','Y','YTD'].map(function(p){
+    var lbl=p==='W'?'Week':p==='M'?'Month':p==='Q'?'Quarter':p==='Y'?'Year':'YTD';
+    var act=activePeriod===p;
+    return '<button type="button" onclick="'+fnName+'(\''+p+'\')" style="padding:.25rem .7rem;border-radius:6px;font-size:.72rem;font-weight:700;border:1px solid var(--border);cursor:pointer;background:'+(act?'var(--grad)':'var(--bg-secondary)')+';color:'+(act?'#fff':'var(--t3)')+';">'+lbl+'</button>';
+  }).join('');
+}
+function glkChartMetricBtns(){
+  return ['mrc','tcv'].map(function(m){
+    var act=chartMetric===m;
+    return '<button type="button" onclick="setChartMetric(\''+m+'\')" style="padding:.25rem .7rem;border-radius:6px;font-size:.72rem;font-weight:700;border:1px solid var(--border);cursor:pointer;background:'+(act?'var(--grad)':'var(--bg-secondary)')+';color:'+(act?'#fff':'var(--t3)')+';">'+(m==='mrc'?'MRC':'TCV')+'</button>';
+  }).join('');
+}
+function glkBarLabelPlugin(){
+  return {id:'glkBarLabels',afterDatasetsDraw:function(chart){
+    var ctx=chart.ctx,meta=chart.getDatasetMeta(0);
+    if(!meta||!meta.data) return;
+    meta.data.forEach(function(bar,i){
+      var val=chart.data.datasets[0].data[i];
+      if(!val||val<=0) return;
+      var lbl=chart.data.glkBarMeta&&chart.data.glkBarMeta[i]?chart.data.glkBarMeta[i].label:'';
+      var midY=(bar.y+bar.base)/2;
+      ctx.save();
+      ctx.fillStyle='#fff';
+      ctx.font='bold 10px Inter';
+      ctx.textAlign='center';
+      ctx.textBaseline='middle';
+      ctx.fillText(val+'M',bar.x,midY);
+      ctx.restore();
+    });
+  }};
+}
+function glkBridgeTargetPlugin(targetM,c){
+  return {id:'glkBridgeTarget',afterDraw:function(chart){
+    if(!targetM||targetM<=0) return;
+    var yScale=chart.scales.y,xScale=chart.scales.x;
+    if(!yScale||!xScale) return;
+    var y=yScale.getPixelForValue(targetM);
+    var left=xScale.left,right=xScale.right;
+    var ctx=chart.ctx;
+    ctx.save();
+    ctx.strokeStyle=BRIDGE_TARGET_COLOR;
+    ctx.lineWidth=2;
+    ctx.setLineDash([6,4]);
+    ctx.beginPath();ctx.moveTo(left,y);ctx.lineTo(right,y);ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle=BRIDGE_TARGET_COLOR;
+    ctx.font='bold 11px Inter';
+    ctx.textAlign='right';
+    ctx.fillText('Target '+targetM+'M',right-4,y-6);
+    ctx.restore();
+  }};
 }
 function glkTopCustomersPlusOthers(bids,metric,topN){
   const map={};
@@ -2829,128 +2884,155 @@ function renderProbTCV(bids,c){
 }
 function renderForecastPie(bids,c){
   destroyChart('fcPie');
-  const scoped=glkFilterByChartPeriod(bids,forecastPiePeriod,bridgeDateField);
-  const metric=bridgeMetric;
-  const values=FORECAST_PIE_GROUPS.map(function(g){
-    return scoped.filter(g.match).reduce(function(s,b){return s+glkBidMetric(b,metric);},0);
+  var scoped=glkFilterByChartPeriod(bids,forecastPiePeriod);
+  var metric=chartMetric;
+  var groups=FORECAST_PIE_GROUPS.map(function(g){
+    var matched=scoped.filter(g.match);
+    return {label:g.label,color:g.color,count:matched.length,value:matched.reduce(function(s,b){return s+glkBidMetric(b,metric);},0)};
+  }).filter(function(g){return g.value>0||g.count>0;});
+  if(!groups.length) groups=FORECAST_PIE_GROUPS.map(function(g){return {label:g.label,color:g.color,count:0,value:0};});
+  var total=groups.reduce(function(a,g){return a+g.value;},0);
+  var totalCnt=groups.reduce(function(a,g){return a+g.count;},0);
+  var labels=groups.map(function(g){
+    var pct=total>0?(g.value/total*100).toFixed(1):'0.0';
+    return g.label+'  ·  '+g.count+'  ·  '+pct+'%';
   });
-  const total=values.reduce(function(a,b){return a+b;},0);
-  const labels=FORECAST_PIE_GROUPS.map(function(g,i){
-    const cnt=scoped.filter(g.match).length;
-    return g.label+' · '+cnt+' · '+fmt(values[i]);
-  });
-  const colors=FORECAST_PIE_GROUPS.map(function(g){return g.color;});
-  CHARTS.fcPie=new Chart(el('chartForecastPie'),{type:'pie',
-    data:{labels:labels,datasets:[{data:values,backgroundColor:colors,borderWidth:3,borderColor:'var(--bg-card)',hoverOffset:10}]},
-    options:{responsive:true,maintainAspectRatio:false,
+  var values=groups.map(function(g){return g.value;});
+  var colors=groups.map(function(g){return g.color;});
+  var centerPlugin={id:'fcPieCenter',beforeDraw:function(chart){
+    var ca=chart.chartArea,ctx=chart.ctx;
+    if(!ca) return;
+    ctx.save();
+    ctx.font='bold 20px Inter';
+    ctx.fillStyle=c.text;
+    ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillText(fmt(total),ca.left+ca.width/2,ca.top+ca.height/2-8);
+    ctx.font='600 11px Inter';
+    ctx.fillStyle=c.text;
+    ctx.fillText((metric==='mrc'?'Total MRC':'Total TCV')+' · '+totalCnt+' opps',ca.left+ca.width/2,ca.top+ca.height/2+14);
+    ctx.restore();
+  }};
+  CHARTS.fcPie=new Chart(el('chartForecastPie'),{type:'doughnut',plugins:[centerPlugin],
+    data:{labels:labels,datasets:[{
+      data:values,
+      backgroundColor:colors,
+      borderWidth:4,
+      borderColor:'var(--bg-card)',
+      hoverOffset:16,
+      hoverBorderWidth:2
+    }]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'62%',
       plugins:{
-        legend:{position:'right',labels:{color:c.text,font:{size:11,weight:'600'},padding:10,usePointStyle:true,pointStyleWidth:10}},
-        tooltip:{backgroundColor:'rgba(0,0,0,.8)',padding:12,cornerRadius:10,
+        legend:{position:'right',labels:{color:c.text,font:{size:11,weight:'600'},padding:14,usePointStyle:true,pointStyleWidth:10,
+          generateLabels:function(chart){
+            return chart.data.labels.map(function(lbl,i){
+              return {text:lbl+'  ·  '+fmt(values[i]),fillStyle:colors[i],strokeStyle:colors[i],fontColor:c.text,hidden:false,index:i};
+            });
+          }
+        }},
+        tooltip:{backgroundColor:'rgba(15,10,30,.88)',padding:14,cornerRadius:12,titleFont:{size:13,weight:'700'},bodyFont:{size:12},
           callbacks:{
             label:function(ctx){
-              const pct=total>0?(ctx.parsed/total*100).toFixed(1):'0';
-              return '  '+fmt(ctx.parsed)+' ('+pct+'%)';
+              var pct=total>0?(ctx.parsed/total*100).toFixed(1):'0';
+              return ['  '+fmt(ctx.parsed),'  Share: '+pct+'%','  Opportunities: '+groups[ctx.dataIndex].count];
             }
           }
         }
       }
     }
   });
-  const wrap=el('forecastPieControlsWrap');
+  var wrap=el('forecastPieControlsWrap');
   if(wrap){
     wrap.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center;margin-top:.65rem;flex-wrap:wrap;gap:.5rem;">'+
-      '<div style="display:flex;gap:.35rem;">'+['mrc','tcv'].map(function(m){
-        return '<button type="button" onclick="setBridgeMetric(\''+m+'\');renderForecastPie(getViewBids(),getChartColors())" style="padding:.25rem .7rem;border-radius:6px;font-size:.72rem;font-weight:700;border:1px solid var(--border);cursor:pointer;background:'+(bridgeMetric===m?'var(--grad)':'var(--bg-secondary)')+';color:'+(bridgeMetric===m?'#fff':'var(--t3)')+';">'+(m==='mrc'?'MRC':'TCV')+'</button>';
-      }).join('')+'</div>'+
-      '<div style="display:flex;gap:.35rem;">'+['W','M','Q','Y','YTD'].map(function(p){
-        const lbl=p==='W'?'Week':p==='M'?'Month':p==='Q'?'Quarter':p==='Y'?'Year':'YTD';
-        return '<button type="button" onclick="setForecastPiePeriod(\''+p+'\')" style="padding:.25rem .7rem;border-radius:6px;font-size:.72rem;font-weight:700;border:1px solid var(--border);cursor:pointer;background:'+(forecastPiePeriod===p?'var(--grad)':'var(--bg-secondary)')+';color:'+(forecastPiePeriod===p?'#fff':'var(--t3)')+';">'+lbl+'</button>';
-      }).join('')+'</div></div>';
+      '<div style="display:flex;gap:.35rem;">'+glkChartMetricBtns()+'</div>'+
+      '<div style="display:flex;gap:.35rem;">'+glkChartPeriodBtns(forecastPiePeriod,'setForecastPiePeriod')+'</div></div>';
   }
 }
 function renderBridge(bids,c){
   destroyChart('bridge');
-  const scoped=glkFilterByChartPeriod(bids,bridgePeriod,bridgeDateField);
-  const metric=bridgeMetric;
-  let running=0;
-  const bars=[];
-  const palette=['#10b981','#6366f1','#8b5cf6','#a855f7','#c084fc','#e879f9','#f472b6','#fb7185','#fdba74','#fcd34d','#86efac','#67e8f9'];
-  let pi=0;
-  BRIDGE_SECTIONS.forEach(function(sec,si){
-    const secBids=scoped.filter(sec.filter);
+  var scoped=glkFilterByChartPeriod(bids,bridgePeriod);
+  var metric=chartMetric;
+  var running=0;
+  var bars=[];
+  var barMeta=[];
+  BRIDGE_SECTIONS.forEach(function(sec){
+    var secBids=scoped.filter(sec.filter);
     if(sec.key==='won'){
-      const val=secBids.reduce(function(s,b){return s+glkBidMetric(b,metric);},0);
-      bars.push({label:'Won',value:val,start:0,type:'total',color:sec.color});
-      running=val;
+      var val=secBids.reduce(function(s,b){return s+glkBidMetric(b,metric);},0);
+      if(val>0){
+        bars.push({label:'Won',value:val,start:running,color:sec.colors[0],type:'step'});
+        barMeta.push({label:'Won'});
+        running+=val;
+      }
       return;
     }
-    const br=glkTopCustomersPlusOthers(secBids,metric,3);
+    var br=glkTopCustomersPlusOthers(secBids,metric,3);
     if(!br.total) return;
+    var ci=0;
     br.top.forEach(function(pair){
-      bars.push({label:sec.label+'\n'+pair[0],value:pair[1],start:running,type:'increment',color:palette[pi++%palette.length]});
-      running+=pair[1];
+      var short=pair[0].length>14?pair[0].slice(0,12)+'…':pair[0];
+      bars.push({label:short,value:pair[1],start:running,color:sec.colors[ci%sec.colors.length],type:'step'});
+      barMeta.push({label:sec.label+': '+pair[0]});
+      running+=pair[1]; ci++;
     });
     if(br.others>0){
-      bars.push({label:sec.label+'\nOthers',value:br.others,start:running,type:'increment',color:palette[pi++%palette.length]});
+      bars.push({label:sec.label+'\nOthers',value:br.others,start:running,color:sec.colors[sec.colors.length-1],type:'step'});
+      barMeta.push({label:sec.label+': Others'});
       running+=br.others;
     }
   });
-  bars.push({label:'Current\nTotal',value:running,start:0,type:'total',color:'#334155'});
-  bars.push({label:'Target',value:bridgeTarget,start:0,type:'target',color:'#ef4444'});
-  const labels=bars.map(function(b){return b.label;});
-  const data=bars.map(function(b){return +(b.value/1e6).toFixed(2);});
-  const bases=bars.map(function(b){
-    if(b.type==='increment') return +(b.start/1e6).toFixed(2);
-    return 0;
+  if(running>0){
+    bars.push({label:'End',value:running,start:0,color:BRIDGE_END_COLOR,type:'end'});
+    barMeta.push({label:'Pipeline Total'});
+  }
+  var labels=bars.map(function(b){return b.label;});
+  var data=bars.map(function(b){return +(b.value/1e6).toFixed(2);});
+  var bases=bars.map(function(b){
+    return b.type==='step'?+(b.start/1e6).toFixed(2):0;
   });
-  const bg=bars.map(function(b){return b.color;});
-  CHARTS.bridge=new Chart(el('chartBridge'),{type:'bar',
-    data:{labels:labels,datasets:[{
-      label:metric.toUpperCase()+' (M)',
+  var bg=bars.map(function(b){return b.color;});
+  var targetM=+(bridgeTarget/1e6).toFixed(2);
+  CHARTS.bridge=new Chart(el('chartBridge'),{
+    type:'bar',
+    plugins:[glkBarLabelPlugin(),glkBridgeTargetPlugin(targetM,c)],
+    data:{labels:labels,glkBarMeta:barMeta,datasets:[{
+      label:(metric==='mrc'?'MRC':'TCV')+' (M)',
       data:data,
       base:bases,
       backgroundColor:bg,
-      borderRadius:6,
+      borderRadius:{topLeft:4,topRight:4,bottomLeft:0,bottomRight:0},
       borderSkipped:false,
-      barPercentage:.72,
-      categoryPercentage:.82
+      barPercentage:.78,
+      categoryPercentage:.85,
+      maxBarThickness:52
     }]},
     options:{responsive:true,maintainAspectRatio:false,
+      layout:{padding:{top:18}},
       plugins:{
         legend:{display:false},
-        tooltip:{backgroundColor:'rgba(0,0,0,.8)',padding:12,cornerRadius:10,
+        tooltip:{backgroundColor:'rgba(15,10,30,.88)',padding:14,cornerRadius:12,titleFont:{size:12,weight:'700'},bodyFont:{size:12},
           callbacks:{
+            title:function(items){return barMeta[items[0].dataIndex]?barMeta[items[0].dataIndex].label:items[0].label;},
             label:function(ctx){
-              const b=bars[ctx.dataIndex];
-              if(b.type==='increment') return '  +'+fmt(b.value)+' (from '+fmt(b.start)+')';
-              return '  '+fmt(b.value);
+              var b=bars[ctx.dataIndex];
+              if(b.type==='step') return '  +'+fmt(b.value)+'  (cumulative '+fmt(b.start+b.value)+')';
+              return '  Total '+fmt(b.value);
             }
           }
         }
       },
       scales:{
-        x:{ticks:{color:c.text,font:{size:10,weight:'600'},maxRotation:0,minRotation:0},grid:{display:false}},
-        y:{ticks:{color:c.text,font:{size:11},callback:function(v){return v+'M';}},grid:{color:c.grid},border:{dash:[4,4]},beginAtZero:true}
+        x:{ticks:{color:c.text,font:{size:10,weight:'600'},maxRotation:45,minRotation:0},grid:{display:false}},
+        y:{ticks:{color:c.text,font:{size:11},callback:function(v){return v+'M';}},grid:{color:c.grid},border:{dash:[4,4]},beginAtZero:true,
+          suggestedMax:Math.max(targetM,running/1e6)*1.08}
       }
     }
   });
-  const wrap=el('bridgeControlsWrap');
+  var wrap=el('bridgeControlsWrap');
   if(wrap){
-    const dateOpts=[['expectedActivation','Expected Activation'],['contractSigned','Contract Signed'],['billedDate','Billed Date'],['created','Created'],['proposedDate','Proposed Date']];
     wrap.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center;margin-top:.65rem;flex-wrap:wrap;gap:.5rem;">'+
-      '<div style="display:flex;gap:.35rem;align-items:center;flex-wrap:wrap;">'+
-        '<span style="font-size:.7rem;font-weight:700;color:var(--t3);">Date:</span>'+
-        dateOpts.map(function(o){
-          return '<button type="button" onclick="setBridgeDateField(\''+o[0]+'\')" style="padding:.22rem .55rem;border-radius:6px;font-size:.68rem;font-weight:700;border:1px solid var(--border);cursor:pointer;background:'+(bridgeDateField===o[0]?'var(--grad)':'var(--bg-secondary)')+';color:'+(bridgeDateField===o[0]?'#fff':'var(--t3)')+';">'+o[1]+'</button>';
-        }).join('')+
-      '</div>'+
-      '<div style="display:flex;gap:.35rem;">'+['mrc','tcv'].map(function(m){
-        return '<button type="button" onclick="setBridgeMetric(\''+m+'\')" style="padding:.25rem .7rem;border-radius:6px;font-size:.72rem;font-weight:700;border:1px solid var(--border);cursor:pointer;background:'+(bridgeMetric===m?'var(--grad)':'var(--bg-secondary)')+';color:'+(bridgeMetric===m?'#fff':'var(--t3)')+';">'+(m==='mrc'?'MRC':'TCV')+'</button>';
-      }).join('')+'</div>'+
-      '<div style="display:flex;gap:.35rem;">'+['W','M','Q','Y','YTD'].map(function(p){
-        const lbl=p==='W'?'Week':p==='M'?'Month':p==='Q'?'Quarter':p==='Y'?'Year':'YTD';
-        return '<button type="button" onclick="setBridgePeriod(\''+p+'\')" style="padding:.25rem .7rem;border-radius:6px;font-size:.72rem;font-weight:700;border:1px solid var(--border);cursor:pointer;background:'+(bridgePeriod===p?'var(--grad)':'var(--bg-secondary)')+';color:'+(bridgePeriod===p?'#fff':'var(--t3)')+';">'+lbl+'</button>';
-      }).join('')+'</div></div>';
+      '<div style="display:flex;gap:.35rem;">'+glkChartMetricBtns()+'</div>'+
+      '<div style="display:flex;gap:.35rem;">'+glkChartPeriodBtns(bridgePeriod,'setBridgePeriod')+'</div></div>';
   }
 }
 let lbMode='hd';
