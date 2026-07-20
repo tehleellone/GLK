@@ -3092,38 +3092,29 @@ function renderBridge(bids,c){
   // Use broken axis only when Won dwarfs pipeline; otherwise linear (works for HD/AD/AM filters).
   var useBroken=wonM>0&&pipeTotalM>0&&wonM/pipeTotalM>6;
   var targetOffScale=targetM>forecastM*2;
+  var estYMax=Math.max(forecastM,targetOffScale?forecastM:targetM,wonM+pipeTotalM,0.001);
+  // Every pipeline item gets at least this visual height (like Oracle) — real AED still on bar/tooltip.
+  var minStepM=Math.max(estYMax*0.055,0.15);
   var bars=[],barMeta=[],sectionGroups=[];
-  var truePipeRunning=0,dispRunning=0;
-  var BASE_DISP=4.5,PIPE_DISP=nz>0?9:0;
-  function stepDispInc(val){
-    var floor=PIPE_DISP*0.35/Math.max(nz,1);
-    var prop=pipeTotal>0?PIPE_DISP*0.65*(val/pipeTotal):0;
-    return floor+prop;
-  }
-  function toDisp(trueStart,trueEnd){
-    if(!useBroken) return [trueStart/1e6,trueEnd/1e6];
-    if(trueStart<=wonVal){
-      var lo=trueStart/wonVal*BASE_DISP,hi=trueEnd/wonVal*BASE_DISP;
-      return [lo,hi];
-    }
-    var lo=BASE_DISP+dispRunning,inc=stepDispInc(trueEnd-trueStart);
-    dispRunning+=inc;
-    return [lo,lo+inc];
-  }
+  var truePipeRunning=0;
+  var BASE_DISP=4.5;
+  var wonDispEnd=useBroken?BASE_DISP:wonM;
+  var dispTop=wonDispEnd;
   // Won
-  var wonDisp=useBroken?[0,BASE_DISP]:[0,wonM];
-  dispRunning=0;
-  bars.push({value:wonVal,trueEnd:wonVal,displayStart:wonDisp[0],displayEnd:wonDisp[1],color:'#16a34a',type:'won'});
+  bars.push({value:wonVal,trueEnd:wonVal,displayStart:0,displayEnd:wonDispEnd,color:'#16a34a',type:'won'});
   barMeta.push({label:'Won · '+fmt(wonVal)});
   sectionGroups.push({key:'won',label:'Won',color:'#16a34a',startIdx:0,endIdx:0});
   var labelList=[''];
   pipeItems.forEach(function(p){
     var idx=bars.length;
     var trueStart=wonVal+truePipeRunning,trueEnd=trueStart+p.value;
-    var disp=toDisp(trueStart,trueEnd);
+    var valM=p.value/1e6;
+    var stepH=Math.max(valM,minStepM);
+    var dStart=dispTop,dEnd=dispTop+stepH;
+    dispTop=dEnd;
     bars.push({
       value:p.value,trueStart:trueStart,trueEnd:trueEnd,
-      displayStart:disp[0],displayEnd:disp[1],
+      displayStart:dStart,displayEnd:dEnd,
       custName:p.custName,color:p.color,type:'step'
     });
     barMeta.push({label:p.secLabel+': '+p.name+' · '+fmt(p.value)});
@@ -3135,7 +3126,7 @@ function renderBridge(bids,c){
       sectionGroups.push({key:p.secKey,label:p.secLabel,color:p.secColor,startIdx:idx,endIdx:idx});
     }
   });
-  var forecastDispTop=useBroken?(BASE_DISP+dispRunning):forecastM;
+  var forecastDispTop=dispTop;
   var fIdx=bars.length;
   bars.push({value:forecastVal,trueEnd:forecastVal,displayStart:0,displayEnd:forecastDispTop,color:over?'#0ea5e9':'#f59e0b',type:'forecast',gap:gap,over:over});
   barMeta.push({label:'Forecast '+fmt(forecastVal)+(over?' · +'+fmt(gap)+' over target':' · '+fmt(Math.abs(gap))+' short')});
@@ -3143,18 +3134,18 @@ function renderBridge(bids,c){
   labelList.push('');
   var targetDisp=null,targetLabel='Target '+fmt(targetVal);
   if(!targetOffScale){
-    if(useBroken){
-      if(targetM<=wonM&&wonM>0) targetDisp=targetM/wonM*BASE_DISP;
-      else{
-        var aboveScale=dispRunning>0&&pipeTotalM>0?dispRunning/pipeTotalM:1;
-        targetDisp=BASE_DISP+(targetM-wonM)*aboveScale;
-      }
-    }else targetDisp=targetM;
+    var pipeDispSpan=forecastDispTop-wonDispEnd;
+    var aboveScale=pipeTotalM>0?pipeDispSpan/pipeTotalM:minStepM;
+    if(targetM<=wonM&&wonM>0){
+      targetDisp=useBroken?(targetM/wonM*BASE_DISP):targetM;
+    }else{
+      targetDisp=wonDispEnd+(targetM-wonM)*aboveScale;
+    }
   }
   var floatData=bars.map(glkBridgeFloatBar);
   var bg=bars.map(function(b){return b.color;});
   var yMax=Math.max(forecastDispTop,targetDisp||0,0.001)*1.12;
-  var yTitle=useBroken?'Won compressed · pipeline magnified · AED on bars':'AED (M)';
+  var yTitle=useBroken?'Won compressed · min bar height · AED on bars':'AED (M) · min bar height applied';
   var bridgePlugins=[glkBridgeBarLabelPlugin(bars),glkBridgeGroupPlugin(sectionGroups,c),glkBridgeConnectorPlugin(bars)];
   if(targetDisp!=null) bridgePlugins.push(glkBridgeTargetLinePlugin(targetDisp,targetLabel,c));
   CHARTS.bridge=new Chart(el('chartBridge'),{
