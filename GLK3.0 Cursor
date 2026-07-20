@@ -577,29 +577,22 @@ body[data-theme="dark"] .badge-warning,body[data-theme="duralux-dark"] .badge-wa
 .lm-tile.selected::after{content:'✓ Selected';position:absolute;bottom:7px;right:10px;font-size:.62rem;font-weight:700;color:var(--acc);background:var(--nab);border:1px solid var(--nab2);padding:1px 7px;border-radius:20px;}
 .stat-card.tile-active::after{content:'✓';position:absolute;top:6px;right:8px;font-size:.7rem;font-weight:900;color:var(--acc);}
 
-/* Advanced date intelligence (PSD-style) */
-.adv-filters-section{background:var(--bg-card);border:1px solid var(--border-s);border-radius:12px;padding:.9rem 1rem;margin-bottom:1rem;box-shadow:var(--cs)}
-.adv-filters-header{display:flex;align-items:center;justify-content:space-between;gap:.75rem;flex-wrap:wrap;margin-bottom:.65rem}
-.adv-filters-title{font-size:.72rem;font-weight:800;color:var(--acc);text-transform:uppercase;letter-spacing:.07em;display:flex;align-items:center;gap:.4rem}
-.adv-filters-sub{font-size:.72rem;color:var(--t3);margin-bottom:.75rem;line-height:1.45}
+/* Date filters inside main filters panel */
+.filters-date-divider{font-size:.68rem;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;margin:.75rem 0 .55rem;padding-top:.65rem;border-top:1px dashed var(--border)}
 .filter-bar-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:.55rem .65rem;align-items:end}
 .fb-group{display:flex;flex-direction:column;gap:.22rem}
 .fb-group-label{font-size:.65rem;font-weight:700;color:var(--t2);text-transform:uppercase;letter-spacing:.05em}
 .fb-select{padding:.42rem .65rem;border-radius:8px;border:1px solid var(--border);background:var(--bg-input);color:var(--t1);font-size:.8rem;width:100%;cursor:pointer}
-.fb-select:focus{outline:none;border-color:var(--border-s);box-shadow:0 0 0 3px var(--glow)}
-.glk-date-hint{font-size:.71rem;color:var(--t3);margin:.4rem 0;line-height:1.4}
-.glk-preset-row{display:flex;flex-wrap:wrap;gap:.4rem;margin-bottom:.75rem}
-.glk-preset-btn{padding:.28rem .65rem;border-radius:7px;font-size:.7rem;font-weight:700;background:var(--bg-secondary);border:1px solid var(--border);color:var(--t2);cursor:pointer;transition:all .15s}
-.glk-preset-btn:hover{border-color:var(--border-s);color:var(--t1)}
-.glk-preset-btn.active{background:var(--grad);color:#fff;border-color:transparent}
-.glk-date-rule{border:1px dashed var(--border);border-radius:10px;padding:.7rem .8rem;margin-bottom:.65rem;background:var(--bg-secondary)}
-.glk-rule-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:.55rem}
+.glk-date-hint{font-size:.71rem;color:var(--t3);margin:.35rem 0 .5rem;line-height:1.4}
+.glk-date-rule{border:1px dashed var(--border);border-radius:10px;padding:.65rem .75rem;margin-bottom:.55rem;background:var(--bg-secondary)}
+.glk-rule-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:.5rem}
 .glk-rule-title{font-size:.74rem;font-weight:800;color:var(--t1)}
-.glk-rule-remove{padding:.2rem .55rem;border-radius:6px;font-size:.68rem;font-weight:700;background:rgba(220,38,38,.08);border:1px solid rgba(220,38,38,.25);color:#dc2626;cursor:pointer}
-.glk-add-rule-btn{padding:.38rem .85rem;border-radius:8px;font-size:.76rem;font-weight:700;background:var(--nab);border:1px solid var(--nab2);color:var(--acc);cursor:pointer;margin-top:.25rem}
-.glk-compare-toggle{display:flex;align-items:center;gap:.45rem;font-size:.78rem;font-weight:600;color:var(--t2);margin:.85rem 0 .55rem;cursor:pointer}
+.glk-rule-remove{padding:.2rem .55rem;border-radius:6px;font-size:.68rem;font-weight:700;background:rgba(220,38,38,.08);border:1px solid rgba(220,38,38,.25);color:#dc2626;cursor:pointer;border:none}
+.glk-add-rule-btn{padding:.38rem .85rem;border-radius:8px;font-size:.76rem;font-weight:700;background:var(--nab);border:1px solid var(--nab2);color:var(--acc);cursor:pointer;margin-top:.35rem}
+.glk-compare-row{display:flex;align-items:center;gap:.75rem;flex-wrap:wrap;margin-top:.75rem;padding-top:.65rem;border-top:1px dashed var(--border)}
+.glk-compare-toggle{display:flex;align-items:center;gap:.45rem;font-size:.78rem;font-weight:600;color:var(--t2);cursor:pointer;margin:0}
 .glk-compare-toggle input{width:15px;height:15px;accent-color:var(--acc)}
-.glk-compare-panel{border-top:1px dashed var(--border);padding-top:.75rem;margin-top:.5rem}
+.glk-compare-year-sel{max-width:110px;padding:.38rem .55rem!important}
 .glk-compare-banner{display:none;grid-template-columns:1fr auto 1fr;gap:.85rem;align-items:stretch;margin-bottom:1rem;padding:.85rem 1rem;background:var(--bg-card);border:1px solid var(--border-s);border-radius:12px;box-shadow:var(--cs)}
 .glk-compare-banner.visible{display:grid}
 .glk-compare-col{padding:.65rem .75rem;border-radius:9px;background:var(--bg-secondary);border:1px solid var(--border)}
@@ -608,10 +601,8 @@ body[data-theme="dark"] .badge-warning,body[data-theme="duralux-dark"] .badge-wa
 .glk-compare-metric{display:flex;justify-content:space-between;gap:.5rem;font-size:.74rem;padding:.12rem 0}
 .glk-compare-metric span:first-child{color:var(--t3)}
 .glk-compare-metric span:last-child{font-weight:800;color:var(--t1)}
-.glk-compare-vs{display:flex;align-items:center;justify-content:center;font-size:.82rem;font-weight:900;color:var(--acc);padding:0 .25rem}
+.glk-compare-vs{display:flex;align-items:center;justify-content:center;font-size:.82rem;font-weight:900;color:var(--acc)}
 .glk-compare-delta{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:.5rem .85rem;padding-top:.55rem;border-top:1px solid var(--border);font-size:.72rem;font-weight:700;color:var(--t2)}
-.glk-active-chips{display:flex;flex-wrap:wrap;gap:.35rem;margin-bottom:.65rem}
-.glk-chip{padding:.18rem .55rem;border-radius:20px;font-size:.68rem;font-weight:700;background:var(--chip);border:1px solid var(--nab2);color:var(--acc)}
 @media(max-width:900px){.glk-compare-banner.visible{grid-template-columns:1fr}.glk-compare-vs{padding:.35rem 0}}
 </style>
 </head>
@@ -795,41 +786,21 @@ body[data-theme="dark"] .badge-warning,body[data-theme="duralux-dark"] .badge-wa
         <!-- FILTERS -->
         <div class="filters-section">
           <div class="filters-grid" id="filtersGrid"></div>
+          <div class="filters-date-divider">Date filters</div>
+          <div id="glkDateRulesWrap"></div>
+          <button type="button" class="glk-add-rule-btn" onclick="glkAddDateRule()">+ Add date criterion</button>
+          <div class="glk-compare-row" id="glkCompareRow">
+            <label class="glk-compare-toggle">
+              <input type="checkbox" id="glkCompareToggle" onchange="glkToggleCompare()">
+              Compare to another year <span style="font-weight:400;color:var(--t3);">(same filters &amp; date fields)</span>
+            </label>
+            <select id="glkCompareYear" class="fb-select glk-compare-year-sel" onchange="onDateFilterChange()" style="display:none;"></select>
+          </div>
           <div class="filter-actions">
             <button type="button" class="reset-btn" onclick="resetAll()">
               <svg viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.95"/></svg>
               Reset All Filters
             </button>
-          </div>
-        </div>
-
-        <!-- ADVANCED DATE INTELLIGENCE (does not replace filters above) -->
-        <div class="adv-filters-section" id="advFiltersSection">
-          <div class="adv-filters-header">
-            <div class="adv-filters-title">
-              <svg viewBox="0 0 24 24" style="width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-              Date Intelligence &amp; Advanced Filters
-            </div>
-            <button type="button" class="reset-btn" onclick="glkResetAdvancedFilters()" style="padding:.38rem .75rem;font-size:.76rem;">
-              Reset Advanced
-            </button>
-          </div>
-          <div class="adv-filters-sub">
-            Stack multiple date criteria (AND logic) — e.g. <strong>Created in 2025</strong> AND <strong>Closed in 2026</strong>. Each row picks <em>which date field</em> and <em>how</em> to filter (range, YTD, year/quarter/month). Existing filters above are unchanged.
-          </div>
-          <div class="glk-active-chips" id="glkActiveChips"></div>
-          <div class="glk-preset-row" id="glkPresetRow"></div>
-          <div id="glkClosureProbWrap"></div>
-          <div id="glkDateRulesWrap"></div>
-          <button type="button" class="glk-add-rule-btn" onclick="glkAddDateRule('primary')">+ Add date criterion</button>
-          <label class="glk-compare-toggle">
-            <input type="checkbox" id="glkCompareToggle" onchange="glkToggleCompare()">
-            Compare two periods (A = active view, B = comparison baseline)
-          </label>
-          <div class="glk-compare-panel" id="glkComparePanel" style="display:none;">
-            <div class="adv-filters-sub" style="margin-bottom:.55rem;">Period B — compare against the primary date criteria above using independent rules below.</div>
-            <div id="glkCompareRulesWrap"></div>
-            <button type="button" class="glk-add-rule-btn" onclick="glkAddDateRule('compare')">+ Add comparison criterion</button>
           </div>
         </div>
 
@@ -1354,7 +1325,6 @@ function glkLaunchSpoofed(){
   // Reset and rebuild everything scoped to spoofed user
   resetAll();
   buildFilters();
-  glkBuildAdvancedFilters();
   applyRoleLocks();
   applyAll();
 
@@ -1421,6 +1391,10 @@ function loadData(){
     'Closure_x0020_Probability','Expected_x0020_Contract_x0020_Si','Actual_x0020_Contract_x0020_Sign',
     'Proposed_x0020_Date','No_x0020_Bid_x002f_Lost_x002f_Ca','BilledDate','Lost_x0020_Reason',
     'CustomerCode','Complexity','BidManager','ProjectManager0','field5','field8',
+    'Building_x0020_Status','Bid_x0020_Request','Comments_x002f_Remarks',
+    'POC_x0020_Name','POC_x0020_Email_x0020_ID','Contact_x0020_No',
+    'MNP','Churn_x0020_Reasons','Third_x0020_Party','Vendor_x0020_Name',
+    'GA_x0020_Lines','RFP_x0020_Submission_x0020_Date','Solution_x0020_Assigned_x0020_Date',
     'Created','Modified',
     'group/Title','group/EMail'
   ].join(',');
@@ -1434,7 +1408,6 @@ function loadData(){
         ALL_BIDS=[];
         remapBlankHD();
         buildFilters();
-        glkBuildAdvancedFilters();
         applyAll();
         return;
       }
@@ -1447,7 +1420,6 @@ function loadData(){
         ALL_BIDS=allResults.map(mapItem);
         remapBlankHD();
         buildFilters();
-        glkBuildAdvancedFilters();
         applyAll();
       }
     });
@@ -1485,6 +1457,13 @@ function loadData(){
     customerCode:it.CustomerCode||'—',complexity:it.Complexity||'—',
     bidManager:it.BidManager||'—',projectManager:it.ProjectManager0||'—',
     pcv:num(it.field5),prepaidPostpaid:it.field8||'—',
+    buildingStatus:it.Building_x0020_Status||'—',bidRequest:it.Bid_x0020_Request||'—',
+    comments:it.Comments_x002f_Remarks||'—',pocName:it.POC_x0020_Name||'—',
+    pocEmail:it.POC_x0020_Email_x0020_ID||'—',contactNo:it.Contact_x0020_No||'—',
+    mnp:it.MNP||'—',churnReason:it.Churn_x0020_Reasons||'—',
+    thirdParty:it.Third_x0020_Party||'—',vendorName:it.Vendor_x0020_Name||'—',
+    gaLines:num(it.GA_x0020_Lines),rfpSubmissionDate:it.RFP_x0020_Submission_x0020_Date||null,
+    solutionAssignedDate:it.Solution_x0020_Assigned_x0020_Date||null,
     amName:it.group?(it.group.Title||'—'):'—',amEmail:it.group?(it.group.EMail||''):'',
     created:it.Created||null,modified:it.Modified||null,
   };
@@ -1498,67 +1477,52 @@ const FILTER_DEFS=[
   {key:'typeOfContract',label:'Type of Contract'},
   {key:'vertical',label:'Vertical'},
   {key:'status',label:'Opp. Status'},
-  {key:'_year',label:'Year'},
-  {key:'_quarter',label:'Quarter'},
-  {key:'_month',label:'Month'},
+  {key:'closureProb',label:'Closure Probability'},
 ];
 const MONTH_NAMES=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-
-// ══════════════════════════════════════════════════════════════════
-//  ADVANCED DATE INTELLIGENCE (PSD-style — separate from FILTER_DEFS)
-// ══════════════════════════════════════════════════════════════════
 const GLK_DATE_FIELD_OPTS=[
-  {key:'created',label:'Created (Lead/Opp entered)'},
+  {key:'created',label:'Created'},
   {key:'expectedActivation',label:'Expected Activation'},
-  {key:'contractSigned',label:'Contract Signed (Won)'},
+  {key:'contractSigned',label:'Contract Signed'},
   {key:'billedDate',label:'Billed Date'},
-  {key:'lostDate',label:'Lost / Cancelled / No Bid'},
+  {key:'lostDate',label:'Lost / Cancelled'},
   {key:'proposedDate',label:'Proposed Date'},
   {key:'modified',label:'Last Modified'},
 ];
-let glkPrimaryDateRules=[];
-let glkCompareDateRules=[];
+let glkDateRules=[];
 let glkCompareEnabled=false;
-let glkAdvClosureProb=[];
+let glkCompareYear=String(new Date().getFullYear()-1);
 let glkRuleSeq=0;
 
 function glkDefaultDateRule(field){
   return {id:'r'+(glkRuleSeq++),dateField:field||'created',dateMode:'any',from:'',to:'',specific:'',ytdYear:'',years:[],quarters:[],months:[],weeks:[]};
 }
 function glkBidDateValue(bid,field){ return bid&&field?bid[field]||null:null; }
-function glkWeekOfMonth(d){
-  if(!(d instanceof Date)||isNaN(d)) return null;
-  return Math.ceil(d.getDate()/7);
-}
+function glkWeekOfMonth(d){ if(!(d instanceof Date)||isNaN(d)) return null; return Math.ceil(d.getDate()/7); }
 function glkDateMeta(iso){
   if(!iso) return null;
-  const d=new Date(iso);
-  if(isNaN(d)) return null;
+  const d=new Date(iso); if(isNaN(d)) return null;
   const y=d.getFullYear(),mi=d.getMonth();
   return {year:y,quarter:Math.floor(mi/3)+1,monthIndex:mi,week:glkWeekOfMonth(d),dayStart:new Date(y,mi,d.getDate()).getTime()};
 }
-function glkDateFieldLabel(key){
-  const o=GLK_DATE_FIELD_OPTS.find(x=>x.key===key);
-  return o?o.label:key;
-}
+function glkDateFieldLabel(key){ const o=GLK_DATE_FIELD_OPTS.find(x=>x.key===key); return o?o.label:key; }
 function glkDateModeHint(mode){
-  if(mode==='range') return 'Pick a start and end date — both days included.';
-  if(mode==='single') return 'Shows records on exactly one day (uses the date field selected).';
-  if(mode==='period') return 'Combine year, quarter, month, and/or week — stack selections as needed.';
-  if(mode==='ytd') return 'Year-to-date: 1 Jan through today for the selected year (or current year).';
-  return 'Inactive — choose “How to filter” to narrow by a specific date field.';
+  if(mode==='range') return 'Start and end date — both days included.';
+  if(mode==='single') return 'Records on exactly one day.';
+  if(mode==='period') return 'Combine year, quarter, month, week.';
+  if(mode==='ytd') return '1 Jan through today for selected year.';
+  return 'Choose a filter mode to activate this criterion.';
 }
-function glkRulePrefix(scope,ruleId){ return scope==='compare'?'glkC_'+ruleId:'glkP_'+ruleId; }
+function glkRulePrefix(id){ return 'glkR_'+id; }
 function glkGetSelectVal(id){ const e=el(id); return e?String(e.value||'').trim():''; }
-function glkGetRuleChecked(scope,ruleId,part){
-  const drop=el(glkRulePrefix(scope,ruleId)+'_'+part);
+function glkGetRuleChecked(ruleId,part){
+  const drop=el(glkRulePrefix(ruleId)+'_'+part);
   if(!drop) return [];
   return Array.from(drop.querySelectorAll('input:checked')).map(c=>c.value);
 }
-function glkUpdateRuleMsText(scope,ruleId,part,label){
-  const checked=glkGetRuleChecked(scope,ruleId,part);
-  const te=el(glkRulePrefix(scope,ruleId)+'_'+part+'Text');
-  if(!te) return;
+function glkUpdateRuleMsText(ruleId,part,label){
+  const checked=glkGetRuleChecked(ruleId,part);
+  const te=el(glkRulePrefix(ruleId)+'_'+part+'Text'); if(!te) return;
   if(!checked.length){ te.textContent='All '+label; return; }
   if(checked.length===1){
     if(part==='quarter') te.textContent='Q'+checked[0];
@@ -1569,12 +1533,11 @@ function glkUpdateRuleMsText(scope,ruleId,part,label){
   }
   te.textContent=checked.length+' selected';
 }
-function glkToggleRuleMs(scope,ruleId,part){
-  const drop=el(glkRulePrefix(scope,ruleId)+'_'+part);
-  const trig=el(glkRulePrefix(scope,ruleId)+'_'+part+'Trig');
+function glkToggleRuleMs(ruleId,part){
+  const drop=el(glkRulePrefix(ruleId)+'_'+part),trig=el(glkRulePrefix(ruleId)+'_'+part+'Trig');
   if(!drop||!trig) return;
   const isOpen=drop.classList.contains('open');
-  document.querySelectorAll('.glk-date-rule .ms-dropdown.open').forEach(d=>{d.classList.remove('open');const t=d.previousElementSibling;if(t)t.classList.remove('open');});
+  document.querySelectorAll('.glk-date-rule .ms-dropdown.open').forEach(d=>{d.classList.remove('open');if(d.previousElementSibling)d.previousElementSibling.classList.remove('open');});
   if(!isOpen){
     const rect=trig.getBoundingClientRect();
     drop.style.top=(rect.bottom+4)+'px';drop.style.left=rect.left+'px';
@@ -1582,33 +1545,27 @@ function glkToggleRuleMs(scope,ruleId,part){
     drop.classList.add('open');trig.classList.add('open');
   }
 }
-function glkBuildRuleMs(scope,ruleId,part,label,values,selected,labelFn){
-  const drop=el(glkRulePrefix(scope,ruleId)+'_'+part);
-  if(!drop) return;
+function glkBuildRuleMs(ruleId,part,label,values,selected,labelFn){
+  const drop=el(glkRulePrefix(ruleId)+'_'+part); if(!drop) return;
   const selSet={}; (selected||[]).forEach(v=>{selSet[String(v)]=true;});
   drop.innerHTML=values.map(function(val){
     const disp=labelFn?labelFn(val):val;
-    const cid=glkRulePrefix(scope,ruleId)+'_'+part+'_'+String(val).replace(/\W/g,'_');
-    return '<div class="ms-option" onclick="event.stopPropagation()"><input type="checkbox" id="'+cid+'" value="'+val+'"'+(selSet[String(val)]?' checked':'')+' onchange="glkUpdateRuleMsText(\''+scope+'\',\''+ruleId+'\',\''+part+'\',\''+label+'\');glkOnAdvancedFilterChange()"><label for="'+cid+'">'+disp+'</label></div>';
+    const cid=glkRulePrefix(ruleId)+'_'+part+'_'+String(val).replace(/\W/g,'_');
+    return '<div class="ms-option" onclick="event.stopPropagation()"><input type="checkbox" id="'+cid+'" value="'+val+'"'+(selSet[String(val)]?' checked':'')+' onchange="glkUpdateRuleMsText(\''+ruleId+'\',\''+part+'\',\''+label+'\');onDateFilterChange()"><label for="'+cid+'">'+disp+'</label></div>';
   }).join('');
-  glkUpdateRuleMsText(scope,ruleId,part,label);
+  glkUpdateRuleMsText(ruleId,part,label);
 }
 function glkCollectDateMetas(items,field){
   const metas=[];
-  (items||[]).forEach(function(b){
-    const meta=glkDateMeta(glkBidDateValue(b,field));
-    if(meta) metas.push(meta);
-  });
+  (items||[]).forEach(function(b){ const meta=glkDateMeta(glkBidDateValue(b,field)); if(meta) metas.push(meta); });
   return metas;
 }
-function glkPopulateRulePeriodDropdowns(scope,rule,items){
+function glkPopulateRulePeriodDropdowns(rule,items){
   const field=rule.dateField||'created';
   const metas=glkCollectDateMetas(items,field);
   const ySel=rule.years||[], qSel=rule.quarters||[], mSel=rule.months||[];
   const years=[],quarters=[],months=[],weeks=[];
-  metas.forEach(function(m){
-    const ys=String(m.year); if(years.indexOf(ys)<0) years.push(ys);
-  });
+  metas.forEach(function(m){ const ys=String(m.year); if(years.indexOf(ys)<0) years.push(ys); });
   years.sort((a,b)=>parseInt(b,10)-parseInt(a,10));
   metas.forEach(function(m){
     if(ySel.length&&ySel.indexOf(String(m.year))<0) return;
@@ -1628,37 +1585,28 @@ function glkPopulateRulePeriodDropdowns(scope,rule,items){
     if(m.week!=null){ const ws=String(m.week); if(weeks.indexOf(ws)<0) weeks.push(ws); }
   });
   weeks.sort((a,b)=>parseInt(a,10)-parseInt(b,10));
-  glkBuildRuleMs(scope,rule.id,'year','Years',years,rule.years);
-  glkBuildRuleMs(scope,rule.id,'quarter','Quarters',quarters,rule.quarters,v=>'Q'+v);
-  glkBuildRuleMs(scope,rule.id,'month','Months',months,rule.months,v=>MONTH_NAMES[+v]||v);
-  glkBuildRuleMs(scope,rule.id,'week','Weeks',weeks,rule.weeks,v=>'W'+v);
+  glkBuildRuleMs(rule.id,'year','Years',years,rule.years);
+  glkBuildRuleMs(rule.id,'quarter','Quarters',quarters,rule.quarters,v=>'Q'+v);
+  glkBuildRuleMs(rule.id,'month','Months',months,rule.months,v=>MONTH_NAMES[+v]||v);
+  glkBuildRuleMs(rule.id,'week','Weeks',weeks,rule.weeks,v=>'W'+v);
 }
-function glkReadDateRuleFromDom(scope,ruleId){
-  const p=glkRulePrefix(scope,ruleId);
+function glkReadDateRuleFromDom(ruleId){
+  const p=glkRulePrefix(ruleId);
   return {
     id:ruleId,
     dateField:glkGetSelectVal(p+'Field')||'created',
     dateMode:glkGetSelectVal(p+'Mode')||'any',
-    from:glkGetSelectVal(p+'From'),
-    to:glkGetSelectVal(p+'To'),
-    specific:glkGetSelectVal(p+'Specific'),
+    from:glkGetSelectVal(p+'From'),to:glkGetSelectVal(p+'To'),specific:glkGetSelectVal(p+'Specific'),
     ytdYear:glkGetSelectVal(p+'YtdYear'),
-    years:glkGetRuleChecked(scope,ruleId,'year'),
-    quarters:glkGetRuleChecked(scope,ruleId,'quarter'),
-    months:glkGetRuleChecked(scope,ruleId,'month'),
-    weeks:glkGetRuleChecked(scope,ruleId,'week'),
+    years:glkGetRuleChecked(ruleId,'year'),quarters:glkGetRuleChecked(ruleId,'quarter'),
+    months:glkGetRuleChecked(ruleId,'month'),weeks:glkGetRuleChecked(ruleId,'week'),
   };
 }
-function glkReadAllDateRules(scope){
-  const rules=scope==='compare'?glkCompareDateRules:glkPrimaryDateRules;
-  return rules.map(r=>glkReadDateRuleFromDom(scope,r.id));
-}
-function glkSyncRuleModeUI(scope,ruleId){
-  const p=glkRulePrefix(scope,ruleId);
-  const mode=glkGetSelectVal(p+'Mode')||'any';
-  const map={range:'Range',single:'Single',period:'Period',ytd:'Ytd'};
-  Object.keys(map).forEach(function(k){
-    const g=el(p+map[k]+'Group'); if(g) g.style.display=(mode===k?'grid':'none');
+function glkReadAllDateRules(){ return glkDateRules.map(r=>glkReadDateRuleFromDom(r.id)); }
+function glkSyncRuleModeUI(ruleId){
+  const p=glkRulePrefix(ruleId), mode=glkGetSelectVal(p+'Mode')||'any';
+  ['Range','Single','Period','Ytd'].forEach(function(suffix){
+    const g=el(p+suffix+'Group'); if(g) g.style.display=(mode===suffix.toLowerCase()?'grid':'none');
   });
   const hint=el(p+'Hint'); if(hint) hint.textContent=glkDateModeHint(mode);
 }
@@ -1681,8 +1629,7 @@ function glkApplyDateRule(bid,rule){
     if(meta.year!==yr) return false;
     const today=new Date(); today.setHours(23,59,59,999);
     const ytdEnd=(yr===today.getFullYear())?today.getTime():new Date(yr,11,31,23,59,59,999).getTime();
-    const ytdStart=new Date(yr,0,1).getTime();
-    return meta.dayStart>=ytdStart&&meta.dayStart<=ytdEnd;
+    return meta.dayStart>=new Date(yr,0,1).getTime()&&meta.dayStart<=ytdEnd;
   }
   if(rule.dateMode==='period'){
     if(rule.years&&rule.years.length&&rule.years.indexOf(String(meta.year))<0) return false;
@@ -1694,50 +1641,45 @@ function glkApplyDateRule(bid,rule){
   return true;
 }
 function glkApplyDateRules(bids,rules){
-  rules=rules||[];
-  const active=rules.filter(r=>r.dateMode&&r.dateMode!=='any');
+  const active=(rules||[]).filter(r=>r.dateMode&&r.dateMode!=='any');
   if(!active.length) return bids;
-  return bids.filter(function(b){ return active.every(r=>glkApplyDateRule(b,r)); });
-}
-function glkApplyClosureProbFilter(bids){
-  if(!glkAdvClosureProb.length) return bids;
-  return bids.filter(b=>glkAdvClosureProb.includes(b.closureProb));
-}
-function glkApplyAdvancedFilters(bids){
-  let out=glkApplyDateRules(bids,glkReadAllDateRules('primary'));
-  out=glkApplyClosureProbFilter(out);
-  return out;
-}
-function glkApplyCompareFilters(bids){
-  return glkApplyDateRules(bids,glkReadAllDateRules('compare'));
+  return bids.filter(b=>active.every(r=>glkApplyDateRule(b,r)));
 }
 function glkRuleIsActive(rule){ return rule&&rule.dateMode&&rule.dateMode!=='any'; }
-function glkSummarizeRules(rules){
+function glkSummarizeRules(rules,compareYear){
   const active=(rules||[]).filter(glkRuleIsActive);
   if(!active.length) return 'All dates';
   return active.map(function(r){
     const fld=glkDateFieldLabel(r.dateField);
-    if(r.dateMode==='ytd') return fld+' YTD '+(r.ytdYear||new Date().getFullYear());
-    if(r.dateMode==='range') return fld+' '+ (r.from||'…')+' → '+(r.to||'…');
+    const yr=compareYear||(r.ytdYear||(r.years&&r.years[0])||'');
+    if(r.dateMode==='ytd') return fld+' YTD '+yr;
+    if(r.dateMode==='range') return fld+' '+(r.from||'…')+' → '+(r.to||'…');
     if(r.dateMode==='single') return fld+' on '+r.specific;
     if(r.dateMode==='period'){
       const bits=[];
-      if(r.years&&r.years.length) bits.push('Y'+r.years.join(','));
+      const ys=compareYear?[compareYear]:(r.years||[]);
+      if(ys.length) bits.push(ys.join(','));
       if(r.quarters&&r.quarters.length) bits.push('Q'+r.quarters.join(','));
       if(r.months&&r.months.length) bits.push(r.months.map(m=>MONTH_NAMES[+m]||m).join(','));
-      if(r.weeks&&r.weeks.length) bits.push('W'+r.weeks.join(','));
-      return fld+' '+(bits.join(' · ')||'period');
+      return fld+' '+bits.join(' · ');
     }
     return fld;
-  }).join(' AND ');
+  }).join(' + ');
 }
-function glkRenderActiveChips(){
-  const wrap=el('glkActiveChips'); if(!wrap) return;
-  const chips=[];
-  const pr=glkReadAllDateRules('primary'); if(glkRuleIsActive(pr[0])||pr.some(glkRuleIsActive)) chips.push('Primary: '+glkSummarizeRules(pr));
-  if(glkAdvClosureProb.length) chips.push('Closure Prob: '+glkAdvClosureProb.join(', '));
-  if(glkCompareEnabled){ chips.push('Compare B: '+glkSummarizeRules(glkReadAllDateRules('compare'))); }
-  wrap.innerHTML=chips.map(c=>'<span class="glk-chip">'+c+'</span>').join('');
+function glkRulesForCompareYear(rules){
+  const cy=glkCompareYear||String(new Date().getFullYear()-1);
+  return rules.map(function(r){
+    const c=Object.assign({},r);
+    if(r.dateMode==='period') c.years=[cy];
+    else if(r.dateMode==='ytd') c.ytdYear=cy;
+    else if(r.dateMode==='range'){
+      const py=(r.years&&r.years[0])?parseInt(r.years[0],10):(r.from?new Date(r.from).getFullYear():new Date().getFullYear());
+      const diff=parseInt(cy,10)-py;
+      if(r.from){ const d=new Date(r.from); if(!isNaN(d)){ d.setFullYear(d.getFullYear()+diff); c.from=d.toISOString().slice(0,10); } }
+      if(r.to){ const d=new Date(r.to); if(!isNaN(d)){ d.setFullYear(d.getFullYear()+diff); c.to=d.toISOString().slice(0,10); } }
+    }
+    return c;
+  });
 }
 function glkQuickMetrics(bids){
   const pfTest=PF_FAMILIES[selPF];
@@ -1745,214 +1687,105 @@ function glkQuickMetrics(bids){
   const won=scoped.filter(b=>STATUS_WON.includes(b.status));
   const lost=scoped.filter(b=>STATUS_LOST.includes(b.status));
   const ip=scoped.filter(b=>STATUS_IP.includes(b.status));
-  return {
-    count:scoped.length,
-    tcv:scoped.reduce((s,b)=>s+b.tcv,0),
-    won:won.length,
-    lost:lost.length,
-    ip:ip.length,
-    mrc:scoped.reduce((s,b)=>s+b.mrc,0),
-  };
+  return {count:scoped.length,tcv:scoped.reduce((s,b)=>s+b.tcv,0),won:won.length,lost:lost.length,ip:ip.length,mrc:scoped.reduce((s,b)=>s+b.mrc,0)};
 }
-function glkFmtDelta(a,b){
-  if(!b) return a>0?'+100%':'—';
-  const pct=((a-b)/b*100);
-  const sign=pct>0?'+':'';
-  return sign+pct.toFixed(1)+'%';
-}
-function glkRenderCompareBanner(baseBids){
+function glkFmtDelta(a,b){ if(!b) return a>0?'+100%':'—'; return ((a-b)/b*100>0?'+':'')+((a-b)/b*100).toFixed(1)+'%'; }
+function glkRenderCompareBanner(baseBids,rules){
   const banner=el('glkCompareBanner'); if(!banner) return;
-  if(!glkCompareEnabled){ banner.classList.remove('visible'); banner.innerHTML=''; return; }
-  const primary=glkApplyAdvancedFilters(baseBids);
-  let comparePool=glkApplyClosureProbFilter(glkApplyDateRules(baseBids,glkReadAllDateRules('compare')));
-  const mA=glkQuickMetrics(primary), mB=glkQuickMetrics(comparePool);
+  if(!glkCompareEnabled||!rules.some(glkRuleIsActive)){ banner.classList.remove('visible'); banner.innerHTML=''; return; }
+  const mA=glkQuickMetrics(glkApplyDateRules(baseBids,rules));
+  const mB=glkQuickMetrics(glkApplyDateRules(baseBids,glkRulesForCompareYear(rules)));
   banner.classList.add('visible');
   banner.innerHTML=
-    '<div class="glk-compare-col primary"><div class="glk-compare-col-label">Period A (active view)</div>'+
+    '<div class="glk-compare-col primary"><div class="glk-compare-col-label">Current · '+glkSummarizeRules(rules)+'</div>'+
       '<div class="glk-compare-metric"><span>Opportunities</span><span>'+mA.count+'</span></div>'+
       '<div class="glk-compare-metric"><span>TCV</span><span>'+fmt(mA.tcv)+'</span></div>'+
       '<div class="glk-compare-metric"><span>Won / Billed</span><span>'+mA.won+'</span></div>'+
-      '<div class="glk-compare-metric"><span>In Pipeline</span><span>'+mA.ip+'</span></div>'+
-      '<div class="glk-compare-metric"><span>MRC</span><span>'+fmt(mA.mrc)+'</span></div>'+
-    '</div>'+
+      '<div class="glk-compare-metric"><span>Pipeline</span><span>'+mA.ip+'</span></div>'+
+      '<div class="glk-compare-metric"><span>MRC</span><span>'+fmt(mA.mrc)+'</span></div></div>'+
     '<div class="glk-compare-vs">vs</div>'+
-    '<div class="glk-compare-col"><div class="glk-compare-col-label">Period B (comparison)</div>'+
+    '<div class="glk-compare-col"><div class="glk-compare-col-label">Compare · '+glkSummarizeRules(rules,glkCompareYear)+'</div>'+
       '<div class="glk-compare-metric"><span>Opportunities</span><span>'+mB.count+'</span></div>'+
       '<div class="glk-compare-metric"><span>TCV</span><span>'+fmt(mB.tcv)+'</span></div>'+
       '<div class="glk-compare-metric"><span>Won / Billed</span><span>'+mB.won+'</span></div>'+
-      '<div class="glk-compare-metric"><span>In Pipeline</span><span>'+mB.ip+'</span></div>'+
-      '<div class="glk-compare-metric"><span>MRC</span><span>'+fmt(mB.mrc)+'</span></div>'+
-    '</div>'+
+      '<div class="glk-compare-metric"><span>Pipeline</span><span>'+mB.ip+'</span></div>'+
+      '<div class="glk-compare-metric"><span>MRC</span><span>'+fmt(mB.mrc)+'</span></div></div>'+
     '<div class="glk-compare-delta">'+
       '<span>Δ Opps: '+glkFmtDelta(mA.count,mB.count)+'</span>'+
       '<span>Δ TCV: '+glkFmtDelta(mA.tcv,mB.tcv)+'</span>'+
       '<span>Δ Won: '+glkFmtDelta(mA.won,mB.won)+'</span>'+
-      '<span>Δ Pipeline: '+glkFmtDelta(mA.ip,mB.ip)+'</span>'+
-    '</div>';
+      '<span>Δ Pipeline: '+glkFmtDelta(mA.ip,mB.ip)+'</span></div>';
 }
-function glkRenderDateRuleCard(scope,rule,index){
-  const p=glkRulePrefix(scope,rule.id);
-  const mode=rule.dateMode||'any';
+function glkRenderDateRuleCard(rule,index){
+  const p=glkRulePrefix(rule.id), mode=rule.dateMode||'any';
   const fieldOpts=GLK_DATE_FIELD_OPTS.map(o=>'<option value="'+o.key+'"'+(rule.dateField===o.key?' selected':'')+'>'+o.label+'</option>').join('');
   const modeOpts=[
-    {v:'any',l:'Inactive (any date)'},
-    {v:'ytd',l:'Year to date (YTD)'},
-    {v:'range',l:'Between two dates'},
-    {v:'single',l:'One specific day'},
-    {v:'period',l:'Year / quarter / month / week'},
+    {v:'any',l:'Any date'},{v:'ytd',l:'Year to date'},{v:'range',l:'Date range'},
+    {v:'single',l:'Specific day'},{v:'period',l:'Year / quarter / month'},
   ].map(o=>'<option value="'+o.v+'"'+(mode===o.v?' selected':'')+'>'+o.l+'</option>').join('');
   const years=[...new Set(ALL_BIDS.map(b=>{const m=glkDateMeta(glkBidDateValue(b,rule.dateField));return m?String(m.year):null;}).filter(Boolean))].sort((a,b)=>parseInt(b,10)-parseInt(a,10));
   const ytdOpts=years.map(y=>'<option value="'+y+'"'+(String(rule.ytdYear||new Date().getFullYear())===y?' selected':'')+'>'+y+'</option>').join('');
-  const msPart=function(part,label){
-    return '<div class="filter-group"><div class="filter-label">'+label+'</div><div class="ms-wrap"><div class="ms-trigger" id="'+p+'_'+part+'Trig" onclick="event.stopPropagation();glkToggleRuleMs(\''+scope+'\',\''+rule.id+'\',\''+part+'\')"><span id="'+p+'_'+part+'Text">All '+label+'</span><svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></div><div class="ms-dropdown" id="'+p+'_'+part+'"></div></div></div>';
+  const ms=function(part,label){
+    return '<div class="filter-group"><div class="filter-label">'+label+'</div><div class="ms-wrap"><div class="ms-trigger" id="'+p+'_'+part+'Trig" onclick="event.stopPropagation();glkToggleRuleMs(\''+rule.id+'\',\''+part+'\')"><span id="'+p+'_'+part+'Text">All '+label+'</span><svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></div><div class="ms-dropdown" id="'+p+'_'+part+'"></div></div></div>';
   };
   return '<div class="glk-date-rule" id="'+p+'Card">'+
-    '<div class="glk-rule-header"><span class="glk-rule-title">'+(scope==='compare'?'Compare':'Date')+' criterion '+(index+1)+'</span>'+
-      ((scope==='primary'&&glkPrimaryDateRules.length>1)||(scope==='compare'&&glkCompareDateRules.length>1)?'<button type="button" class="glk-rule-remove" onclick="glkRemoveDateRule(\''+scope+'\',\''+rule.id+'\')">Remove</button>':'')+
+    '<div class="glk-rule-header"><span class="glk-rule-title">Date criterion '+(index+1)+'</span>'+
+      (glkDateRules.length>1?'<button type="button" class="glk-rule-remove" onclick="glkRemoveDateRule(\''+rule.id+'\')">Remove</button>':'')+
     '</div>'+
     '<div class="filter-bar-grid">'+
-      '<div class="fb-group"><div class="fb-group-label">Which date field?</div><select class="fb-select" id="'+p+'Field" onchange="glkOnAdvancedFilterChange()">'+fieldOpts+'</select></div>'+
-      '<div class="fb-group"><div class="fb-group-label">How to filter</div><select class="fb-select" id="'+p+'Mode" onchange="glkSyncRuleModeUI(\''+scope+'\',\''+rule.id+'\');glkOnAdvancedFilterChange()">'+modeOpts+'</select></div>'+
+      '<div class="fb-group"><div class="fb-group-label">Date field</div><select class="fb-select" id="'+p+'Field" onchange="onDateFilterChange()">'+fieldOpts+'</select></div>'+
+      '<div class="fb-group"><div class="fb-group-label">Filter by</div><select class="fb-select" id="'+p+'Mode" onchange="glkSyncRuleModeUI(\''+rule.id+'\');onDateFilterChange()">'+modeOpts+'</select></div>'+
     '</div>'+
     '<div class="glk-date-hint" id="'+p+'Hint">'+glkDateModeHint(mode)+'</div>'+
-    '<div id="'+p+'RangeGroup" class="filter-bar-grid" style="display:'+(mode==='range'?'grid':'none')+';margin-top:.45rem;">'+
-      '<div class="fb-group"><div class="fb-group-label">Start date</div><input type="date" class="fb-select" id="'+p+'From" value="'+(rule.from||'')+'" onchange="glkOnAdvancedFilterChange()"></div>'+
-      '<div class="fb-group"><div class="fb-group-label">End date</div><input type="date" class="fb-select" id="'+p+'To" value="'+(rule.to||'')+'" onchange="glkOnAdvancedFilterChange()"></div>'+
-    '</div>'+
-    '<div id="'+p+'SingleGroup" class="filter-bar-grid" style="display:'+(mode==='single'?'grid':'none')+';margin-top:.45rem;">'+
-      '<div class="fb-group"><div class="fb-group-label">Pick a day</div><input type="date" class="fb-select" id="'+p+'Specific" value="'+(rule.specific||'')+'" onchange="glkOnAdvancedFilterChange()"></div>'+
-    '</div>'+
-    '<div id="'+p+'YtdGroup" class="filter-bar-grid" style="display:'+(mode==='ytd'?'grid':'none')+';margin-top:.45rem;">'+
-      '<div class="fb-group"><div class="fb-group-label">YTD year</div><select class="fb-select" id="'+p+'YtdYear" onchange="glkOnAdvancedFilterChange()">'+ytdOpts+'</select></div>'+
-    '</div>'+
-    '<div id="'+p+'PeriodGroup" class="filter-bar-grid" style="display:'+(mode==='period'?'grid':'none')+';margin-top:.45rem;">'+
-      msPart('year','Years')+msPart('quarter','Quarters')+msPart('month','Months')+msPart('week','Weeks')+
-    '</div>'+
-  '</div>';
+    '<div id="'+p+'RangeGroup" class="filter-bar-grid" style="display:'+(mode==='range'?'grid':'none')+';margin-top:.4rem;">'+
+      '<div class="fb-group"><div class="fb-group-label">From</div><input type="date" class="fb-select" id="'+p+'From" value="'+(rule.from||'')+'" onchange="onDateFilterChange()"></div>'+
+      '<div class="fb-group"><div class="fb-group-label">To</div><input type="date" class="fb-select" id="'+p+'To" value="'+(rule.to||'')+'" onchange="onDateFilterChange()"></div></div>'+
+    '<div id="'+p+'SingleGroup" class="filter-bar-grid" style="display:'+(mode==='single'?'grid':'none')+';margin-top:.4rem;">'+
+      '<div class="fb-group"><div class="fb-group-label">Day</div><input type="date" class="fb-select" id="'+p+'Specific" value="'+(rule.specific||'')+'" onchange="onDateFilterChange()"></div></div>'+
+    '<div id="'+p+'YtdGroup" class="filter-bar-grid" style="display:'+(mode==='ytd'?'grid':'none')+';margin-top:.4rem;">'+
+      '<div class="fb-group"><div class="fb-group-label">YTD year</div><select class="fb-select" id="'+p+'YtdYear" onchange="onDateFilterChange()">'+ytdOpts+'</select></div></div>'+
+    '<div id="'+p+'PeriodGroup" class="filter-bar-grid" style="display:'+(mode==='period'?'grid':'none')+';margin-top:.4rem;">'+
+      ms('year','Years')+ms('quarter','Quarters')+ms('month','Months')+ms('week','Weeks')+'</div></div>';
 }
-function glkRenderDateRules(scope){
-  const rules=scope==='compare'?glkCompareDateRules:glkPrimaryDateRules;
-  const wrap=el(scope==='compare'?'glkCompareRulesWrap':'glkDateRulesWrap');
-  if(!wrap) return;
-  wrap.innerHTML=rules.map((r,i)=>glkRenderDateRuleCard(scope,r,i)).join('');
-  rules.forEach(function(r){
-    glkSyncRuleModeUI(scope,r.id);
-    glkPopulateRulePeriodDropdowns(scope,glkReadDateRuleFromDom(scope,r.id),ALL_BIDS);
+function glkBuildDateFilters(){
+  if(!glkDateRules.length) glkDateRules=[glkDefaultDateRule('created')];
+  const wrap=el('glkDateRulesWrap'); if(!wrap) return;
+  wrap.innerHTML=glkDateRules.map((r,i)=>glkRenderDateRuleCard(r,i)).join('');
+  glkDateRules.forEach(function(r){
+    glkSyncRuleModeUI(r.id);
+    glkPopulateRulePeriodDropdowns(glkReadDateRuleFromDom(r.id),ALL_BIDS);
   });
-}
-function glkRenderPresets(){
-  const wrap=el('glkPresetRow'); if(!wrap) return;
-  const cy=new Date().getFullYear();
-  const presets=[
-    {id:'ytd'+cy,label:'YTD '+cy,fn:function(){glkApplyPreset({dateField:'created',dateMode:'ytd',ytdYear:String(cy)});}},
-    {id:'created'+cy,label:'Created '+cy,fn:function(){glkApplyPreset({dateField:'created',dateMode:'period',years:[String(cy)]});}},
-    {id:'closed'+cy,label:'Closed/Won '+cy,fn:function(){glkApplyPreset({dateField:'contractSigned',dateMode:'period',years:[String(cy)]});}},
-    {id:'act'+cy,label:'Exp. Activation '+cy,fn:function(){glkApplyPreset({dateField:'expectedActivation',dateMode:'period',years:[String(cy)]});}},
-    {id:'lost'+cy,label:'Lost '+cy,fn:function(){glkApplyPreset({dateField:'lostDate',dateMode:'period',years:[String(cy)]});}},
-    {id:'created'+(cy-1),label:'Created '+(cy-1),fn:function(){glkApplyPreset({dateField:'created',dateMode:'period',years:[String(cy-1)]});}},
-    {id:'closed'+(cy-1),label:'Closed '+(cy-1),fn:function(){glkApplyPreset({dateField:'contractSigned',dateMode:'period',years:[String(cy-1)]});}},
-    {id:'cross',label:'Created '+(cy-1)+' → Closed '+cy,fn:function(){
-      glkPrimaryDateRules=[glkDefaultDateRule('created'),glkDefaultDateRule('contractSigned')];
-      glkPrimaryDateRules[0].dateMode='period'; glkPrimaryDateRules[0].years=[String(cy-1)];
-      glkPrimaryDateRules[1].dateMode='period'; glkPrimaryDateRules[1].years=[String(cy)];
-      glkBuildAdvancedFilters(); glkOnAdvancedFilterChange();
-    }},
-  ];
-  wrap.innerHTML=presets.map(p=>'<button type="button" class="glk-preset-btn" data-pid="'+p.id+'" onclick="glkRunPreset(\''+p.id+'\')">'+p.label+'</button>').join('');
-  window._glkPresets=presets;
-}
-window.glkRunPreset=function(id){
-  const p=(window._glkPresets||[]).find(x=>x.id===id);
-  if(p) p.fn();
-  document.querySelectorAll('.glk-preset-btn').forEach(b=>b.classList.toggle('active',b.getAttribute('data-pid')===id));
-};
-function glkApplyPreset(opts){
-  glkPrimaryDateRules=[Object.assign(glkDefaultDateRule(opts.dateField),opts)];
-  glkBuildAdvancedFilters();
-  glkOnAdvancedFilterChange();
-}
-function glkRenderClosureProbFilter(){
-  const wrap=el('glkClosureProbWrap'); if(!wrap) return;
-  wrap.innerHTML='<div class="filter-group" style="margin-bottom:.75rem;max-width:260px;"><div class="filter-label">Closure Probability</div><div class="ms-wrap" id="ms_glkClosureProb"><div class="ms-trigger" id="mst_glkClosureProb" onclick="event.stopPropagation();toggleMs(\'glkClosureProb\')"><span id="mstext_glkClosureProb">All</span><svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></div><div class="ms-dropdown" id="msd_glkClosureProb"></div></div></div>';
-  const drop=el('msd_glkClosureProb');
-  PROB_ORDER.forEach(function(v){
-    const opt=document.createElement('div'); opt.className='ms-option';
-    const cid='cb_glkClosureProb_'+v.replace(/\W/g,'');
-    opt.innerHTML='<input type="checkbox" id="'+cid+'" value="'+v+'"'+(glkAdvClosureProb.includes(v)?' checked':'')+' onchange="glkOnClosureProbChange()"><label for="'+cid+'">'+v+'</label>';
-    drop.appendChild(opt);
-  });
-  glkUpdateClosureProbText();
-}
-function glkUpdateClosureProbText(){
-  const drop=el('msd_glkClosureProb'); if(!drop) return;
-  glkAdvClosureProb=Array.from(drop.querySelectorAll('input:checked')).map(c=>c.value);
-  const te=el('mstext_glkClosureProb'); if(!te) return;
-  if(!glkAdvClosureProb.length) te.textContent='All';
-  else if(glkAdvClosureProb.length===1) te.textContent=glkAdvClosureProb[0];
-  else te.textContent=glkAdvClosureProb.length+' selected';
-}
-window.glkOnClosureProbChange=function(){ glkUpdateClosureProbText(); glkOnAdvancedFilterChange(); };
-function glkBuildAdvancedFilters(){
-  if(!glkPrimaryDateRules.length) glkPrimaryDateRules=[glkDefaultDateRule('created')];
-  if(!glkCompareDateRules.length) glkCompareDateRules=[glkDefaultDateRule('contractSigned')];
-  glkRenderPresets();
-  glkRenderClosureProbFilter();
-  glkRenderDateRules('primary');
-  glkRenderDateRules('compare');
+  const cySel=el('glkCompareYear');
+  if(cySel){
+    const yrs=[...new Set(ALL_BIDS.flatMap(b=>GLK_DATE_FIELD_OPTS.map(o=>{const m=glkDateMeta(b[o.key]);return m?String(m.year):null;})).filter(Boolean))].sort((a,b)=>parseInt(b,10)-parseInt(a,10));
+    cySel.innerHTML=yrs.map(y=>'<option value="'+y+'"'+(glkCompareYear===y?' selected':'')+'>'+y+'</option>').join('');
+    cySel.style.display=glkCompareEnabled?'block':'none';
+  }
   const ct=el('glkCompareToggle'); if(ct) ct.checked=glkCompareEnabled;
-  const cp=el('glkComparePanel'); if(cp) cp.style.display=glkCompareEnabled?'block':'none';
 }
-window.glkAddDateRule=function(scope){
-  const rules=scope==='compare'?glkCompareDateRules:glkPrimaryDateRules;
-  rules.push(glkDefaultDateRule('created'));
-  glkRenderDateRules(scope);
-};
-window.glkRemoveDateRule=function(scope,ruleId){
-  const rules=scope==='compare'?glkCompareDateRules:glkPrimaryDateRules;
-  const next=rules.filter(r=>r.id!==ruleId);
-  if(scope==='compare') glkCompareDateRules=next.length?next:[glkDefaultDateRule('contractSigned')];
-  else glkPrimaryDateRules=next.length?next:[glkDefaultDateRule('created')];
-  glkRenderDateRules(scope);
-  glkOnAdvancedFilterChange();
+window.glkAddDateRule=function(){ glkDateRules.push(glkDefaultDateRule('created')); glkBuildDateFilters(); };
+window.glkRemoveDateRule=function(ruleId){
+  glkDateRules=glkDateRules.filter(r=>r.id!==ruleId);
+  if(!glkDateRules.length) glkDateRules=[glkDefaultDateRule('created')];
+  glkBuildDateFilters(); onDateFilterChange();
 };
 window.glkToggleCompare=function(){
   glkCompareEnabled=!!(el('glkCompareToggle')&&el('glkCompareToggle').checked);
-  const cp=el('glkComparePanel'); if(cp) cp.style.display=glkCompareEnabled?'block':'none';
-  glkOnAdvancedFilterChange();
+  if(el('glkCompareYear')) el('glkCompareYear').style.display=glkCompareEnabled?'block':'none';
+  onDateFilterChange();
 };
-window.glkOnAdvancedFilterChange=function(){
-  glkPrimaryDateRules=glkReadAllDateRules('primary');
-  glkCompareDateRules=glkReadAllDateRules('compare');
-  glkPrimaryDateRules.forEach(function(r){ glkPopulateRulePeriodDropdowns('primary',r,ALL_BIDS); });
-  glkCompareDateRules.forEach(function(r){ glkPopulateRulePeriodDropdowns('compare',r,ALL_BIDS); });
-  glkRenderActiveChips();
+window.onDateFilterChange=function(){
+  glkDateRules=glkReadAllDateRules();
+  if(el('glkCompareYear')) glkCompareYear=glkGetSelectVal('glkCompareYear')||glkCompareYear;
+  glkDateRules.forEach(r=>glkPopulateRulePeriodDropdowns(r,ALL_BIDS));
   applyAll();
 };
-window.glkResetAdvancedFilters=function(){
-  glkPrimaryDateRules=[glkDefaultDateRule('created')];
-  glkCompareDateRules=[glkDefaultDateRule('contractSigned')];
-  glkCompareEnabled=false;
-  glkAdvClosureProb=[];
-  document.querySelectorAll('.glk-preset-btn').forEach(b=>b.classList.remove('active'));
-  glkBuildAdvancedFilters();
-  glkOnAdvancedFilterChange();
-};
 
-function getBidMeta(bid){
-  const rd=getRelevantDate(bid); const d=rd?new Date(rd):null;
-  return {
-    _year:d&&!isNaN(d)?String(d.getFullYear()):null,
-    _quarter:d&&!isNaN(d)?getQuarter(rd):null,
-    _month:d&&!isNaN(d)?String(d.getMonth()):null,
-  };
-}
 function getFilterVals(key){
-  if(key==='_year') return [...new Set(ALL_BIDS.map(b=>{const rd=getRelevantDate(b);const d=rd?new Date(rd):null;return d&&!isNaN(d)?String(d.getFullYear()):null;}).filter(Boolean))].sort();
-  if(key==='_quarter') return ['Q1','Q2','Q3','Q4'];
-  if(key==='_month') return MONTH_NAMES.map((_,i)=>String(i));
   if(key==='closureProb') return PROB_ORDER;
-return [...new Set(ALL_BIDS.map(b=>b[key]).filter(Boolean))].sort();
+  return [...new Set(ALL_BIDS.map(b=>b[key]).filter(Boolean))].sort();
 }
+
 function remapBlankHD(){
   const STATUS_ONGOING=['Lead','Opportunity','On Hold','Proposed'];
 
@@ -2007,7 +1840,7 @@ function buildFilters(){
     const drop=document.createElement('div'); drop.className='ms-dropdown'; drop.id='msd_'+fd.key;
     getFilterVals(fd.key).forEach(function(v){
       if(!v||v==='—'||v==='All') return;
-      const label=fd.key==='_month'?MONTH_NAMES[+v]:v;
+      const label=v;
       const opt=document.createElement('div'); opt.className='ms-option';
       const cid='cb_'+fd.key+'_'+v.toString().replace(/[^a-zA-Z0-9]/g,'_');
       opt.innerHTML='<input type="checkbox" id="'+cid+'" value="'+v+'" onchange="onFilterChange(\''+fd.key+'\')"><label for="'+cid+'">'+label+'</label>';
@@ -2016,6 +1849,7 @@ function buildFilters(){
     wrap.appendChild(trig); wrap.appendChild(drop); div.appendChild(wrap); grid.appendChild(div);
   });
   applyRoleLocks();
+  glkBuildDateFilters();
 }
 function applyRoleLocks(){
   if(USER.role==='Viewer'||USER.role==='Admin'||USER.role==='CEO') return;
@@ -2103,43 +1937,12 @@ function getChecked(key){ const drop=el('msd_'+key); if(!drop) return []; return
 function updateMsText(key){
   const checked=getChecked(key); const e=el('mstext_'+key); if(!e) return;
   if(!checked.length) e.textContent='All';
-  else if(checked.length===1) e.textContent=key==='_month'?MONTH_NAMES[+checked[0]]:checked[0];
+  else if(checked.length===1) e.textContent=checked[0];
   else e.textContent=checked.length+' selected';
 }
 function onFilterChange(key){
   updateMsText(key);
-  // Cascade: year change resets quarter+month; quarter change resets month
-  if(key==='_year'){
-    clearFilter('_quarter');
-    clearFilter('_month');
-    rebuildQuarterMonth();
-  } else if(key==='_quarter'){
-    clearFilter('_month');
-    rebuildQuarterMonth();
-  }
   applyAll();
-}
-function rebuildQuarterMonth(){
-  const selYears=getChecked('_year');
-  const selQuarters=getChecked('_quarter');
-  // Filter available months based on selected years+quarters
-  const available=ALL_BIDS.filter(b=>{
-    const rd=getRelevantDate(b); const d=rd?new Date(rd):null; if(!d||isNaN(d)) return false;
-    const yr=String(d.getFullYear());
-    const qr='Q'+Math.ceil((d.getMonth()+1)/3);
-    if(selYears.length&&!selYears.includes(yr)) return false;
-    if(selQuarters.length&&!selQuarters.includes(qr)) return false;
-    return true;
-  });
-  const availMonths=new Set(available.map(b=>{const rd=getRelevantDate(b);const d=rd?new Date(rd):null;return d&&!isNaN(d)?String(d.getMonth()):null;}).filter(Boolean));
-  const drop=el('msd__month'); if(!drop) return;
-  drop.querySelectorAll('input[type=checkbox]').forEach(cb=>{
-    const inScope=availMonths.has(cb.value);
-    cb.parentElement.style.opacity=inScope?'1':'0.35';
-    cb.parentElement.style.pointerEvents=inScope?'auto':'none';
-    if(!inScope) cb.checked=false;
-  });
-  updateMsText('_month');
 }
 function clearFilter(key){ const drop=el('msd_'+key); if(!drop) return; drop.querySelectorAll('input:not([disabled])').forEach(c=>c.checked=false); updateMsText(key); }
 
@@ -2150,11 +1953,9 @@ function applyAll(){
   const filters={};
   FILTER_DEFS.forEach(function(fd){ filters[fd.key]=getChecked(fd.key); });
 FILTERED=ALL_BIDS.filter(function(bid){
-    const meta=getBidMeta(bid);
     for(const fd of FILTER_DEFS){
       const vals=filters[fd.key]; if(!vals.length) continue;
-      const bidVal=fd.key.startsWith('_')?meta[fd.key]:bid[fd.key];
-      if(!vals.includes(bidVal)) return false;
+      if(!vals.includes(bid[fd.key])) return false;
     }
     return true;
   });
@@ -2174,9 +1975,9 @@ FILTERED=ALL_BIDS.filter(function(bid){
   }
 
   const baseForCompare=FILTERED.slice();
-  FILTERED=glkApplyAdvancedFilters(FILTERED);
-  glkRenderActiveChips();
-  glkRenderCompareBanner(baseForCompare);
+  const dateRules=glkReadAllDateRules();
+  FILTERED=glkApplyDateRules(FILTERED,dateRules);
+  glkRenderCompareBanner(baseForCompare,dateRules);
 
 updateTopStats();
 
@@ -3235,14 +3036,14 @@ function renderGrid(){
       resizable:true,
       type:'numericColumn',
       headerTooltip:'Year Impact = MRC × months remaining in current year from Expected Activation date (inclusive). Only current-year activation dates are calculated. Past year = skipped. Next year = shown with note. Excludes Lost / Cancelled / No Bid.',
-      valueGetter: p => { const r = calcYearImpact(p.data); return r.val; },
-      cellRenderer: p => {
-        const r = calcYearImpact(p.data);
-        if (r.val === null && r.note) return `<span style="color:var(--t3);font-size:.76rem;font-style:italic">— <span title="${r.note}" style="cursor:help;border-bottom:1px dashed var(--t3);">ⓘ</span></span>`;
-        if (r.val === null) return `<span style="color:var(--t3);">—</span>`;
+      valueGetter:p=>{const r=calcYearImpact(p.data);return r.val;},
+      cellRenderer:p=>{
+        const r=calcYearImpact(p.data);
+        if(r.val===null&&r.note) return `<span style="color:var(--t3);font-size:.76rem;font-style:italic">— <span title="${r.note}" style="cursor:help;border-bottom:1px dashed var(--t3);">ⓘ</span></span>`;
+        if(r.val===null) return `<span style="color:var(--t3);">—</span>`;
         return `<span style="font-weight:700;color:var(--sc);">${fmtYearImpact(r.val)}</span>`;
       },
-      cellStyle:{ display:'flex', alignItems:'center' }
+      cellStyle:{display:'flex',alignItems:'center'}
     },
     {field:'pcv',headerName:'Cat. Value',width:110,valueFormatter:p=>fmt(p.value),type:'numericColumn'},
     {field:'status',headerName:'Status',width:115,cellRenderer:p=>{
@@ -3263,8 +3064,22 @@ function renderGrid(){
     {field:'lostReason',headerName:'Lost Reason',width:160},
     {field:'duration',headerName:'Duration',width:100},
     {field:'customerCode',headerName:'Customer Code',width:130},
+    {field:'solutionManager',headerName:'Solution Manager',width:140},
     {field:'bidManager',headerName:'Bid Manager',width:140},
     {field:'projectManager',headerName:'Project Manager',width:140},
+    {field:'buildingStatus',headerName:'Building Status',width:120},
+    {field:'bidRequest',headerName:'Bid Request',width:110},
+    {field:'gaLines',headerName:'GA Lines',width:90,type:'numericColumn'},
+    {field:'mnp',headerName:'MNP',width:80},
+    {field:'churnReason',headerName:'Churn Reason',width:130},
+    {field:'thirdParty',headerName:'Third Party',width:100},
+    {field:'vendorName',headerName:'Vendor Name',width:130},
+    {field:'pocName',headerName:'POC Name',width:130},
+    {field:'pocEmail',headerName:'POC Email',width:160},
+    {field:'contactNo',headerName:'Contact No',width:115},
+    {field:'rfpSubmissionDate',headerName:'RFP Submission Date',width:140,valueFormatter:p=>fmtDate(p.value)},
+    {field:'solutionAssignedDate',headerName:'Solution Assigned Date',width:150,valueFormatter:p=>fmtDate(p.value)},
+    {field:'comments',headerName:'Comments/Remarks',width:200},
     {field:'prepaidPostpaid',headerName:'Pre/Postpaid',width:115},
     {field:'modified',headerName:'Modified',width:120,valueFormatter:p=>fmtDate(p.value)},
   ];
@@ -3286,13 +3101,15 @@ function gridSearch(v){ if(GRID_API) GRID_API.setGridOption('quickFilterText',v)
 // ══════════════════════════════════════════════════════════════════
 function exportExcel(){
   const data=getViewBids();
-  const cols=['headDirector','accountDirector','amName','customerName','typeOfRequest','typeOfContract','vertical','productFamily','productCategory','services','gaPoints','mrc','otc','tcv','pcv','status','closureProb','complexity','created','proposedDate','expectedActivation','contractSigned','billedDate','lostDate','lostReason','duration','customerCode','bidManager','projectManager','prepaidPostpaid','modified'];
-  const headers=['Head Director','Account Director','Account Manager','Customer','Type of Request','Type of Contract','Vertical','Product Family','Product Category','Services','GA Points','MRC','OTC','TCV','Cat. Value','Status','Closure Prob.','Complexity','Proposed Date','Expected Activation','Contract Signed','Billed Date','Lost Date','Lost Reason','Duration','Customer Code','Bid Manager','Project Manager','Pre/Postpaid'];
+  const cols=['headDirector','accountDirector','amName','customerName','typeOfRequest','typeOfContract','vertical','productFamily','productCategory','services','gaPoints','mrc','otc','tcv','pcv','status','closureProb','complexity','created','proposedDate','expectedActivation','contractSigned','billedDate','lostDate','lostReason','duration','customerCode','solutionManager','bidManager','projectManager','buildingStatus','bidRequest','gaLines','mnp','churnReason','thirdParty','vendorName','pocName','pocEmail','contactNo','rfpSubmissionDate','solutionAssignedDate','comments','prepaidPostpaid','modified'];
+  const headers=['Head Director','Account Director','Account Manager','Customer','Type of Request','Type of Contract','Vertical','Product Family','Product Category','Services','GA Points','MRC','OTC','TCV','Cat. Value','Status','Closure Prob.','Complexity','Created','Proposed Date','Expected Activation','Contract Signed','Billed Date','Lost Date','Lost Reason','Duration','Customer Code','Solution Manager','Bid Manager','Project Manager','Building Status','Bid Request','GA Lines','MNP','Churn Reason','Third Party','Vendor Name','POC Name','POC Email','Contact No','RFP Submission Date','Solution Assigned Date','Comments/Remarks','Pre/Postpaid','Modified'];
   let html='<html><head><meta charset="utf-8"></head><body><table border="1" cellpadding="4" cellspacing="0">';
   html+='<tr>'+headers.map(h=>'<th style="background:#a855f7;color:white;font-weight:bold;padding:10px;">'+h+'</th>').join('')+'</tr>';
+  const dateCols=['created','proposedDate','expectedActivation','contractSigned','billedDate','lostDate','rfpSubmissionDate','solutionAssignedDate','modified'];
+  const numCols=['mrc','otc','tcv','pcv','gaPoints','gaLines'];
   data.forEach((row,i)=>{
     const bg=i%2===0?'#f9f0ff':'#ffffff';
-    html+='<tr>'+cols.map(c=>{let v=row[c]||'—';if(['proposedDate','expectedActivation','contractSigned','billedDate','lostDate'].includes(c))v=fmtDate(v);if(['mrc','otc','tcv','pcv'].includes(c))v=fmt(num(v));return '<td style="background:'+bg+';padding:8px;">'+v+'</td>';}).join('')+'</tr>';
+    html+='<tr>'+cols.map(c=>{let v=row[c]||'—';if(dateCols.includes(c))v=fmtDate(v);if(numCols.includes(c))v=fmt(num(v));return '<td style="background:'+bg+';padding:8px;">'+v+'</td>';}).join('')+'</tr>';
   });
   html+='</table></body></html>';
   const blob=new Blob([html],{type:'application/vnd.ms-excel'});
@@ -3307,6 +3124,10 @@ function resetAll(){
   selHD=null;selAD=null;selAM=null;selStatusTile=null; hideAD(); hideAM();
   document.querySelectorAll('.ms-dropdown input:not([disabled])').forEach(cb=>cb.checked=false);
   FILTER_DEFS.forEach(fd=>updateMsText(fd.key));
+  glkDateRules=[glkDefaultDateRule('created')];
+  glkCompareEnabled=false;
+  glkCompareYear=String(new Date().getFullYear()-1);
+  glkBuildDateFilters();
   applyAll();
   updateSelectionBadge();
 }
