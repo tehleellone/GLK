@@ -1,0 +1,52 @@
+(function () {
+  const SITE = 'http://sharedspaces:8086/sites/GKA';
+  const LIST = 'GLK Pipeline Portal';
+
+  const url =
+    SITE +
+    "/_api/web/lists/getbytitle('" +
+    LIST.replace(/'/g, "''") +
+    "')/fields?$select=Title,InternalName,TypeAsString,Required,Hidden,ReadOnlyField,FromBaseType&$top=500";
+
+  fetch(url, {
+    headers: { Accept: 'application/json;odata=verbose' },
+    credentials: 'include'
+  })
+    .then(function (r) {
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r.json();
+    })
+    .then(function (data) {
+      const fields = (data.d.results || [])
+        .filter(function (f) {
+          // skip base/hidden system junk; remove filter if you want everything
+          return !f.Hidden && !f.FromBaseType;
+        })
+        .sort(function (a, b) {
+          return (a.Title || '').localeCompare(b.Title || '');
+        });
+
+      console.table(
+        fields.map(function (f) {
+          return {
+            Title: f.Title,
+            InternalName: f.InternalName,
+            Type: f.TypeAsString,
+            Required: f.Required
+          };
+        })
+      );
+
+      console.log('--- internal names only ---');
+      console.log(fields.map(function (f) { return f.InternalName; }).join('\n'));
+
+      console.log('--- copy/paste for $select ---');
+      console.log(fields.map(function (f) { return f.InternalName; }).join(','));
+
+      window.glkListFields = fields;
+      console.log('Full array saved as window.glkListFields');
+    })
+    .catch(function (e) {
+      console.error('Failed:', e);
+    });
+})();
