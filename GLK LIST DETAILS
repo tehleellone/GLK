@@ -1,0 +1,96 @@
+
+List Information
+Name:	GLK Pipeline Portal
+Web Address:	http://sharedspaces:8086/sites/GKA/Lists/abcdtest/AllItems.aspx
+Description:	GLK Pipeline Portal
+
+Columns
+A column stores information about each item in the list. The following columns are currently available in this list:
+Column (click to edit)	Type	Required
+Customers Name	Single line of text	
+Type of Request	Choice	
+Type of Contract	Choice	
+Vertical	Choice	
+Account Director	Choice	
+Solution Manager	Choice	
+Product Family	Choice	
+Product Category	Choice	
+Services	Single line of text	
+GA Points	Number	
+Monthly Recurring Charges (MRC)	Number	
+One Time Charges (OTC)	Number	
+Contract Duration	Choice	
+Total Contact Value (TCV)	Number	
+Opportunity Status	Choice	
+Closure Probability	Choice	
+Expected Activation Date	Date and Time	
+Actual Contract Signed Date	Date and Time	
+Proposed Date	Date and Time	
+No Bid/Lost/Cancelled Date	Date and Time	
+Lost/Cancelled/No Bid Reason	Single line of text	
+Comments/Remarks	Multiple lines of text	
+Bid Reference No	Calculated (calculation based on other columns)	
+My ID	Single line of text	
+Modified	Date and Time	
+Created	Date and Time	
+Account Manager	Person or Group	
+Project Manager	Choice	
+UserName	Single line of text	
+Building Status	Choice	
+Bid Manager	Single line of text	
+Complexity	Choice	
+Customer Code	Single line of text	
+Bid Manager Required	Choice	
+Bid Request	Choice	
+RFP,s	Choice	
+Bid Manager Feedback	Single line of text	
+Solution Manager Required	Choice	
+POC Name	Single line of text	
+POC Email ID	Single line of text	
+Contact No	Single line of text	
+Latitude	Single line of text	
+Longitude	Single line of text	
+Service Requirement	Single line of text	
+Justification for SC	Single line of text	
+BM Assign wk	Single line of text	
+SM Assign WK	Single line of text	
+SM Alert Wk	Single line of text	
+WK-AM Alert on SM	Single line of text	
+Billed Date	Date and Time	
+FNE Manager Required	Choice	
+Building Name	Single line of text	
+Building Unit	Single line of text	
+Building Floor	Single line of text	
+FNE Mail Alert	Single line of text	
+FNE Request Type	Choice	
+Latitude 2	Single line of text	
+Latitude 3	Single line of text	
+Longitude 2	Single line of text	
+Longitude 3	Single line of text	
+FNE Manager	Choice	
+Workflow API Count	Single line of text	
+POC Job role	Single line of text	
+Old AM - 10/23	Single line of text	
+VK wk col	Single line of text	
+Solution Assigned Date	Date and Time	
+BM assinged Date	Date and Time	
+FNE Assinged	Date and Time	
+MNP	Choice	
+Product Catalogue Value	Number	
+Churn Reasons	Choice	
+field7	Date and Time	
+Prepaid/Postpaid	Choice	
+Third Party	Choice	
+Vendor Name	Single line of text	
+Justification of Supplier Selection	Multiple lines of text	
+GA Lines	Number	
+M2M Use Case	Single line of text	
+M2M Customer Type	Choice	
+M2M Industry Vertical	Single line of text	
+field9	Yes/No	
+field10	Date and Time	
+Head Director	Choice	
+RFP Mail sent	Single line of text	
+RFP Submission Date	Date and Time	
+Created By	Person or Group	
+Modified By	Person or Group
