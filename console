@@ -1,52 +1,96 @@
-(function () {
-  const SITE = 'http://sharedspaces:8086/sites/GKA';
-  const LIST = 'GLK Pipeline Portal';
-
-  const url =
-    SITE +
-    "/_api/web/lists/getbytitle('" +
-    LIST.replace(/'/g, "''") +
-    "')/fields?$select=Title,InternalName,TypeAsString,Required,Hidden,ReadOnlyField,FromBaseType&$top=500";
-
-  fetch(url, {
-    headers: { Accept: 'application/json;odata=verbose' },
-    credentials: 'include'
-  })
-    .then(function (r) {
-      if (!r.ok) throw new Error('HTTP ' + r.status);
-      return r.json();
-    })
-    .then(function (data) {
-      const fields = (data.d.results || [])
-        .filter(function (f) {
-          // skip base/hidden system junk; remove filter if you want everything
-          return !f.Hidden && !f.FromBaseType;
-        })
-        .sort(function (a, b) {
-          return (a.Title || '').localeCompare(b.Title || '');
-        });
-
-      console.table(
-        fields.map(function (f) {
-          return {
-            Title: f.Title,
-            InternalName: f.InternalName,
-            Type: f.TypeAsString,
-            Required: f.Required
-          };
-        })
-      );
-
-      console.log('--- internal names only ---');
-      console.log(fields.map(function (f) { return f.InternalName; }).join('\n'));
-
-      console.log('--- copy/paste for $select ---');
-      console.log(fields.map(function (f) { return f.InternalName; }).join(','));
-
-      window.glkListFields = fields;
-      console.log('Full array saved as window.glkListFields');
-    })
-    .catch(function (e) {
-      console.error('Failed:', e);
-    });
-})();
+VM1378:41 Account_x0020_Director
+group
+Actual_x0020_Contract_x0020_Sign
+APIAlert
+AssignBi
+AssignSo
+Assignto
+BidManager
+BidManagerFeedback
+BidManagerRequired
+Unique_x0020_Reference_x0020_ID
+BidRequest
+BilledDate
+BilledSt
+BM_x0020_Assign_x0020_wk
+BMassingedDate
+Building_x0020_Floor
+Building_x0020_Name
+field3
+Building_x0020_Unit
+field6
+Closure_x0020_Probability
+Comments_x002f_Remarks
+Complexity
+ContactNo
+Contract_x0020_Duration
+CustomerCode
+Expected_x0020_Contract_x0020_Si
+ExpiredD
+field10
+field7
+field9
+FNEAssig
+FNEAssinged
+FNE_x0020_Mail_x0020_Alert
+FNEManager
+FNE_x0020_Manager_x0020_Required
+FNEManna
+FNENotif
+group1
+GA_x0020_Lines
+Gross_x0020_Adds
+Head_x0020_Director
+JustificationforSolutionConsulta
+Requirement_x0020_Reason_x0020_f
+LatitudePOC
+Latitude2
+Latitude3
+LongitudePOC
+Longitude2
+Longitude3
+Lost_x0020_Reason
+M2M_x0020_Customer_x0020_Type
+M2M_x0020_Industry_x0020_Vertica
+M2M_x0020_Use_x0020_Case
+MNP
+Monthly_x0020_Recurring_x0020_Ch
+My_x0020_ID
+No_x0020_Bid_x002f_Lost_x002f_Ca
+Old_x0020_AM_x0020__x002d__x0020
+One_x0020_Time_x0020_Charges_x00
+Opportunity_x0020_Status
+PMNotifi
+POCEmailID
+field4
+POCName
+field8
+field5
+Product_x0020_Category
+Product_x0020_Family
+ProjectManager0
+Proposed_x0020_Date
+RFPMailP
+RFP_x0020_Mail_x0020_sent
+RFP_x0020_Submission_x0020_Date
+RFPs
+ServiceRequirement
+Services
+SM_x0020_Alert_x0020_Wk
+SM_x0020_Assign_x0020_WK
+SolutionAssignedDate
+Solution_x0020_Manager
+SolutionManagerRequired
+Third_x0020_Party
+Total_x0020_Contact_x0020_Value_
+Type_x0020_of_x0020_Contract
+Type_x0020_of_x0020_Request
+UniqueID0
+UserName
+Vendor_x0020_Name
+Segment
+VK_x0020_wk_x0020_col
+WK_x002d_AM_x0020_Alert_x0020_on
+Workflow_x0020_API_x0020_Count
+VM1378:43 --- copy/paste for $select ---
+VM1378:44 Account_x0020_Director,group,Actual_x0020_Contract_x0020_Sign,APIAlert,AssignBi,AssignSo,Assignto,BidManager,BidManagerFeedback,BidManagerRequired,Unique_x0020_Reference_x0020_ID,BidRequest,BilledDate,BilledSt,BM_x0020_Assign_x0020_wk,BMassingedDate,Building_x0020_Floor,Building_x0020_Name,field3,Building_x0020_Unit,field6,Closure_x0020_Probability,Comments_x002f_Remarks,Complexity,ContactNo,Contract_x0020_Duration,CustomerCode,Expected_x0020_Contract_x0020_Si,ExpiredD,field10,field7,field9,FNEAssig,FNEAssinged,FNE_x0020_Mail_x0020_Alert,FNEManager,FNE_x0020_Manager_x0020_Required,FNEManna,FNENotif,group1,GA_x0020_Lines,Gross_x0020_Adds,Head_x0020_Director,JustificationforSolutionConsulta,Requirement_x0020_Reason_x0020_f,LatitudePOC,Latitude2,Latitude3,LongitudePOC,Longitude2,Longitude3,Lost_x0020_Reason,M2M_x0020_Customer_x0020_Type,M2M_x0020_Industry_x0020_Vertica,M2M_x0020_Use_x0020_Case,MNP,Monthly_x0020_Recurring_x0020_Ch,My_x0020_ID,No_x0020_Bid_x002f_Lost_x002f_Ca,Old_x0020_AM_x0020__x002d__x0020,One_x0020_Time_x0020_Charges_x00,Opportunity_x0020_Status,PMNotifi,POCEmailID,field4,POCName,field8,field5,Product_x0020_Category,Product_x0020_Family,ProjectManager0,Proposed_x0020_Date,RFPMailP,RFP_x0020_Mail_x0020_sent,RFP_x0020_Submission_x0020_Date,RFPs,ServiceRequirement,Services,SM_x0020_Alert_x0020_Wk,SM_x0020_Assign_x0020_WK,SolutionAssignedDate,Solution_x0020_Manager,SolutionManagerRequired,Third_x0020_Party,Total_x0020_Contact_x0020_Value_,Type_x0020_of_x0020_Contract,Type_x0020_of_x0020_Request,UniqueID0,UserName,Vendor_x0020_Name,Segment,VK_x0020_wk_x0020_col,WK_x002d_AM_x0020_Alert_x0020_on,Workflow_x0020_API_x0020_Count
