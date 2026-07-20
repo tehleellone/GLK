@@ -3356,105 +3356,105 @@ destroyChart('ga');
 // ══════════════════════════════════════════════════════════════════
 //  AG GRID
 // ══════════════════════════════════════════════════════════════════
+function glkCol(cfg,kind){
+  kind=kind||'text';
+  var base={filter:GlkValueListFilter};
+  if(kind==='date') base.filterValueGetter=glkGridDateVal;
+  else if(kind==='money') base.filterValueGetter=glkGridMoneyVal;
+  else if(kind==='num') base.filterValueGetter=glkGridNumVal;
+  else base.filterValueGetter=glkGridTextVal;
+  return Object.assign(base,cfg);
+}
 function renderGrid(){
   if(typeof agGrid==='undefined'){ el('myGrid').innerHTML='<div style="padding:20px;color:var(--t3);">AG Grid not loaded.</div>'; return; }
   const data=getViewBids();
-  const T={
-    text:{filter:GlkValueListFilter,filterValueGetter:glkGridTextVal},
-    date:{filter:GlkValueListFilter,filterValueGetter:glkGridDateVal},
-    money:{filter:GlkValueListFilter,filterValueGetter:glkGridMoneyVal},
-    num:{filter:GlkValueListFilter,filterValueGetter:glkGridNumVal},
-  };
   const cols=[
-    {field:'headDirector',headerName:'Head Director',width:155,pinned:'left',...T.text},
-    {field:'accountDirector',headerName:'Account Director',width:155,pinned:'left',...T.text},
-    {field:'amName',headerName:'Account Manager',width:145,...T.text},
-    {field:'customerName',headerName:'Customer',width:180,...T.text},
-    {field:'typeOfRequest',headerName:'Type of Request',width:140,...T.text},
-    {field:'typeOfContract',headerName:'Type of Contract',width:140,...T.text},
-    {field:'vertical',headerName:'Vertical',width:120,...T.text},
-    {field:'productFamily',headerName:'Product Family',width:130,...T.text},
-    {field:'productCategory',headerName:'Product Category',width:145,...T.text},
-    {field:'services',headerName:'Services',width:155,...T.text},
-    {field:'gaPoints',headerName:'GA Points',width:100,...T.num},
-    {field:'mrc',headerName:'MRC',width:110,valueFormatter:p=>fmt(p.value),...T.money},
-    {field:'otc',headerName:'OTC',width:110,valueFormatter:p=>fmt(p.value),...T.money},
-    {field:'tcv',headerName:'TCV',width:120,valueFormatter:p=>fmt(p.value),...T.money,cellStyle:{fontWeight:'700'}},
+    glkCol({field:'headDirector',headerName:'Head Director',width:155,pinned:'left'}),
+    glkCol({field:'accountDirector',headerName:'Account Director',width:155,pinned:'left'}),
+    glkCol({field:'amName',headerName:'Account Manager',width:145}),
+    glkCol({field:'customerName',headerName:'Customer',width:180}),
+    glkCol({field:'typeOfRequest',headerName:'Type of Request',width:140}),
+    glkCol({field:'typeOfContract',headerName:'Type of Contract',width:140}),
+    glkCol({field:'vertical',headerName:'Vertical',width:120}),
+    glkCol({field:'productFamily',headerName:'Product Family',width:130}),
+    glkCol({field:'productCategory',headerName:'Product Category',width:145}),
+    glkCol({field:'services',headerName:'Services',width:155}),
+    glkCol({field:'gaPoints',headerName:'GA Points',width:100},'num'),
+    glkCol({field:'mrc',headerName:'MRC',width:110,valueFormatter:function(p){return fmt(p.value);}},'money'),
+    glkCol({field:'otc',headerName:'OTC',width:110,valueFormatter:function(p){return fmt(p.value);}},'money'),
+    glkCol({field:'tcv',headerName:'TCV',width:120,valueFormatter:function(p){return fmt(p.value);},cellStyle:{fontWeight:'700'}},'money'),
     {
       colId:'yearImpact',headerName:'Year Impact ⓘ',width:155,sortable:true,resizable:true,
       filter:GlkValueListFilter,
-      filterValueGetter:p=>{const r=calcYearImpact(p.data);return r.val!=null?fmtYearImpact(r.val):'—';},
+      filterValueGetter:function(p){var r=calcYearImpact(p.data);return r.val!=null?fmtYearImpact(r.val):'—';},
       headerTooltip:'Year Impact = MRC × months remaining in current year from Expected Activation date (inclusive). Only current-year activation dates are calculated. Past year = skipped. Next year = shown with note. Excludes Lost / Cancelled / No Bid.',
-      valueGetter:p=>{const r=calcYearImpact(p.data);return r.val;},
-      cellRenderer:p=>{
-        const r=calcYearImpact(p.data);
-        if(r.val===null&&r.note) return `<span style="color:var(--t3);font-size:.76rem;font-style:italic">— <span title="${r.note}" style="cursor:help;border-bottom:1px dashed var(--t3);">ⓘ</span></span>`;
-        if(r.val===null) return `<span style="color:var(--t3);">—</span>`;
-        return `<span style="font-weight:700;color:var(--sc);">${fmtYearImpact(r.val)}</span>`;
+      valueGetter:function(p){return calcYearImpact(p.data).val;},
+      cellRenderer:function(p){
+        var r=calcYearImpact(p.data);
+        if(r.val===null&&r.note) return '<span style="color:var(--t3);font-size:.76rem;font-style:italic">— <span title="'+r.note+'" style="cursor:help;border-bottom:1px dashed var(--t3);">ⓘ</span></span>';
+        if(r.val===null) return '<span style="color:var(--t3);">—</span>';
+        return '<span style="font-weight:700;color:var(--sc);">'+fmtYearImpact(r.val)+'</span>';
       },
       cellStyle:{display:'flex',alignItems:'center'}
     },
-    {field:'pcv',headerName:'Cat. Value',width:110,valueFormatter:p=>fmt(p.value),...T.money},
-    {field:'status',headerName:'Status',width:115,...T.text,cellRenderer:p=>{
-      const s=p.value||'—'; const cl=STATUS_WON.includes(s)?'badge-success':STATUS_LOST.includes(s)?'badge-danger':'badge-warning';
-      return `<span class="status-badge ${cl}">${s}</span>`;
-    }},
-    {field:'closureProb',headerName:'Closure Prob.',width:120,...T.text,cellRenderer:p=>{
-      const v=p.value||'—'; const col=v==='100%'?'#16a34a':v==='75%'?'rgba(22,163,74,.8)':v==='50%'?'#b45309':'#dc2626';
-      return `<span style="font-weight:700;color:${col}">${v}</span>`;
-    }},
-    {field:'forecastCategory',headerName:'Forecast Category',width:170,...T.text},
-    {field:'complexity',headerName:'Complexity',width:110,...T.text},
-    {field:'created',headerName:'Created',width:120,valueFormatter:p=>fmtDate(p.value),...T.date},
-    {field:'proposedDate',headerName:'Proposed Date',width:130,valueFormatter:p=>fmtDate(p.value),...T.date},
-    {field:'expectedActivation',headerName:'Expected Activation',width:150,valueFormatter:p=>fmtDate(p.value),...T.date},
-    {field:'contractSigned',headerName:'Contract Signed',width:140,valueFormatter:p=>fmtDate(p.value),...T.date},
-    {field:'billedDate',headerName:'Billed Date',width:120,valueFormatter:p=>fmtDate(p.value),...T.date},
-    {field:'lostDate',headerName:'Lost Date',width:120,valueFormatter:p=>fmtDate(p.value),...T.date},
-    {field:'lostReason',headerName:'Lost Reason',width:160,...T.text},
-    {field:'duration',headerName:'Duration',width:100,...T.text},
-    {field:'customerCode',headerName:'Customer Code',width:130,...T.text},
-    {field:'solutionManager',headerName:'Solution Manager',width:140,...T.text},
-    {field:'bidManager',headerName:'Bid Manager',width:140,...T.text},
-    {field:'projectManager',headerName:'Project Manager',width:140,...T.text},
-    {field:'buildingName',headerName:'Building Name',width:130,...T.text},
-    {field:'buildingUnit',headerName:'Building Unit',width:110,...T.text},
-    {field:'buildingFloor',headerName:'Building Floor',width:110,...T.text},
-    {field:'buildingStatus',headerName:'Building Status',width:120,...T.text},
-    {field:'bidRequest',headerName:'Bid Request',width:110,...T.text},
-    {field:'gaLines',headerName:'GA Lines',width:90,...T.num},
-    {field:'mnp',headerName:'MNP',width:80,...T.text},
-    {field:'churnReason',headerName:'Churn Reasons',width:130,...T.text},
-    {field:'thirdParty',headerName:'Third Party',width:100,...T.text},
-    {field:'vendorName',headerName:'Vendor Name',width:130,...T.text},
-    {field:'pocName',headerName:'POC Name',width:130,...T.text},
-    {field:'pocJobRole',headerName:'POC Job Role',width:130,...T.text},
-    {field:'pocEmail',headerName:'POC Email',width:160,...T.text},
-    {field:'contactNo',headerName:'Contact No',width:115,...T.text},
-    {field:'serviceRequirement',headerName:'Service Requirement',width:150,...T.text},
-    {field:'bidManagerRequired',headerName:'BM Required',width:110,...T.text},
-    {field:'solutionManagerRequired',headerName:'SM Required',width:110,...T.text},
-    {field:'rfps',headerName:'RFPs',width:90,...T.text},
-    {field:'m2mUseCase',headerName:'M2M Use Case',width:130,...T.text},
-    {field:'m2mCustomerType',headerName:'M2M Customer Type',width:130,...T.text},
-    {field:'m2mIndustryVertical',headerName:'M2M Industry',width:130,...T.text},
-    {field:'myId',headerName:'My ID',width:100,...T.text},
-    {field:'userName',headerName:'User Name',width:120,...T.text},
-    {field:'bmAssignedDate',headerName:'BM Assigned Date',width:130,valueFormatter:p=>fmtDate(p.value),...T.date},
-    {field:'rfpSubmissionDate',headerName:'RFP Submission Date',width:140,valueFormatter:p=>fmtDate(p.value),...T.date},
-    {field:'solutionAssignedDate',headerName:'Solution Assigned Date',width:150,valueFormatter:p=>fmtDate(p.value),...T.date},
-    {field:'comments',headerName:'Comments/Remarks',width:200,...T.text},
-    {field:'prepaidPostpaid',headerName:'Pre/Postpaid',width:115,...T.text},
-    {field:'modified',headerName:'Modified',width:120,valueFormatter:p=>fmtDate(p.value),...T.date},
+    glkCol({field:'pcv',headerName:'Cat. Value',width:110,valueFormatter:function(p){return fmt(p.value);}},'money'),
+    glkCol({field:'status',headerName:'Status',width:115,cellRenderer:function(p){
+      var s=p.value||'—',cl=STATUS_WON.includes(s)?'badge-success':STATUS_LOST.includes(s)?'badge-danger':'badge-warning';
+      return '<span class="status-badge '+cl+'">'+s+'</span>';
+    }}),
+    glkCol({field:'closureProb',headerName:'Closure Prob.',width:120,cellRenderer:function(p){
+      var v=p.value||'—',col=v==='100%'?'#16a34a':v==='75%'?'rgba(22,163,74,.8)':v==='50%'?'#b45309':'#dc2626';
+      return '<span style="font-weight:700;color:'+col+'">'+v+'</span>';
+    }}),
+    glkCol({field:'forecastCategory',headerName:'Forecast Category',width:170}),
+    glkCol({field:'complexity',headerName:'Complexity',width:110}),
+    glkCol({field:'created',headerName:'Created',width:120,valueFormatter:function(p){return fmtDate(p.value);}},'date'),
+    glkCol({field:'proposedDate',headerName:'Proposed Date',width:130,valueFormatter:function(p){return fmtDate(p.value);}},'date'),
+    glkCol({field:'expectedActivation',headerName:'Expected Activation',width:150,valueFormatter:function(p){return fmtDate(p.value);}},'date'),
+    glkCol({field:'contractSigned',headerName:'Contract Signed',width:140,valueFormatter:function(p){return fmtDate(p.value);}},'date'),
+    glkCol({field:'billedDate',headerName:'Billed Date',width:120,valueFormatter:function(p){return fmtDate(p.value);}},'date'),
+    glkCol({field:'lostDate',headerName:'Lost Date',width:120,valueFormatter:function(p){return fmtDate(p.value);}},'date'),
+    glkCol({field:'lostReason',headerName:'Lost Reason',width:160}),
+    glkCol({field:'duration',headerName:'Duration',width:100}),
+    glkCol({field:'customerCode',headerName:'Customer Code',width:130}),
+    glkCol({field:'solutionManager',headerName:'Solution Manager',width:140}),
+    glkCol({field:'bidManager',headerName:'Bid Manager',width:140}),
+    glkCol({field:'projectManager',headerName:'Project Manager',width:140}),
+    glkCol({field:'buildingName',headerName:'Building Name',width:130}),
+    glkCol({field:'buildingUnit',headerName:'Building Unit',width:110}),
+    glkCol({field:'buildingFloor',headerName:'Building Floor',width:110}),
+    glkCol({field:'buildingStatus',headerName:'Building Status',width:120}),
+    glkCol({field:'bidRequest',headerName:'Bid Request',width:110}),
+    glkCol({field:'gaLines',headerName:'GA Lines',width:90},'num'),
+    glkCol({field:'mnp',headerName:'MNP',width:80}),
+    glkCol({field:'churnReason',headerName:'Churn Reasons',width:130}),
+    glkCol({field:'thirdParty',headerName:'Third Party',width:100}),
+    glkCol({field:'vendorName',headerName:'Vendor Name',width:130}),
+    glkCol({field:'pocName',headerName:'POC Name',width:130}),
+    glkCol({field:'pocJobRole',headerName:'POC Job Role',width:130}),
+    glkCol({field:'pocEmail',headerName:'POC Email',width:160}),
+    glkCol({field:'contactNo',headerName:'Contact No',width:115}),
+    glkCol({field:'serviceRequirement',headerName:'Service Requirement',width:150}),
+    glkCol({field:'bidManagerRequired',headerName:'BM Required',width:110}),
+    glkCol({field:'solutionManagerRequired',headerName:'SM Required',width:110}),
+    glkCol({field:'rfps',headerName:'RFPs',width:90}),
+    glkCol({field:'m2mUseCase',headerName:'M2M Use Case',width:130}),
+    glkCol({field:'m2mCustomerType',headerName:'M2M Customer Type',width:130}),
+    glkCol({field:'m2mIndustryVertical',headerName:'M2M Industry',width:130}),
+    glkCol({field:'myId',headerName:'My ID',width:100}),
+    glkCol({field:'userName',headerName:'User Name',width:120}),
+    glkCol({field:'bmAssignedDate',headerName:'BM Assigned Date',width:130,valueFormatter:function(p){return fmtDate(p.value);}},'date'),
+    glkCol({field:'rfpSubmissionDate',headerName:'RFP Submission Date',width:140,valueFormatter:function(p){return fmtDate(p.value);}},'date'),
+    glkCol({field:'solutionAssignedDate',headerName:'Solution Assigned Date',width:150,valueFormatter:function(p){return fmtDate(p.value);}},'date'),
+    glkCol({field:'comments',headerName:'Comments/Remarks',width:200}),
+    glkCol({field:'prepaidPostpaid',headerName:'Pre/Postpaid',width:115}),
+    glkCol({field:'modified',headerName:'Modified',width:120,valueFormatter:function(p){return fmtDate(p.value);}},'date'),
   ];
   const opts={
     columnDefs:cols,rowData:data,
     defaultColDef:{sortable:true,filter:GlkValueListFilter,filterValueGetter:glkGridTextVal,resizable:true},
     suppressMenuHide:true,
     pagination:true,paginationPageSize:50,paginationPageSizeSelector:[25,50,100,250],
-    rowHeight:44,headerHeight:48,animateRows:true,enableCellTextSelection:true,
-    onGridReady:p=>{GRID_API=p.api;}
-  };
     rowHeight:44,headerHeight:48,animateRows:true,enableCellTextSelection:true,
     onGridReady:p=>{GRID_API=p.api;}
   };
