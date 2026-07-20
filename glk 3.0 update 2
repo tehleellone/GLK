@@ -861,7 +861,7 @@ body[data-theme="dark"] .badge-warning,body[data-theme="duralux-dark"] .badge-wa
                 <div class="chart-title" style="justify-content:space-between;">
                   <span style="display:flex;flex-direction:column;gap:.15rem;">
                     <span style="display:flex;align-items:center;gap:.35rem;"><svg viewBox="0 0 24 24"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>Forecast Category Mix</span>
-                    <span style="font-size:.68rem;font-weight:600;color:var(--t3);">Follows dashboard filters · Period = relevant date window</span>
+                    <span style="font-size:.68rem;font-weight:600;color:var(--t3);">Uses dashboard filters · Period narrows time window</span>
                   </span>
                 </div>
                 <div class="chart-container" style="height:320px;"><canvas id="chartForecastPie"></canvas></div>
@@ -871,7 +871,7 @@ body[data-theme="dark"] .badge-warning,body[data-theme="duralux-dark"] .badge-wa
                 <div class="chart-title" style="justify-content:space-between;flex-wrap:wrap;gap:.5rem;">
                   <span style="display:flex;flex-direction:column;gap:.15rem;">
                     <span style="display:flex;align-items:center;gap:.35rem;"><svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>Forecast Bridge (Period to Date)</span>
-                    <span style="font-size:.68rem;font-weight:600;color:var(--t3);">Follows dashboard filters · Waterfall by forecast stage</span>
+                    <span style="font-size:.68rem;font-weight:600;color:var(--t3);">Uses dashboard filters · Period narrows time window</span>
                   </span>
                   <div style="display:flex;align-items:center;gap:.45rem;flex-wrap:wrap;">
                     <label style="font-size:.72rem;color:var(--t2);font-weight:700;">Target (AED)</label>
@@ -1008,11 +1008,12 @@ const FORECAST_OPTIONS=[
 ];
 const FORECAST_TO_PROB={
   'Closed Won':'100%','Closed Lost':'0%','Most Likely - No Risk':'75%',
+  'Commit':'75%','Upside - Bring Home Yes':'50%',
   'Upside - Bring Home No':'50%','Not Forecasted':'25%'
 };
 const PROB_TO_FORECAST={
-  '100%':'Closed Won','0%':'Closed Lost','75%':'Most Likely - No Risk',
-  '50%':'Upside - Bring Home No','25%':'Not Forecasted'
+  '100%':'Closed Won','0%':'Closed Lost','75%':'Commit',
+  '50%':'Upside - Bring Home Yes','25%':'Not Forecasted'
 };
 const FORECAST_TO_STATUS={'Closed Won':'Won','Closed Lost':'Lost'};
 const FORECAST_PIE_GROUPS=[
@@ -1028,8 +1029,7 @@ const BRIDGE_SECTIONS=[
   {key:'mlnr',label:'ML No Risk',filter:b=>b.forecastCategory==='Most Likely - No Risk',colors:['#1d4ed8','#2563eb','#3b82f6','#60a5fa']},
   {key:'upside',label:'Upside Bring Home',filter:b=>b.forecastCategory==='Upside - Bring Home Yes',colors:['#6d28d9','#7c3aed','#8b5cf6','#a78bfa']},
 ];
-const BRIDGE_END_COLOR='#1e3a8a';
-const BRIDGE_TARGET_COLOR='#dc2626';
+const BRIDGE_TARGET_COLOR='#1e40af';
 
 // ══════════════════════════════════════════════════════════════════
 //  STATE
@@ -1042,8 +1042,7 @@ let GRID_API  = null;
 let chartsVisible = false;
 let trendPeriod='M';
 let gaPeriod='M';
-let forecastPiePeriod='M';
-let bridgePeriod='YTD';
+let chartPeriod='YTD';
 let chartMetric='mrc';
 let bridgeTarget=10000000;
 function selectPF(pf){
@@ -1058,13 +1057,14 @@ function setTrendPeriod(p){
   ['W','M','Y'].forEach(x=>el('trendBtn'+x)?.classList.toggle('active',x===p));
   const bids=getViewBids();const c=getChartColors();renderTrend(bids,c);
 }
-function setForecastPiePeriod(p){
-  forecastPiePeriod=p;
-  const bids=getViewBids();const c=getChartColors();renderForecastPie(bids,c);
-}
-function setBridgePeriod(p){
-  bridgePeriod=p;
-  const bids=getViewBids();const c=getChartColors();renderBridge(bids,c);
+function setChartPeriod(p){
+  chartPeriod=p;
+  var selPie=el('chartPeriodSelectPie'),selBridge=el('chartPeriodSelectBridge');
+  if(selPie) selPie.value=p;
+  if(selBridge) selBridge.value=p;
+  var bids=getViewBids(),c=getChartColors();
+  renderForecastPie(bids,c);
+  renderBridge(bids,c);
 }
 function setChartMetric(m){
   chartMetric=m;
@@ -1152,18 +1152,57 @@ function glkFilterByChartPeriod(bids,period){
     return true;
   });
 }
-function glkChartPeriodBtns(activePeriod,fnName){
-  return ['W','M','Q','Y','YTD'].map(function(p){
-    var lbl=p==='W'?'Week':p==='M'?'Month':p==='Q'?'Quarter':p==='Y'?'Year':'YTD';
-    var act=activePeriod===p;
-    return '<button type="button" onclick="'+fnName+'(\''+p+'\')" style="padding:.25rem .7rem;border-radius:6px;font-size:.72rem;font-weight:700;border:1px solid var(--border);cursor:pointer;background:'+(act?'var(--grad)':'var(--bg-secondary)')+';color:'+(act?'#fff':'var(--t3)')+';">'+lbl+'</button>';
-  }).join('');
-}
 function glkChartMetricBtns(){
   return ['mrc','tcv'].map(function(m){
     var act=chartMetric===m;
     return '<button type="button" onclick="setChartMetric(\''+m+'\')" style="padding:.25rem .7rem;border-radius:6px;font-size:.72rem;font-weight:700;border:1px solid var(--border);cursor:pointer;background:'+(act?'var(--grad)':'var(--bg-secondary)')+';color:'+(act?'#fff':'var(--t3)')+';">'+(m==='mrc'?'MRC':'TCV')+'</button>';
   }).join('');
+}
+function glkChartPeriodSelect(id){
+  var periods=[{v:'W',l:'This week'},{v:'M',l:'This month'},{v:'Q',l:'This quarter'},{v:'Y',l:'This year'},{v:'YTD',l:'Year to date'}];
+  return '<select id="'+id+'" class="fb-select" style="font-size:.72rem;padding:.32rem .55rem;min-width:130px;" onchange="setChartPeriod(this.value)">'+
+    periods.map(function(p){return '<option value="'+p.v+'"'+(chartPeriod===p.v?' selected':'')+'>'+p.l+'</option>';}).join('')+
+    '</select>';
+}
+function glkChartControlsHtml(pieId,bridgeId){
+  return '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:.65rem;flex-wrap:wrap;gap:.5rem;">'+
+    '<div style="display:flex;gap:.35rem;align-items:center;">'+glkChartMetricBtns()+'</div>'+
+    '<div style="display:flex;gap:.4rem;align-items:center;"><span style="font-size:.68rem;font-weight:700;color:var(--t3);">Period</span>'+glkChartPeriodSelect(pieId||bridgeId)+'</div></div>';
+}
+function glkBridgeFourBars(bids,metric){
+  var br=glkTopCustomersPlusOthers(bids,metric,3),out=[];
+  var i;
+  for(i=0;i<3;i++){
+    if(br.top[i]) out.push({name:br.top[i][0],value:br.top[i][1]});
+    else out.push({name:'—',value:0});
+  }
+  out.push({name:'Others',value:br.others||0});
+  return out;
+}
+function glkBridgeBarLabel(name,value){
+  if(value<=0&&name==='—') return '—';
+  var short=name==='Others'?'Others':(name.length>14?name.slice(0,12)+'…':name);
+  return fmt(value)+'\n'+short;
+}
+function glkBridgeGroupPlugin(sectionGroups,c){
+  return {id:'glkBridgeGroups',afterDraw:function(chart){
+    var ctx=chart.ctx,meta=chart.getDatasetMeta(0),area=chart.chartArea;
+    if(!meta||!meta.data||!sectionGroups.length) return;
+    ctx.save();
+    ctx.strokeStyle=c.text||'#64748b';
+    ctx.fillStyle=c.text||'#64748b';
+    ctx.lineWidth=1;
+    ctx.font='bold 10px Inter';
+    ctx.textAlign='center';
+    sectionGroups.forEach(function(g){
+      var b0=meta.data[g.startIdx],b1=meta.data[g.endIdx];
+      if(!b0||!b1) return;
+      var x1=b0.x-b0.width/2,x2=b1.x+b1.width/2,y=area.bottom+14;
+      ctx.beginPath();ctx.moveTo(x1,y);ctx.lineTo(x1,y+5);ctx.lineTo(x2,y+5);ctx.lineTo(x2,y);ctx.stroke();
+      ctx.fillText(g.label,(x1+x2)/2,y+16);
+    });
+    ctx.restore();
+  }};
 }
 function glkBarLabelPlugin(){
   return {id:'glkBarLabels',afterDatasetsDraw:function(chart){
@@ -1171,8 +1210,7 @@ function glkBarLabelPlugin(){
     if(!meta||!meta.data) return;
     meta.data.forEach(function(bar,i){
       var val=chart.data.datasets[0].data[i];
-      if(!val||val<=0) return;
-      var lbl=chart.data.glkBarMeta&&chart.data.glkBarMeta[i]?chart.data.glkBarMeta[i].label:'';
+      if(val==null||val<=0) return;
       var midY=(bar.y+bar.base)/2;
       ctx.save();
       ctx.fillStyle='#fff';
@@ -1182,27 +1220,6 @@ function glkBarLabelPlugin(){
       ctx.fillText(val+'M',bar.x,midY);
       ctx.restore();
     });
-  }};
-}
-function glkBridgeTargetPlugin(targetM,c){
-  return {id:'glkBridgeTarget',afterDraw:function(chart){
-    if(!targetM||targetM<=0) return;
-    var yScale=chart.scales.y,xScale=chart.scales.x;
-    if(!yScale||!xScale) return;
-    var y=yScale.getPixelForValue(targetM);
-    var left=xScale.left,right=xScale.right;
-    var ctx=chart.ctx;
-    ctx.save();
-    ctx.strokeStyle=BRIDGE_TARGET_COLOR;
-    ctx.lineWidth=2;
-    ctx.setLineDash([6,4]);
-    ctx.beginPath();ctx.moveTo(left,y);ctx.lineTo(right,y);ctx.stroke();
-    ctx.setLineDash([]);
-    ctx.fillStyle=BRIDGE_TARGET_COLOR;
-    ctx.font='bold 11px Inter';
-    ctx.textAlign='right';
-    ctx.fillText('Target '+targetM+'M',right-4,y-6);
-    ctx.restore();
   }};
 }
 function glkTopCustomersPlusOthers(bids,metric,topN){
@@ -2884,7 +2901,7 @@ function renderProbTCV(bids,c){
 }
 function renderForecastPie(bids,c){
   destroyChart('fcPie');
-  var scoped=glkFilterByChartPeriod(bids,forecastPiePeriod);
+  var scoped=glkFilterByChartPeriod(bids,chartPeriod);
   var metric=chartMetric;
   var groups=FORECAST_PIE_GROUPS.map(function(g){
     var matched=scoped.filter(g.match);
@@ -2942,72 +2959,63 @@ function renderForecastPie(bids,c){
     }
   });
   var wrap=el('forecastPieControlsWrap');
-  if(wrap){
-    wrap.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center;margin-top:.65rem;flex-wrap:wrap;gap:.5rem;">'+
-      '<div style="display:flex;gap:.35rem;">'+glkChartMetricBtns()+'</div>'+
-      '<div style="display:flex;gap:.35rem;">'+glkChartPeriodBtns(forecastPiePeriod,'setForecastPiePeriod')+'</div></div>';
-  }
+  if(wrap) wrap.innerHTML=glkChartControlsHtml('chartPeriodSelectPie','chartPeriodSelectPie');
 }
 function renderBridge(bids,c){
   destroyChart('bridge');
-  var scoped=glkFilterByChartPeriod(bids,bridgePeriod);
+  var scoped=glkFilterByChartPeriod(bids,chartPeriod);
   var metric=chartMetric;
-  var running=0;
-  var bars=[];
-  var barMeta=[];
-  BRIDGE_SECTIONS.forEach(function(sec){
-    var secBids=scoped.filter(sec.filter);
-    if(sec.key==='won'){
-      var val=secBids.reduce(function(s,b){return s+glkBidMetric(b,metric);},0);
-      if(val>0){
-        bars.push({label:'Won',value:val,start:running,color:sec.colors[0],type:'step'});
-        barMeta.push({label:'Won'});
-        running+=val;
-      }
-      return;
+  var running=0,bars=[],barMeta=[],sectionGroups=[];
+  function pushStep(label,value,color,meta,groupLabel,groupKey){
+    var idx=bars.length;
+    bars.push({label:label,value:value,start:running,color:color,type:'step'});
+    barMeta.push({label:meta||label});
+    running+=value;
+    if(sectionGroups.length&&sectionGroups[sectionGroups.length-1].key===groupKey){
+      sectionGroups[sectionGroups.length-1].endIdx=idx;
+    }else{
+      sectionGroups.push({key:groupKey,label:groupLabel,startIdx:idx,endIdx:idx});
     }
-    var br=glkTopCustomersPlusOthers(secBids,metric,3);
-    if(!br.total) return;
-    var ci=0;
-    br.top.forEach(function(pair){
-      var short=pair[0].length>14?pair[0].slice(0,12)+'…':pair[0];
-      bars.push({label:short,value:pair[1],start:running,color:sec.colors[ci%sec.colors.length],type:'step'});
-      barMeta.push({label:sec.label+': '+pair[0]});
-      running+=pair[1]; ci++;
-    });
-    if(br.others>0){
-      bars.push({label:sec.label+'\nOthers',value:br.others,start:running,color:sec.colors[sec.colors.length-1],type:'step'});
-      barMeta.push({label:sec.label+': Others'});
-      running+=br.others;
-    }
-  });
-  if(running>0){
-    bars.push({label:'End',value:running,start:0,color:BRIDGE_END_COLOR,type:'end'});
-    barMeta.push({label:'Pipeline Total'});
   }
+  var wonBids=scoped.filter(function(b){return b.forecastCategory==='Closed Won'||STATUS_WON.includes(b.status);});
+  var wonVal=wonBids.reduce(function(s,b){return s+glkBidMetric(b,metric);},0);
+  pushStep(glkBridgeBarLabel('Won',wonVal),wonVal,'#16a34a','Won · '+fmt(wonVal),'Won','won');
+  BRIDGE_SECTIONS.forEach(function(sec){
+    if(sec.key==='won') return;
+    var secBids=scoped.filter(sec.filter);
+    var four=glkBridgeFourBars(secBids,metric);
+    four.forEach(function(cb,ci){
+      pushStep(
+        glkBridgeBarLabel(cb.name,cb.value),
+        cb.value,
+        sec.colors[ci]||sec.colors[sec.colors.length-1],
+        sec.label+': '+(cb.name==='Others'?'Others':cb.name)+' · '+fmt(cb.value),
+        sec.label,
+        sec.key
+      );
+    });
+  });
+  var targetVal=bridgeTarget;
+  var tIdx=bars.length;
+  sectionGroups.push({key:'target',label:'Target',startIdx:tIdx,endIdx:tIdx});
+  bars.push({label:fmt(targetVal)+'\nTarget',value:targetVal,start:0,color:BRIDGE_TARGET_COLOR,type:'target'});
+  barMeta.push({label:'Target · '+fmt(targetVal)});
   var labels=bars.map(function(b){return b.label;});
   var data=bars.map(function(b){return +(b.value/1e6).toFixed(2);});
-  var bases=bars.map(function(b){
-    return b.type==='step'?+(b.start/1e6).toFixed(2):0;
-  });
+  var bases=bars.map(function(b){return b.type==='step'?+(b.start/1e6).toFixed(2):0;});
   var bg=bars.map(function(b){return b.color;});
-  var targetM=+(bridgeTarget/1e6).toFixed(2);
+  var maxY=Math.max.apply(null,data.concat([0]));
   CHARTS.bridge=new Chart(el('chartBridge'),{
     type:'bar',
-    plugins:[glkBarLabelPlugin(),glkBridgeTargetPlugin(targetM,c)],
+    plugins:[glkBarLabelPlugin(),glkBridgeGroupPlugin(sectionGroups,c)],
     data:{labels:labels,glkBarMeta:barMeta,datasets:[{
       label:(metric==='mrc'?'MRC':'TCV')+' (M)',
-      data:data,
-      base:bases,
-      backgroundColor:bg,
+      data:data,base:bases,backgroundColor:bg,
       borderRadius:{topLeft:4,topRight:4,bottomLeft:0,bottomRight:0},
-      borderSkipped:false,
-      barPercentage:.78,
-      categoryPercentage:.85,
-      maxBarThickness:52
+      borderSkipped:false,barPercentage:.82,categoryPercentage:.88,maxBarThickness:48
     }]},
     options:{responsive:true,maintainAspectRatio:false,
-      layout:{padding:{top:18}},
+      layout:{padding:{bottom:28,top:12}},
       plugins:{
         legend:{display:false},
         tooltip:{backgroundColor:'rgba(15,10,30,.88)',padding:14,cornerRadius:12,titleFont:{size:12,weight:'700'},bodyFont:{size:12},
@@ -3016,24 +3024,19 @@ function renderBridge(bids,c){
             label:function(ctx){
               var b=bars[ctx.dataIndex];
               if(b.type==='step') return '  +'+fmt(b.value)+'  (cumulative '+fmt(b.start+b.value)+')';
-              return '  Total '+fmt(b.value);
+              return '  Target '+fmt(b.value);
             }
           }
         }
       },
       scales:{
-        x:{ticks:{color:c.text,font:{size:10,weight:'600'},maxRotation:45,minRotation:0},grid:{display:false}},
-        y:{ticks:{color:c.text,font:{size:11},callback:function(v){return v+'M';}},grid:{color:c.grid},border:{dash:[4,4]},beginAtZero:true,
-          suggestedMax:Math.max(targetM,running/1e6)*1.08}
+        x:{ticks:{color:c.text,font:{size:9,weight:'600'},maxRotation:0,minRotation:0},grid:{display:false}},
+        y:{ticks:{color:c.text,font:{size:11},callback:function(v){return v+'M';}},grid:{color:c.grid},border:{dash:[4,4]},beginAtZero:true,suggestedMax:maxY*1.1}
       }
     }
   });
   var wrap=el('bridgeControlsWrap');
-  if(wrap){
-    wrap.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center;margin-top:.65rem;flex-wrap:wrap;gap:.5rem;">'+
-      '<div style="display:flex;gap:.35rem;">'+glkChartMetricBtns()+'</div>'+
-      '<div style="display:flex;gap:.35rem;">'+glkChartPeriodBtns(bridgePeriod,'setBridgePeriod')+'</div></div>';
-  }
+  if(wrap) wrap.innerHTML=glkChartControlsHtml('chartPeriodSelectBridge','chartPeriodSelectBridge');
 }
 let lbMode='hd';
 let lbMetric='tcv';
