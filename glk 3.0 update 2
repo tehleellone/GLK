@@ -855,8 +855,8 @@ body[data-theme="dark"] .badge-warning,body[data-theme="duralux-dark"] .badge-wa
               </div>
             </div>
 
-            <!-- ROW 2b: Forecast Pie + Bridge -->
-            <div style="display:grid;grid-template-columns:1fr 1.4fr;gap:.85rem;margin-bottom:.85rem;">
+            <!-- ROW 2b: Forecast Pie -->
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:.85rem;margin-bottom:.85rem;">
               <div class="chart-card">
                 <div class="chart-title" style="justify-content:space-between;">
                   <span style="display:flex;flex-direction:column;gap:.15rem;">
@@ -864,21 +864,35 @@ body[data-theme="dark"] .badge-warning,body[data-theme="duralux-dark"] .badge-wa
                     <span style="font-size:.68rem;font-weight:600;color:var(--t3);">Uses dashboard filters · Period narrows time window</span>
                   </span>
                 </div>
-                <div class="chart-container" style="height:320px;"><canvas id="chartForecastPie"></canvas></div>
+                <div class="chart-container" style="height:280px;"><canvas id="chartForecastPie"></canvas></div>
                 <div id="forecastPieControlsWrap"></div>
               </div>
+              <div class="chart-card" style="display:flex;flex-direction:column;justify-content:center;padding:1.5rem;">
+                <div style="font-size:.8rem;font-weight:700;color:var(--t2);margin-bottom:.75rem;">Bridge legend</div>
+                <div style="display:grid;gap:.45rem;font-size:.72rem;color:var(--t3);">
+                  <div><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#16a34a;margin-right:6px;"></span>Won — closed revenue</div>
+                  <div><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#15803d;margin-right:6px;"></span>Commit — top 3 customers + Others</div>
+                  <div><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#2563eb;margin-right:6px;"></span>ML No Risk — top 3 + Others</div>
+                  <div><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#7c3aed;margin-right:6px;"></span>Upside Bring Home — top 3 + Others</div>
+                  <div><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#1e40af;margin-right:6px;"></span>Target — your goal</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- ROW 2c: Forecast Bridge full width (same size as Revenue Trend) -->
+            <div style="display:grid;grid-template-columns:1fr;gap:.85rem;margin-bottom:.85rem;">
               <div class="chart-card">
                 <div class="chart-title" style="justify-content:space-between;flex-wrap:wrap;gap:.5rem;">
                   <span style="display:flex;flex-direction:column;gap:.15rem;">
                     <span style="display:flex;align-items:center;gap:.35rem;"><svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>Forecast Bridge (Period to Date)</span>
-                    <span style="font-size:.68rem;font-weight:600;color:var(--t3);">Uses dashboard filters · Period narrows time window</span>
+                    <span style="font-size:.68rem;font-weight:600;color:var(--t3);">Uses dashboard filters · Won first, then pipeline steps to Target</span>
                   </span>
                   <div style="display:flex;align-items:center;gap:.45rem;flex-wrap:wrap;">
                     <label style="font-size:.72rem;color:var(--t2);font-weight:700;">Target (AED)</label>
                     <input type="number" id="bridgeTargetInp" value="10000000" min="0" step="100000" onchange="glkSetBridgeTarget(this.value)" style="width:120px;padding:.28rem .5rem;border-radius:6px;border:1px solid var(--border);background:var(--bg-input);color:var(--t1);font-size:.72rem;font-weight:700;">
                   </div>
                 </div>
-                <div class="chart-container" style="height:360px;"><canvas id="chartBridge"></canvas></div>
+                <div class="chart-container" style="height:280px;"><canvas id="chartBridge"></canvas></div>
                 <div id="bridgeControlsWrap"></div>
               </div>
             </div>
@@ -1181,8 +1195,53 @@ function glkBridgeFourBars(bids,metric){
 }
 function glkBridgeBarLabel(name,value){
   if(value<=0&&name==='—') return '—';
-  var short=name==='Others'?'Others':(name.length>14?name.slice(0,12)+'…':name);
+  var short=name==='Others'?'Others':(name.length>12?name.slice(0,10)+'…':name);
   return fmt(value)+'\n'+short;
+}
+function glkBridgeFloatBar(b){
+  if(b.type==='won'||b.type==='target') return [0,b.displayEnd];
+  return [b.displayStart,b.displayEnd];
+}
+function glkBridgeConnectorPlugin(bars){
+  return {id:'glkBridgeConnectors',afterDatasetsDraw:function(chart){
+    var meta=chart.getDatasetMeta(0),ctx=chart.ctx;
+    if(!meta||!meta.data) return;
+    for(var i=1;i<meta.data.length;i++){
+      var prev=bars[i-1],cur=bars[i];
+      if(cur.type!=='step') continue;
+      if(prev.type!=='won'&&prev.type!=='step') continue;
+      var pBar=meta.data[i-1],cBar=meta.data[i];
+      if(!pBar||!cBar) continue;
+      var topPrev=Math.min(pBar.y,pBar.base);
+      ctx.save();
+      ctx.strokeStyle='rgba(100,116,139,.35)';
+      ctx.lineWidth=1;
+      ctx.setLineDash([4,3]);
+      ctx.beginPath();
+      ctx.moveTo(pBar.x,topPrev);
+      ctx.lineTo(cBar.x,topPrev);
+      ctx.stroke();
+      ctx.restore();
+    }
+  }};
+}
+function glkBridgeBarLabelPlugin(bars){
+  return {id:'glkBridgeLabels',afterDatasetsDraw:function(chart){
+    var ctx=chart.ctx,meta=chart.getDatasetMeta(0);
+    if(!meta||!meta.data) return;
+    meta.data.forEach(function(bar,i){
+      var b=bars[i]; if(!b||b.value<=0) return;
+      var midY=(bar.y+bar.base)/2;
+      if(Math.abs(bar.y-bar.base)<6) midY=bar.base-8;
+      ctx.save();
+      ctx.fillStyle='#fff';
+      ctx.font='bold 10px Inter';
+      ctx.textAlign='center';
+      ctx.textBaseline='middle';
+      ctx.fillText(fmt(b.value),bar.x,midY);
+      ctx.restore();
+    });
+  }};
 }
 function glkBridgeGroupPlugin(sectionGroups,c){
   return {id:'glkBridgeGroups',afterDraw:function(chart){
@@ -2965,27 +3024,58 @@ function renderBridge(bids,c){
   destroyChart('bridge');
   var scoped=glkFilterByChartPeriod(bids,chartPeriod);
   var metric=chartMetric;
-  var running=0,bars=[],barMeta=[],sectionGroups=[];
-  function pushStep(label,value,color,meta,groupLabel,groupKey){
+  var targetVal=bridgeTarget;
+  var targetM=targetVal/1e6;
+  var truePipeRunning=0,displayPipeRunning=0;
+  var bars=[],barMeta=[],sectionGroups=[];
+  var wonBids=scoped.filter(function(b){return b.forecastCategory==='Closed Won'||STATUS_WON.includes(b.status);});
+  var wonVal=wonBids.reduce(function(s,b){return s+glkBidMetric(b,metric);},0);
+  var wonM=wonVal/1e6;
+  var pipeTotal=0;
+  BRIDGE_SECTIONS.forEach(function(sec){
+    if(sec.key==='won') return;
+    glkBridgeFourBars(scoped.filter(sec.filter),metric).forEach(function(cb){
+      if(cb.value>0) pipeTotal+=cb.value;
+    });
+  });
+  var pipeTotalM=pipeTotal/1e6;
+  var yMaxRough=Math.max(wonM+pipeTotalM,targetM,0.5);
+  var minStepM=Math.max(yMaxRough*0.04,0.15);
+  function pushWon(label,value,color,meta){
     var idx=bars.length;
-    bars.push({label:label,value:value,start:running,color:color,type:'step'});
+    bars.push({label:label,value:value,trueEnd:value,displayStart:0,displayEnd:wonM,color:color,type:'won'});
     barMeta.push({label:meta||label});
-    running+=value;
+    sectionGroups.push({key:'won',label:'Won',startIdx:idx,endIdx:idx});
+  }
+  function pushPipe(label,value,color,meta,groupLabel,groupKey){
+    var idx=bars.length;
+    var trueStart=wonVal+truePipeRunning;
+    var trueEnd=trueStart+value;
+    var incM=value/1e6;
+    var dispInc=incM>0?Math.max(incM,minStepM):0;
+    var dispStart=wonM+displayPipeRunning;
+    var dispEnd=dispStart+dispInc;
+    bars.push({
+      label:label,value:value,trueStart:trueStart,trueEnd:trueEnd,
+      displayStart:dispStart,displayEnd:dispEnd,color:color,type:'step'
+    });
+    barMeta.push({label:meta||label});
+    truePipeRunning+=value;
+    displayPipeRunning+=dispInc;
     if(sectionGroups.length&&sectionGroups[sectionGroups.length-1].key===groupKey){
       sectionGroups[sectionGroups.length-1].endIdx=idx;
     }else{
       sectionGroups.push({key:groupKey,label:groupLabel,startIdx:idx,endIdx:idx});
     }
   }
-  var wonBids=scoped.filter(function(b){return b.forecastCategory==='Closed Won'||STATUS_WON.includes(b.status);});
-  var wonVal=wonBids.reduce(function(s,b){return s+glkBidMetric(b,metric);},0);
-  pushStep(glkBridgeBarLabel('Won',wonVal),wonVal,'#16a34a','Won · '+fmt(wonVal),'Won','won');
+  pushWon(glkBridgeBarLabel('Won',wonVal),wonVal,'#16a34a','Won · '+fmt(wonVal));
   BRIDGE_SECTIONS.forEach(function(sec){
     if(sec.key==='won') return;
     var secBids=scoped.filter(sec.filter);
     var four=glkBridgeFourBars(secBids,metric);
     four.forEach(function(cb,ci){
-      pushStep(
+      if(cb.value<=0) return;
+      pushPipe(
         glkBridgeBarLabel(cb.name,cb.value),
         cb.value,
         sec.colors[ci]||sec.colors[sec.colors.length-1],
@@ -2995,27 +3085,29 @@ function renderBridge(bids,c){
       );
     });
   });
-  var targetVal=bridgeTarget;
   var tIdx=bars.length;
   sectionGroups.push({key:'target',label:'Target',startIdx:tIdx,endIdx:tIdx});
-  bars.push({label:fmt(targetVal)+'\nTarget',value:targetVal,start:0,color:BRIDGE_TARGET_COLOR,type:'target'});
+  bars.push({label:fmt(targetVal)+'\nTarget',value:targetVal,trueEnd:targetVal,displayStart:0,displayEnd:targetM,color:BRIDGE_TARGET_COLOR,type:'target'});
   barMeta.push({label:'Target · '+fmt(targetVal)});
   var labels=bars.map(function(b){return b.label;});
-  var data=bars.map(function(b){return +(b.value/1e6).toFixed(2);});
-  var bases=bars.map(function(b){return b.type==='step'?+(b.start/1e6).toFixed(2):0;});
+  var floatData=bars.map(glkBridgeFloatBar);
   var bg=bars.map(function(b){return b.color;});
-  var maxY=Math.max.apply(null,data.concat([0]));
+  var yMax=Math.max(wonM+displayPipeRunning,targetM,0.001)*1.08;
   CHARTS.bridge=new Chart(el('chartBridge'),{
     type:'bar',
-    plugins:[glkBarLabelPlugin(),glkBridgeGroupPlugin(sectionGroups,c)],
-    data:{labels:labels,glkBarMeta:barMeta,datasets:[{
-      label:(metric==='mrc'?'MRC':'TCV')+' (M)',
-      data:data,base:bases,backgroundColor:bg,
-      borderRadius:{topLeft:4,topRight:4,bottomLeft:0,bottomRight:0},
-      borderSkipped:false,barPercentage:.82,categoryPercentage:.88,maxBarThickness:48
+    plugins:[glkBridgeBarLabelPlugin(bars),glkBridgeGroupPlugin(sectionGroups,c),glkBridgeConnectorPlugin(bars)],
+    data:{labels:labels,glkBars:bars,datasets:[{
+      label:(metric==='mrc'?'MRC':'TCV'),
+      data:floatData,
+      backgroundColor:bg,
+      borderRadius:4,
+      borderSkipped:false,
+      barPercentage:.72,
+      categoryPercentage:.88,
+      maxBarThickness:48
     }]},
     options:{responsive:true,maintainAspectRatio:false,
-      layout:{padding:{bottom:28,top:12}},
+      layout:{padding:{bottom:24,top:10,left:6,right:10}},
       plugins:{
         legend:{display:false},
         tooltip:{backgroundColor:'rgba(15,10,30,.88)',padding:14,cornerRadius:12,titleFont:{size:12,weight:'700'},bodyFont:{size:12},
@@ -3023,20 +3115,32 @@ function renderBridge(bids,c){
             title:function(items){return barMeta[items[0].dataIndex]?barMeta[items[0].dataIndex].label:items[0].label;},
             label:function(ctx){
               var b=bars[ctx.dataIndex];
-              if(b.type==='step') return '  +'+fmt(b.value)+'  (cumulative '+fmt(b.start+b.value)+')';
-              return '  Target '+fmt(b.value);
+              if(b.type==='won') return '  Won '+fmt(b.value);
+              if(b.type==='target') return '  Target '+fmt(b.value);
+              return '  +'+fmt(b.value);
+            },
+            afterBody:function(items){
+              var b=bars[items[0].dataIndex];
+              if(b.type==='step') return ['  Running total: '+fmt(b.trueEnd)];
+              return [];
             }
           }
         }
       },
       scales:{
-        x:{ticks:{color:c.text,font:{size:9,weight:'600'},maxRotation:0,minRotation:0},grid:{display:false}},
-        y:{ticks:{color:c.text,font:{size:11},callback:function(v){return v+'M';}},grid:{color:c.grid},border:{dash:[4,4]},beginAtZero:true,suggestedMax:maxY*1.1}
+        x:{ticks:{color:c.text,font:{size:10,weight:'600'},maxRotation:45,minRotation:0,autoSkip:false},grid:{display:false}},
+        y:{ticks:{color:c.text,font:{size:11},callback:function(v){return v+'M';}},grid:{color:c.grid},border:{dash:[4,4]},beginAtZero:true,
+          suggestedMax:yMax,
+          title:{display:true,text:'AED (M)',color:c.text,font:{size:10,weight:'600'}}}
       }
     }
   });
   var wrap=el('bridgeControlsWrap');
-  if(wrap) wrap.innerHTML=glkChartControlsHtml('chartPeriodSelectBridge','chartPeriodSelectBridge');
+  if(wrap){
+    wrap.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center;margin-top:.65rem;flex-wrap:wrap;gap:.5rem;">'+
+      '<div style="font-size:.68rem;color:var(--t3);font-weight:600;">Won '+fmt(wonVal)+' · Pipeline +'+fmt(truePipeRunning)+' · Forecast '+fmt(wonVal+truePipeRunning)+' · Target '+fmt(targetVal)+'</div>'+
+      '<div style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;">'+glkChartMetricBtns()+glkChartPeriodSelect('chartPeriodSelectBridge')+'</div></div>';
+  }
 }
 let lbMode='hd';
 let lbMetric='tcv';
