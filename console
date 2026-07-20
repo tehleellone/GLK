@@ -1,96 +1,99 @@
-VM1378:41 Account_x0020_Director
-group
-Actual_x0020_Contract_x0020_Sign
-APIAlert
-AssignBi
-AssignSo
-Assignto
-BidManager
-BidManagerFeedback
-BidManagerRequired
-Unique_x0020_Reference_x0020_ID
-BidRequest
-BilledDate
-BilledSt
-BM_x0020_Assign_x0020_wk
-BMassingedDate
-Building_x0020_Floor
-Building_x0020_Name
-field3
-Building_x0020_Unit
-field6
-Closure_x0020_Probability
-Comments_x002f_Remarks
-Complexity
-ContactNo
-Contract_x0020_Duration
-CustomerCode
-Expected_x0020_Contract_x0020_Si
-ExpiredD
-field10
-field7
-field9
-FNEAssig
-FNEAssinged
-FNE_x0020_Mail_x0020_Alert
-FNEManager
-FNE_x0020_Manager_x0020_Required
-FNEManna
-FNENotif
-group1
-GA_x0020_Lines
-Gross_x0020_Adds
-Head_x0020_Director
-JustificationforSolutionConsulta
-Requirement_x0020_Reason_x0020_f
-LatitudePOC
-Latitude2
-Latitude3
-LongitudePOC
-Longitude2
-Longitude3
-Lost_x0020_Reason
-M2M_x0020_Customer_x0020_Type
-M2M_x0020_Industry_x0020_Vertica
-M2M_x0020_Use_x0020_Case
-MNP
-Monthly_x0020_Recurring_x0020_Ch
-My_x0020_ID
-No_x0020_Bid_x002f_Lost_x002f_Ca
-Old_x0020_AM_x0020__x002d__x0020
-One_x0020_Time_x0020_Charges_x00
-Opportunity_x0020_Status
-PMNotifi
-POCEmailID
-field4
-POCName
-field8
-field5
-Product_x0020_Category
-Product_x0020_Family
-ProjectManager0
-Proposed_x0020_Date
-RFPMailP
-RFP_x0020_Mail_x0020_sent
-RFP_x0020_Submission_x0020_Date
-RFPs
-ServiceRequirement
-Services
-SM_x0020_Alert_x0020_Wk
-SM_x0020_Assign_x0020_WK
-SolutionAssignedDate
-Solution_x0020_Manager
-SolutionManagerRequired
-Third_x0020_Party
-Total_x0020_Contact_x0020_Value_
-Type_x0020_of_x0020_Contract
-Type_x0020_of_x0020_Request
-UniqueID0
-UserName
-Vendor_x0020_Name
-Segment
-VK_x0020_wk_x0020_col
-WK_x002d_AM_x0020_Alert_x0020_on
-Workflow_x0020_API_x0020_Count
-VM1378:43 --- copy/paste for $select ---
-VM1378:44 Account_x0020_Director,group,Actual_x0020_Contract_x0020_Sign,APIAlert,AssignBi,AssignSo,Assignto,BidManager,BidManagerFeedback,BidManagerRequired,Unique_x0020_Reference_x0020_ID,BidRequest,BilledDate,BilledSt,BM_x0020_Assign_x0020_wk,BMassingedDate,Building_x0020_Floor,Building_x0020_Name,field3,Building_x0020_Unit,field6,Closure_x0020_Probability,Comments_x002f_Remarks,Complexity,ContactNo,Contract_x0020_Duration,CustomerCode,Expected_x0020_Contract_x0020_Si,ExpiredD,field10,field7,field9,FNEAssig,FNEAssinged,FNE_x0020_Mail_x0020_Alert,FNEManager,FNE_x0020_Manager_x0020_Required,FNEManna,FNENotif,group1,GA_x0020_Lines,Gross_x0020_Adds,Head_x0020_Director,JustificationforSolutionConsulta,Requirement_x0020_Reason_x0020_f,LatitudePOC,Latitude2,Latitude3,LongitudePOC,Longitude2,Longitude3,Lost_x0020_Reason,M2M_x0020_Customer_x0020_Type,M2M_x0020_Industry_x0020_Vertica,M2M_x0020_Use_x0020_Case,MNP,Monthly_x0020_Recurring_x0020_Ch,My_x0020_ID,No_x0020_Bid_x002f_Lost_x002f_Ca,Old_x0020_AM_x0020__x002d__x0020,One_x0020_Time_x0020_Charges_x00,Opportunity_x0020_Status,PMNotifi,POCEmailID,field4,POCName,field8,field5,Product_x0020_Category,Product_x0020_Family,ProjectManager0,Proposed_x0020_Date,RFPMailP,RFP_x0020_Mail_x0020_sent,RFP_x0020_Submission_x0020_Date,RFPs,ServiceRequirement,Services,SM_x0020_Alert_x0020_Wk,SM_x0020_Assign_x0020_WK,SolutionAssignedDate,Solution_x0020_Manager,SolutionManagerRequired,Third_x0020_Party,Total_x0020_Contact_x0020_Value_,Type_x0020_of_x0020_Contract,Type_x0020_of_x0020_Request,UniqueID0,UserName,Vendor_x0020_Name,Segment,VK_x0020_wk_x0020_col,WK_x002d_AM_x0020_Alert_x0020_on,Workflow_x0020_API_x0020_Count
+(index)
+Title
+InternalName
+Type
+Required
+0	'Account Director'	'Account_x0020_Director'	'Choice'	true
+1	'Account Manager'	'group'	'User'	true
+2	'Actual Contract Signed Date'	'Actual_x0020_Contract_x0020_Sign'	'DateTime'	false
+3	'API Alert'	'APIAlert'	'WorkflowStatus'	false
+4	'Assign Bid Manager'	'AssignBi'	'WorkflowStatus'	false
+5	'Assign Solution Manager'	'AssignSo'	'WorkflowStatus'	false
+6	'Assign to Worflow'	'Assignto'	'WorkflowStatus'	false
+7	'Bid Manager'	'BidManager'	'Text'	false
+8	'Bid Manager Feedback'	'BidManagerFeedback'	'Text'	false
+9	'Bid Manager Required'	'BidManagerRequired'	'Choice'	false
+10	'Bid Reference No'	'Unique_x0020_Reference_x0020_ID'	'Calculated'	false
+11	'Bid Request'	'BidRequest'	'Choice'	false
+12	'Billed Date'	'BilledDate'	'DateTime'	false
+13	'Billed Status'	'BilledSt'	'WorkflowStatus'	false
+14	'BM Assign wk'	'BM_x0020_Assign_x0020_wk'	'Text'	false
+15	'BM assinged Date'	'BMassingedDate'	'DateTime'	false
+16	'Building Floor'	'Building_x0020_Floor'	'Text'	false
+17	'Building Name'	'Building_x0020_Name'	'Text'	false
+18	'Building Status'	'field3'	'Choice'	false
+19	'Building Unit'	'Building_x0020_Unit'	'Text'	false
+20	'Churn Reasons'	'field6'	'Choice'	false
+21	'Closure Probability'	'Closure_x0020_Probability'	'Choice'	true
+22	'Comments/Remarks'	'Comments_x002f_Remarks'	'Note'	false
+23	'Complexity'	'Complexity'	'Choice'	false
+24	'Contact No'	'ContactNo'	'Text'	false
+25	'Contract Duration'	'Contract_x0020_Duration'	'Choice'	false
+26	'Customer Code'	'CustomerCode'	'Text'	true
+27	'Expected Activation Date'	'Expected_x0020_Contract_x0020_Si'	'DateTime'	false
+28	'Expired Date'	'ExpiredD'	'WorkflowStatus'	false
+29	'field10'	'field10'	'DateTime'	false
+30	'field7'	'field7'	'DateTime'	false
+31	'field9'	'field9'	'Boolean'	false
+32	'FNE Assignment'	'FNEAssig'	'WorkflowStatus'	false
+33	'FNE Assinged'	'FNEAssinged'	'DateTime'	false
+34	'FNE Mail Alert'	'FNE_x0020_Mail_x0020_Alert'	'Text'	false
+35	'FNE Manager'	'FNEManager'	'Choice'	false
+36	'FNE Manager Required'	'FNE_x0020_Manager_x0020_Required'	'Choice'	false
+37	'FNE Mannager Alert'	'FNEManna'	'WorkflowStatus'	false
+38	'FNE Notification'	'FNENotif'	'WorkflowStatus'	false
+39	'FNE Request Type'	'group1'	'MultiChoice'	false
+40	'GA Lines'	'GA_x0020_Lines'	'Number'	false
+41	'GA Points'	'Gross_x0020_Adds'	'Number'	false
+42	'Head Director'	'Head_x0020_Director'	'Choice'	false
+43	'Justification for SC'	'JustificationforSolutionConsulta'	'Text'	false
+44	'Justification of Supplier Selection'	'Requirement_x0020_Reason_x0020_f'	'Note'	false
+45	'Latitude'	'LatitudePOC'	'Text'	false
+46	'Latitude 2'	'Latitude2'	'Text'	false
+47	'Latitude 3'	'Latitude3'	'Text'	false
+48	'Longitude'	'LongitudePOC'	'Text'	false
+49	'Longitude 2'	'Longitude2'	'Text'	false
+50	'Longitude 3'	'Longitude3'	'Text'	false
+51	'Lost/Cancelled/No Bid Reason'	'Lost_x0020_Reason'	'Text'	false
+52	'M2M Customer Type'	'M2M_x0020_Customer_x0020_Type'	'Choice'	false
+53	'M2M Industry Vertical'	'M2M_x0020_Industry_x0020_Vertica'	'Text'	false
+54	'M2M Use Case'	'M2M_x0020_Use_x0020_Case'	'Text'	false
+55	'MNP'	'MNP'	'Choice'	false
+56	'Monthly Recurring Charges (MRC)'	'Monthly_x0020_Recurring_x0020_Ch'	'Number'	true
+57	'My ID'	'My_x0020_ID'	'Text'	false
+58	'No Bid/Lost/Cancelled Date'	'No_x0020_Bid_x002f_Lost_x002f_Ca'	'DateTime'	false
+59	'Old AM - 10/23'	'Old_x0020_AM_x0020__x002d__x0020'	'Text'	false
+60	'One Time Charges (OTC)'	'One_x0020_Time_x0020_Charges_x00'	'Number'	false
+61	'Opportunity Status'	'Opportunity_x0020_Status'	'Choice'	true
+62	'PM Notification'	'PMNotifi'	'WorkflowStatus'	false
+63	'POC Email ID'	'POCEmailID'	'Text'	false
+64	'POC Job role'	'field4'	'Text'	false
+65	'POC Name'	'POCName'	'Text'	false
+66	'Prepaid/Postpaid'	'field8'	'Choice'	false
+67	'Product Catalogue Value'	'field5'	'Number'	false
+68	'Product Category'	'Product_x0020_Category'	'Choice'	true
+69	'Product Family'	'Product_x0020_Family'	'Choice'	true
+70	'Project Manager'	'ProjectManager0'	'Choice'	false
+71	'Proposed Date'	'Proposed_x0020_Date'	'DateTime'	false
+72	'RFP Mail - Pipeline'	'RFPMailP'	'WorkflowStatus'	false
+73	'RFP Mail sent'	'RFP_x0020_Mail_x0020_sent'	'Text'	false
+74	'RFP Submission Date'	'RFP_x0020_Submission_x0020_Date'	'DateTime'	false
+75	'RFP,s'	'RFPs'	'Choice'	false
+76	'Service Requirement'	'ServiceRequirement'	'Text'	false
+77	'Services'	'Services'	'Text'	true
+78	'SM Alert Wk'	'SM_x0020_Alert_x0020_Wk'	'Text'	false
+79	'SM Assign WK'	'SM_x0020_Assign_x0020_WK'	'Text'	false
+80	'Solution Assigned Date'	'SolutionAssignedDate'	'DateTime'	false
+81	'Solution Manager'	'Solution_x0020_Manager'	'Choice'	false
+82	'Solution Manager Required'	'SolutionManagerRequired'	'Choice'	false
+83	'Third Party'	'Third_x0020_Party'	'Choice'	false
+84	'Total Contact Value (TCV)'	'Total_x0020_Contact_x0020_Value_'	'Number'	false
+85	'Type of Contract'	'Type_x0020_of_x0020_Contract'	'Choice'	true
+86	'Type of Request'	'Type_x0020_of_x0020_Request'	'Choice'	true
+87	'Unique ID'	'UniqueID0'	'WorkflowStatus'	false
+88	'UserName'	'UserName'	'Text'	false
+89	'Vendor Name'	'Vendor_x0020_Name'	'Text'	false
+90	'Vertical'	'Segment'	'Choice'	true
+91	'VK wk col'	'VK_x0020_wk_x0020_col'	'Text'	false
+92	'WK-AM Alert on SM'	'WK_x002d_AM_x0020_Alert_x0020_on'	'Text'	false
+93	'Workflow API Count'	'Workflow_x0020_API_x0020_Count'	'Text'	false
