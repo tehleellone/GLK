@@ -423,8 +423,8 @@ var BCR_ACCESS = [
 
 var FORM_SECTIONS = [
   { id:'Contact_Context', title:'Contact Details', subtitle:'How the customer reached us', tone:'contact', icon:'phone' },
-  { id:'Owner_Identity', title:'Owner Identity', subtitle:'Account owner on the line — from system / records', tone:'owner', icon:'user' },
   { id:'Caller_Identity', title:'Caller Identity', subtitle:'Person contacting us today — may be different from the owner', tone:'caller', icon:'users' },
+  { id:'Owner_Identity', title:'Owner Identity', subtitle:'Account owner on the line — from system / records', tone:'owner', icon:'user' },
   { id:'Account_Details', title:'Account Details', subtitle:'Service, billing and contact information', tone:'account', icon:'credit-card' },
   { id:'Complaint_And_Action', title:'Complaint & Action', subtitle:'Issue summary and steps taken', tone:'complaint', icon:'message-square' }
 ];
@@ -435,15 +435,15 @@ var FORM_FIELDS = [
   { key:'Contact_Date', label:'Contact Date', type:'date', section:'Contact_Context', req:true },
   { key:'Customer_Location', label:'Owner Location', type:'select', section:'Contact_Context', req:true },
   { key:'Customer_Type', label:'Customer Type', type:'select', section:'Contact_Context', req:true },
-  { key:'Customer_Name', label:'Owner Name', type:'text', section:'Owner_Identity', req:true },
-  { key:'Emirates_ID_System', label:'Owner ID No. (System)', type:'eid', section:'Owner_Identity', req:false, hint:'From billing system — leave blank if not available' },
-  { key:'Owner_Emirates_ID_Validity', label:'Owner ID Validity', type:'select', section:'Owner_Identity', req:true },
-  { key:'Owner_x0020_Emirates_ID_Expiry_D', label:'Owner ID Expiry Date', type:'date', section:'Owner_Identity', req:true },
   { key:'Caller_Name', label:'Caller Name', type:'text', section:'Caller_Identity', req:true },
   { key:'Complainer_Role', label:'Caller Relationship to Owner', type:'select', section:'Caller_Identity', req:true },
   { key:'Alternative_Contact', label:'Caller No.', type:'text', section:'Caller_Identity', req:true, hint:'Caller phone number or contact' },
   { key:'Emirates_ID_Provided', label:'Caller ID No.', type:'eid', section:'Caller_Identity', req:true },
   { key:'Emirates_ID_Expiry_Date', label:'Caller ID Expiry Date', type:'date', section:'Caller_Identity', req:true },
+  { key:'Customer_Name', label:'Owner Name', type:'text', section:'Owner_Identity', req:true },
+  { key:'Emirates_ID_System', label:'Owner ID No. (System)', type:'eid', section:'Owner_Identity', req:true, hint:'15-digit Emirates ID from billing system' },
+  { key:'Owner_Emirates_ID_Validity', label:'Owner ID Validity', type:'select', section:'Owner_Identity', req:true },
+  { key:'Owner_x0020_Emirates_ID_Expiry_D', label:'Owner ID Expiry Date', type:'date', section:'Owner_Identity', req:true },
   { key:'Email_Address', label:'Email Address', type:'text', section:'Account_Details', req:true },
   { key:'Account_Number', label:'Account Number', type:'numeric', section:'Account_Details', req:true },
   { key:'MSISDN', label:'MSISDN', type:'numeric', section:'Account_Details', req:true, dup:true },
@@ -843,12 +843,6 @@ function bcrFixAgentNames(apply){
     });
   });
 }
-function spNormalizeLegacyFields(o,item){
-  if(!o.Owner_x0020_Emirates_ID_Expiry_D&&item.Owner_Emirates_ID_Expiry_Date!=null)
-    o.Owner_x0020_Emirates_ID_Expiry_D=valueFromSp('Owner_x0020_Emirates_ID_Expiry_D',item.Owner_Emirates_ID_Expiry_Date);
-  if(!o.Emirates_ID_Expiry_Date&&item.Caller_ID_Expiry_Date!=null)
-    o.Emirates_ID_Expiry_Date=valueFromSp('Emirates_ID_Expiry_Date',item.Caller_ID_Expiry_Date);
-}
 function spMapItem(item){
   var o={Id:item.Id};
   RECORD_SP_FIELDS.forEach(function(f){
@@ -856,14 +850,12 @@ function spMapItem(item){
     if(item[f]==null) return;
     o[f]=valueFromSp(f, item[f]);
   });
-  spNormalizeLegacyFields(o,item);
   if(o.Agent_Email) o.Agent_Name=resolveAgentName(o.Agent_Email,o.Agent_Name);
   return makeRecord(o);
 }
 function loadRecordsFromSharePoint(cb){
   ensureSpUserNameIndex(function(){
-    var site=getSpSite();
-    var sel=RECORD_SP_FIELDS.concat(['Owner_Emirates_ID_Expiry_Date','Caller_ID_Expiry_Date']).filter(function(v,i,a){return a.indexOf(v)===i;}).join(',');
+    var site=getSpSite(), sel=RECORD_SP_FIELDS.join(',');
     var url=site+spListPath(SP_CONFIG.recordsList,"/items?$select="+encodeURIComponent(sel)+"&$top=5000&$orderby=Contact_Date desc");
     spGet(url,function(err,data){
       if(err){ toast('Failed to load '+SP_CONFIG.recordsList+' — '+err.message,'error'); BCR.all=[]; if(cb)cb(); return; }
@@ -1848,7 +1840,7 @@ function renderForm(){
   FORM_FIELDS.forEach(function(f){ (bySection[f.section]=bySection[f.section]||[]).push(f); });
   var html='<div class="dashboard-section agent-form-wrap"><div class="form-card">'
     +'<div class="form-hero"><div class="form-hero-title">'+bcrIcon('file-plus',18)+' New Entry</div>'
-    +'<div class="form-hero-sub">Fill in <strong>Owner Identity</strong> for the account holder and <strong>Caller Identity</strong> for the person contacting us today. They may be different people.</div></div>'
+    +'<div class="form-hero-sub">Fill in <strong>Caller Identity</strong> for the person contacting us today, then <strong>Owner Identity</strong> for the account holder. They may be different people.</div></div>'
     +'<div class="form-body"><div id="dupBanner" class="warn-banner" style="display:none"></div>';
   FORM_SECTIONS.forEach(function(sec){
     var fields=bySection[sec.id]||[];
@@ -1900,16 +1892,7 @@ function validateForm(d){
     if(d[k] && !isDigitsOnly(d[k])){ firstBad=markInvalid(k)||firstBad; ok=false; if(!msg) msg=pretty(k)+' must contain digits only'; }
   });
   EID_FIELD_KEYS.forEach(function(k){
-    var f=FORM_FIELDS.filter(function(x){ return x.key===k; })[0];
-    if(k==='Emirates_ID_System'){
-      var sysDigits=eidDigits(d[k]);
-      if(!sysDigits.length){ d[k]=''; return; }
-      if(sysDigits.length!==15||emiratesIdError(d[k])){ d[k]=''; return; }
-    }
-    if(!d[k]){
-      if(f&&f.req){ return; }
-      return;
-    }
+    if(!d[k]) return;
     var err=emiratesIdError(d[k]);
     if(err){
       firstBad=markInvalid(k)||firstBad; ok=false;
