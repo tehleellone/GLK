@@ -3741,28 +3741,56 @@ let charts = {};
 
         function parseAccessControlYesNo(val) {
             if (!val) return false;
-            if (val === true || val === 'Yes') return true;
+            if (val === true || val === 'Yes' || val === 'yes') return true;
             if (val.results) return val.results.includes('Yes');
             return false;
         }
 
+        function buildAccessControlYesNoPayload(fieldName, enabled, sampleItem) {
+            const existing = sampleItem ? sampleItem[fieldName] : null;
+            if (existing && typeof existing === 'object' && existing.results) {
+                return {
+                    [fieldName]: {
+                        __metadata: {
+                            type: 'Collection(Edm.String)'
+                        },
+                        results: enabled ? ['Yes'] : ['No']
+                    }
+                };
+            }
+            return {
+                [fieldName]: enabled ? 'Yes' : 'No'
+            };
+        }
+
         async function fetchRevenueEnabled() {
             try {
-                const url = SP_URL + "/_api/web/lists/getbytitle('" + SP_ACCESS_LIST + "')/items?" +
+                let url = SP_URL + "/_api/web/lists/getbytitle('" + SP_ACCESS_LIST + "')/items?" +
                     "$select=ID,UserEmailID,RevenueEnabled,POCDetailsEnabled&" +
                     "$filter=(UserEmailID eq 'ubaid.mir@du.ae' or UserEmailID eq 'tehleel.lone@du.ae')&$top=2";
-                const res = await fetch(url, {
+                let res = await fetch(url, {
                     headers: {
                         'Accept': 'application/json;odata=verbose'
                     },
                     credentials: 'include'
                 });
+                if (!res.ok) {
+                    url = SP_URL + "/_api/web/lists/getbytitle('" + SP_ACCESS_LIST + "')/items?" +
+                        "$select=ID,UserEmailID,RevenueEnabled&" +
+                        "$filter=(UserEmailID eq 'ubaid.mir@du.ae' or UserEmailID eq 'tehleel.lone@du.ae')&$top=2";
+                    res = await fetch(url, {
+                        headers: {
+                            'Accept': 'application/json;odata=verbose'
+                        },
+                        credentials: 'include'
+                    });
+                }
                 if (!res.ok) return;
                 const data = await res.json();
                 const results = data.d.results;
                 window.REVENUE_ENABLED = results.some(r => parseAccessControlYesNo(r.RevenueEnabled));
                 window.POC_DETAILS_ENABLED = results.some(r => parseAccessControlYesNo(r.POCDetailsEnabled));
-                window.REVENUE_CONTROL_ITEMS = results; // store both rows for update later
+                window.REVENUE_CONTROL_ITEMS = results;
                 console.log('[RevenueEnabled]', window.REVENUE_ENABLED);
                 console.log('[POCDetailsEnabled]', window.POC_DETAILS_ENABLED);
                 updateRevenueToggleBtn();
@@ -3877,25 +3905,22 @@ let charts = {};
                             'X-HTTP-Method': 'MERGE'
                         },
                         credentials: 'include',
-                        body: JSON.stringify({
+                        body: JSON.stringify(Object.assign({
                             __metadata: {
                                 type: 'SP.Data.Access_x005f_ControlListItem'
-                            },
-                            POCDetailsEnabled: {
-                                __metadata: {
-                                    type: 'Collection(Edm.String)'
-                                },
-                                results: newValue ? ['Yes'] : ['No']
                             }
-                        })
+                        }, buildAccessControlYesNoPayload('POCDetailsEnabled', newValue, item)))
                     });
-                    if (!updateRes.ok) throw new Error('Update failed for ' + item.UserEmailID);
+                    if (!updateRes.ok) {
+                        const errText = await updateRes.text();
+                        throw new Error('Update failed for ' + item.UserEmailID + ': ' + errText);
+                    }
                 }
 
                 window.POC_DETAILS_ENABLED = newValue;
                 window.REVENUE_CONTROL_ITEMS = items.map(i => ({
                     ...i,
-                    POCDetailsEnabled: newValue
+                    POCDetailsEnabled: newValue ? 'Yes' : 'No'
                 }));
                 updatePocToggleBtn();
                 if (typeof renderEditPocFields === 'function' && EDIT_ACCOUNT_DATA) renderEditPocFields();
@@ -9044,7 +9069,7 @@ async function ownerFetchUserRole(email) {
                 html += '<h3 class="table-title"><i data-lucide="users" style="width: 18px; height: 18px; display: inline-block; vertical-align: middle; margin-right: 6px;"></i>POC Details</h3>';
                 html += '<div class="filter-group" style="margin-bottom: 1rem; max-width: 360px;">' +
                     '<label class="filter-label">POC Category</label>' +
-                    '<select class="filter-select" id="editPocCategory" onchange="renderEditPocFields()" style="font-size: 14px; padding: 10px;">' +
+                    '<select class="filter-select" id="editPocCategory" onchange="onEditPocCategoryChange()" style="font-size: 14px; padding: 10px;">' +
                     '<option value="primary" selected>Primary POC Details</option>' +
                     '<option value="secondary">Secondary POC Details</option>' +
                     '<option value="technical">Technical POC Details</option>' +
@@ -9154,34 +9179,31 @@ async function ownerFetchUserRole(email) {
 
         function syncEditPocFromDom() {
             if (!window.EDIT_POC_VALUES) return;
-            const cat = (document.getElementById('editPocCategory') || {}).value || 'primary';
-            const fieldMap = {
-                primary: [
-                    ['pocName', 'editPrimaryName'],
-                    ['pocEmail', 'editPrimaryEmail'],
-                    ['pocPhone', 'editPrimaryContact']
-                ],
-                secondary: [
-                    ['secondaryPocName', 'editSecondaryName'],
-                    ['secondaryPocEmail', 'editSecondaryEmail'],
-                    ['secondaryPocPhone', 'editSecondaryContact']
-                ],
-                technical: [
-                    ['technicalPocName', 'editTechnicalName'],
-                    ['technicalPocEmail', 'editTechnicalEmail'],
-                    ['technicalPocPhone', 'editTechnicalContact']
-                ]
-            };
-            (fieldMap[cat] || []).forEach(function (pair) {
+            [
+                ['pocName', 'editPrimaryName'],
+                ['pocEmail', 'editPrimaryEmail'],
+                ['pocPhone', 'editPrimaryContact'],
+                ['secondaryPocName', 'editSecondaryName'],
+                ['secondaryPocEmail', 'editSecondaryEmail'],
+                ['secondaryPocPhone', 'editSecondaryContact'],
+                ['technicalPocName', 'editTechnicalName'],
+                ['technicalPocEmail', 'editTechnicalEmail'],
+                ['technicalPocPhone', 'editTechnicalContact']
+            ].forEach(function (pair) {
                 const el = document.getElementById(pair[1]);
                 if (el) window.EDIT_POC_VALUES[pair[0]] = el.value.trim();
             });
         }
 
-        function renderEditPocFields() {
+        function onEditPocCategoryChange() {
+            syncEditPocFromDom();
+            renderEditPocFields(true);
+        }
+
+        function renderEditPocFields(skipSync) {
             const account = EDIT_ACCOUNT_DATA;
             if (!account) return;
-            syncEditPocFromDom();
+            if (!skipSync) syncEditPocFromDom();
             if (!window.EDIT_POC_VALUES) initEditPocValues(account);
             const cat = (document.getElementById('editPocCategory') || {}).value || 'primary';
             const wrap = document.getElementById('editPocFields');
