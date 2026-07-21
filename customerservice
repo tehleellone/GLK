@@ -99,9 +99,38 @@
     .sm-ag-set-actions button { flex:1; padding:.25rem .4rem; font-size:.68rem; font-weight:700; border:1px solid var(--border, var(--border-color, #e2e8f0)); border-radius:6px; background:var(--chip, rgba(168,85,247,.08)); color:var(--acc, #a855f7); cursor:pointer; }
 
     /* LM / SM tile status breakdown — match top KPI tiles */
-    #customerServiceView .lm-stats-grid { grid-template-columns: repeat(3, 1fr); }
-    #customerServiceView .manager-row .stat-col { min-width: 62px; }
-    #customerServiceView .manager-row .stat-col .stat-label { font-size: .6rem; line-height: 1.15; }
+    #customerServiceView .line-managers-grid {
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    }
+    #customerServiceView .lm-tile {
+        overflow: visible;
+        min-width: 0;
+    }
+    #customerServiceView .lm-stats-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: .45rem;
+    }
+    #customerServiceView .lm-stat-box {
+        min-width: 0;
+        padding: .45rem .5rem;
+    }
+    #customerServiceView .lm-stat-label {
+        white-space: normal;
+        line-height: 1.2;
+        word-break: break-word;
+        hyphens: auto;
+    }
+    #customerServiceView .lm-stat-value {
+        font-size: .98rem;
+        line-height: 1.1;
+    }
+    #customerServiceView .manager-row .stat-col { min-width: 68px; }
+    #customerServiceView .manager-row .stat-col .stat-label {
+        font-size: .6rem;
+        line-height: 1.15;
+        white-space: normal;
+        word-break: break-word;
+    }
     #customerServiceView .manager-row .stat-col .stat-value { font-size: .92rem; }
     `;
     document.head.appendChild(style);
@@ -1216,10 +1245,10 @@ function csMakeLMTile(lm, reviews, isSelected) {
         <div class="lm-stats-grid">
             <div class="lm-stat-box"><div class="lm-stat-label">Reviews</div><div class="lm-stat-value">${s.total}</div></div>
             <div class="lm-stat-box"><div class="lm-stat-label">Completed</div><div class="lm-stat-value" style="color:#10b981">${s.completed}</div></div>
-            <div class="lm-stat-box"><div class="lm-stat-label">In progress</div><div class="lm-stat-value" style="color:var(--warning)">${s.inProgress}</div></div>
+            <div class="lm-stat-box"><div class="lm-stat-label">In prog</div><div class="lm-stat-value" style="color:var(--warning)">${s.inProgress}</div></div>
             <div class="lm-stat-box"><div class="lm-stat-label">Pending</div><div class="lm-stat-value">${s.pending}</div></div>
             <div class="lm-stat-box"><div class="lm-stat-label">Overdue</div><div class="lm-stat-value" style="color:var(--danger)">${s.overdue}</div></div>
-            <div class="lm-stat-box"><div class="lm-stat-label">Not applicable</div><div class="lm-stat-value" style="color:var(--t3)">${s.notApplicable}</div></div>
+            <div class="lm-stat-box"><div class="lm-stat-label">N/A</div><div class="lm-stat-value" style="color:var(--t3)">${s.notApplicable}</div></div>
             <div class="lm-stat-box"><div class="lm-stat-label">Declined</div><div class="lm-stat-value">${s.declined}</div></div>
             <div class="lm-stat-box"><div class="lm-stat-label">No show</div><div class="lm-stat-value" style="color:#b45309">${s.noShow}</div></div>
             <div class="lm-stat-box"><div class="lm-stat-label">Unreachable</div><div class="lm-stat-value" style="color:var(--danger)">${s.unreachable}</div></div>
@@ -1251,10 +1280,10 @@ function csMakeSMRow(sm, reviews, index, isSelected) {
         <div class="manager-name-col"><div class="manager-name">${sm}</div><div class="manager-tag">${tag}</div></div>
         <div class="stat-col"><div class="stat-label">Reviews</div><div class="stat-value">${s.total}</div></div>
         <div class="stat-col"><div class="stat-label">Completed</div><div class="stat-value" style="color:#10b981">${s.completed}</div></div>
-        <div class="stat-col"><div class="stat-label">In progress</div><div class="stat-value" style="color:var(--warning)">${s.inProgress}</div></div>
+        <div class="stat-col"><div class="stat-label">In prog</div><div class="stat-value" style="color:var(--warning)">${s.inProgress}</div></div>
         <div class="stat-col"><div class="stat-label">Pending</div><div class="stat-value">${s.pending}</div></div>
         <div class="stat-col"><div class="stat-label">Overdue</div><div class="stat-value" style="color:var(--danger)">${s.overdue}</div></div>
-        <div class="stat-col"><div class="stat-label">Not applicable</div><div class="stat-value" style="color:var(--t3)">${s.notApplicable}</div></div>
+        <div class="stat-col"><div class="stat-label">N/A</div><div class="stat-value" style="color:var(--t3)">${s.notApplicable}</div></div>
         <div class="stat-col"><div class="stat-label">Declined</div><div class="stat-value">${s.declined}</div></div>
         <div class="stat-col"><div class="stat-label">No show</div><div class="stat-value" style="color:#b45309">${s.noShow}</div></div>
         <div class="stat-col"><div class="stat-label">Unreachable</div><div class="stat-value" style="color:var(--danger)">${s.unreachable}</div></div>
