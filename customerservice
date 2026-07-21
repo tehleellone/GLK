@@ -97,6 +97,12 @@
     .sm-ag-set-option { display:flex; align-items:center; gap:.35rem; font-size:.75rem; cursor:pointer; padding:.15rem 0; color:var(--t1, var(--text-primary, #1e293b)); }
     .sm-ag-set-actions { display:flex; gap:.35rem; margin-top:.45rem; }
     .sm-ag-set-actions button { flex:1; padding:.25rem .4rem; font-size:.68rem; font-weight:700; border:1px solid var(--border, var(--border-color, #e2e8f0)); border-radius:6px; background:var(--chip, rgba(168,85,247,.08)); color:var(--acc, #a855f7); cursor:pointer; }
+
+    /* LM / SM tile status breakdown — match top KPI tiles */
+    #customerServiceView .lm-stats-grid { grid-template-columns: repeat(3, 1fr); }
+    #customerServiceView .manager-row .stat-col { min-width: 62px; }
+    #customerServiceView .manager-row .stat-col .stat-label { font-size: .6rem; line-height: 1.15; }
+    #customerServiceView .manager-row .stat-col .stat-value { font-size: .92rem; }
     `;
     document.head.appendChild(style);
 })();
@@ -854,25 +860,31 @@ function csGetFilteredByRole() {
     return reviews;
 }
 
-// ─── KPIs (v2 — includes Unreachable) ─────────────────────────────────────────
-function csRenderKPIs() {
-    const reviews     = csGetDashboardReviewsFiltered({ searchT:'' });
-    const total       = reviews.length;
-    const completed   = reviews.filter(r => r.status === 'Completed').length;
-    const inProg      = reviews.filter(r => r.status === 'In Progress').length;
-    const pending     = reviews.filter(r => r.status === 'Pending').length;
-    const declined    = reviews.filter(r => r.status === 'Customer Declined').length;
+// ─── REVIEW STATUS COUNTS (shared by KPI + LM/SM tiles) ───────────────────────
+function csReviewStatusCounts(reviews) {
+    const terminal = ['Completed','Not Applicable','Customer Declined','Failed','Unreachable','No Show'];
+    const total = reviews.length;
+    const completed = reviews.filter(r => r.status === 'Completed').length;
+    const inProgress = reviews.filter(r => r.status === 'In Progress').length;
+    const pending = reviews.filter(r => r.status === 'Pending').length;
+    const declined = reviews.filter(r => r.status === 'Customer Declined').length;
+    const noShow = reviews.filter(r => r.status === 'No Show').length;
     const unreachable = reviews.filter(r => r.status === 'Unreachable').length;
-   const noShow      = reviews.filter(r => r.status === 'No Show').length;
-    const failed      = reviews.filter(r => r.status === 'Failed').length;
+    const failed = reviews.filter(r => r.status === 'Failed').length;
     const notApplicable = reviews.filter(r => r.status === 'Not Applicable').length;
-    const terminal    = ['Completed','Not Applicable','Customer Declined','Failed','Unreachable','No Show'];
-    const overdue     = reviews.filter(r => {
+    const overdue = reviews.filter(r => {
         if (!r.dueDate) return false;
         const due = new Date(r.dueDate), today = new Date(); today.setHours(0,0,0,0);
         return due < today && !terminal.includes(r.status);
     }).length;
     const rate = total > 0 ? ((completed / total) * 100).toFixed(1) : 0;
+    return { total, completed, inProgress, pending, declined, noShow, unreachable, failed, notApplicable, overdue, rate };
+}
+
+// ─── KPIs (v2 — includes Unreachable) ─────────────────────────────────────────
+function csRenderKPIs() {
+    const reviews = csGetDashboardReviewsFiltered({ searchT:'' });
+    const { total, completed, inProgress: inProg, pending, declined, noShow, unreachable, failed, notApplicable, overdue, rate } = csReviewStatusCounts(reviews);
 
     document.getElementById('csKPISection').innerHTML = `
     <div class="top-stats" style="margin-bottom:1rem;">
@@ -1196,47 +1208,40 @@ function csGetChartColors() {
 }
 // ─── LM / SM TILES ────────────────────────────────────────────────────────────
 function csMakeLMTile(lm, reviews, isSelected) {
-    const total = reviews.length;
-    const comp  = reviews.filter(r=>r.status==='Completed').length;
-    const pend  = reviews.filter(r=>r.status==='Pending').length;
-    const unr   = reviews.filter(r=>r.status==='Unreachable').length;
-    const fail  = reviews.filter(r=>r.status==='Failed').length;
-    const over  = reviews.filter(r=>{ if(!r.dueDate)return false; const d=new Date(r.dueDate),t=new Date(); t.setHours(0,0,0,0); return d<t&&!['Completed','Not Applicable','Customer Declined','Failed','Unreachable'].includes(r.status); }).length;
-    const rate  = total>0?((comp/total)*100).toFixed(1):0;
+    const s = csReviewStatusCounts(reviews);
     const onclick = isSelected ? `csClearLMFilter()` : `csSelectLM('${lm.replace(/'/g,"\\'")}')`;
     return `
     <div class="lm-tile${isSelected?' selected':''}" onclick="${onclick}">
         <div class="lm-header"><h3>${lm}</h3></div>
         <div class="lm-stats-grid">
-            <div class="lm-stat-box"><div class="lm-stat-label">Reviews</div><div class="lm-stat-value">${total}</div></div>
-            <div class="lm-stat-box"><div class="lm-stat-label">Completed</div><div class="lm-stat-value" style="color:#10b981">${comp}</div></div>
-            <div class="lm-stat-box"><div class="lm-stat-label">Pending</div><div class="lm-stat-value">${pend}</div></div>
-            <div class="lm-stat-box"><div class="lm-stat-label">Unreachable</div><div class="lm-stat-value" style="color:var(--danger)">${unr}</div></div>
-            <div class="lm-stat-box"><div class="lm-stat-label">Failed</div><div class="lm-stat-value" style="color:var(--danger)">${fail}</div></div>
+            <div class="lm-stat-box"><div class="lm-stat-label">Reviews</div><div class="lm-stat-value">${s.total}</div></div>
+            <div class="lm-stat-box"><div class="lm-stat-label">Completed</div><div class="lm-stat-value" style="color:#10b981">${s.completed}</div></div>
+            <div class="lm-stat-box"><div class="lm-stat-label">In progress</div><div class="lm-stat-value" style="color:var(--warning)">${s.inProgress}</div></div>
+            <div class="lm-stat-box"><div class="lm-stat-label">Pending</div><div class="lm-stat-value">${s.pending}</div></div>
+            <div class="lm-stat-box"><div class="lm-stat-label">Overdue</div><div class="lm-stat-value" style="color:var(--danger)">${s.overdue}</div></div>
+            <div class="lm-stat-box"><div class="lm-stat-label">Not applicable</div><div class="lm-stat-value" style="color:var(--t3)">${s.notApplicable}</div></div>
+            <div class="lm-stat-box"><div class="lm-stat-label">Declined</div><div class="lm-stat-value">${s.declined}</div></div>
+            <div class="lm-stat-box"><div class="lm-stat-label">No show</div><div class="lm-stat-value" style="color:#b45309">${s.noShow}</div></div>
+            <div class="lm-stat-box"><div class="lm-stat-label">Unreachable</div><div class="lm-stat-value" style="color:var(--danger)">${s.unreachable}</div></div>
+            <div class="lm-stat-box"><div class="lm-stat-label">Failed</div><div class="lm-stat-value" style="color:var(--danger)">${s.failed}</div></div>
         </div>
         <div class="lm-revenue">
             <div class="lm-revenue-label">Completion rate</div>
-            <div class="lm-revenue-count">${rate}%</div>
+            <div class="lm-revenue-count">${s.rate}%</div>
             <div class="lm-revenue-breakdown">
-                <div class="lm-revenue-item"><div class="lm-revenue-item-label">Overdue</div><div class="lm-revenue-item-value" style="color:#fca5a5">${over}</div></div>
-                <div class="lm-revenue-item"><div class="lm-revenue-item-label">Done / Total</div><div class="lm-revenue-item-value">${comp} / ${total}</div></div>
+                <div class="lm-revenue-item"><div class="lm-revenue-item-label">Overdue</div><div class="lm-revenue-item-value" style="color:#fca5a5">${s.overdue}</div></div>
+                <div class="lm-revenue-item"><div class="lm-revenue-item-label">Done / Total</div><div class="lm-revenue-item-value">${s.completed} / ${s.total}</div></div>
             </div>
         </div>
         <div class="lm-progress-section">
-            <div class="lm-progress-row"><span class="lm-progress-label">Completion</span><span class="lm-progress-value">${rate}%</span></div>
-            <div class="progress-bar"><div class="progress-fill" style="width:${Math.min(rate,100)}%"></div></div>
+            <div class="lm-progress-row"><span class="lm-progress-label">Completion</span><span class="lm-progress-value">${s.rate}%</span></div>
+            <div class="progress-bar"><div class="progress-fill" style="width:${Math.min(s.rate,100)}%"></div></div>
         </div>
     </div>`;
 }
 
 function csMakeSMRow(sm, reviews, index, isSelected) {
-    const total = reviews.length;
-    const comp  = reviews.filter(r=>r.status==='Completed').length;
-    const rate  = total>0?((comp/total)*100).toFixed(1):0;
-    const pend  = reviews.filter(r=>r.status==='Pending').length;
-    const unr   = reviews.filter(r=>r.status==='Unreachable').length;
-    const fail  = reviews.filter(r=>r.status==='Failed').length;
-    const over  = reviews.filter(r=>{ if(!r.dueDate)return false; const d=new Date(r.dueDate),t=new Date(); t.setHours(0,0,0,0); return d<t&&!['Completed','Not Applicable','Customer Declined','Failed','Unreachable'].includes(r.status); }).length;
+    const s = csReviewStatusCounts(reviews);
     const rankClass = index===0?'rank-1':index===1?'rank-2':index===2?'rank-3':'rank-other';
     const tag       = index===0?'Top Performer':index===1?'High Achiever':'Key Contributor';
     const onclick   = isSelected ? `csClearSMFilter()` : `csSelectSM('${sm.replace(/'/g,"\\'")}')`;
@@ -1244,16 +1249,20 @@ function csMakeSMRow(sm, reviews, index, isSelected) {
     <div class="manager-row${isSelected?' selected':''}" onclick="${onclick}">
         <div class="rank-badge ${rankClass}">${index+1}</div>
         <div class="manager-name-col"><div class="manager-name">${sm}</div><div class="manager-tag">${tag}</div></div>
-        <div class="stat-col"><div class="stat-label">Reviews</div><div class="stat-value">${total}</div></div>
-        <div class="stat-col"><div class="stat-label">Completed</div><div class="stat-value" style="color:#10b981">${comp}</div></div>
-        <div class="stat-col"><div class="stat-label">Pending</div><div class="stat-value">${pend}</div></div>
-        <div class="stat-col"><div class="stat-label">Unreachable</div><div class="stat-value" style="color:var(--danger)">${unr}</div></div>
-        <div class="stat-col"><div class="stat-label">Failed</div><div class="stat-value" style="color:var(--danger)">${fail}</div></div>
-        <div class="stat-col"><div class="stat-label">Overdue</div><div class="stat-value" style="color:var(--danger)">${over}</div></div>
-        <div class="stat-col"><div class="stat-label">Rate</div><div class="stat-value" style="color:var(--acc)">${rate}%</div></div>
+        <div class="stat-col"><div class="stat-label">Reviews</div><div class="stat-value">${s.total}</div></div>
+        <div class="stat-col"><div class="stat-label">Completed</div><div class="stat-value" style="color:#10b981">${s.completed}</div></div>
+        <div class="stat-col"><div class="stat-label">In progress</div><div class="stat-value" style="color:var(--warning)">${s.inProgress}</div></div>
+        <div class="stat-col"><div class="stat-label">Pending</div><div class="stat-value">${s.pending}</div></div>
+        <div class="stat-col"><div class="stat-label">Overdue</div><div class="stat-value" style="color:var(--danger)">${s.overdue}</div></div>
+        <div class="stat-col"><div class="stat-label">Not applicable</div><div class="stat-value" style="color:var(--t3)">${s.notApplicable}</div></div>
+        <div class="stat-col"><div class="stat-label">Declined</div><div class="stat-value">${s.declined}</div></div>
+        <div class="stat-col"><div class="stat-label">No show</div><div class="stat-value" style="color:#b45309">${s.noShow}</div></div>
+        <div class="stat-col"><div class="stat-label">Unreachable</div><div class="stat-value" style="color:var(--danger)">${s.unreachable}</div></div>
+        <div class="stat-col"><div class="stat-label">Failed</div><div class="stat-value" style="color:var(--danger)">${s.failed}</div></div>
+        <div class="stat-col"><div class="stat-label">Rate</div><div class="stat-value" style="color:var(--acc)">${s.rate}%</div></div>
         <div class="progress-bar-col">
-            <div class="progress-label">Completion: ${rate}%</div>
-            <div class="progress-bar"><div class="progress-fill" style="width:${Math.min(rate,100)}%"></div></div>
+            <div class="progress-label">Completion: ${s.rate}%</div>
+            <div class="progress-bar"><div class="progress-fill" style="width:${Math.min(s.rate,100)}%"></div></div>
         </div>
     </div>`;
 }
