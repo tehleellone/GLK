@@ -390,8 +390,8 @@ var SP_CONFIG = {
 var RECORD_SP_FIELDS = [
   'Id','Reference_ID','Serial_Number','Contact_Date','Contact_Time','Entry_Month',
   'Agent_Name','Agent_Email','Touch_Point','Calling_Number_Chat_Social_Email','Customer_Location',
-  'Customer_Type','Complainer_Role','Caller_Name','Caller_ID_Expiry_Date','Customer_Name','Emirates_ID_System',
-  'Emirates_ID_Provided','Owner_Emirates_ID_Validity','Emirates_ID_Expiry_Date','Owner_Emirates_ID_Expiry_Date',
+  'Customer_Type','Complainer_Role','Caller_Name','Customer_Name','Emirates_ID_System',
+  'Emirates_ID_Provided','Owner_Emirates_ID_Validity','Owner_x0020_Emirates_ID_Expiry_D','Emirates_ID_Expiry_Date',
   'Email_Address','Alternative_Contact',
   'Account_Number','MSISDN','Customer_Segment','Customer_Stack','Service_Calling_For',
   'Service_Status','Plan_Name','Complaint_Summary','Complaint_Details','Action_Taken',
@@ -438,12 +438,12 @@ var FORM_FIELDS = [
   { key:'Customer_Name', label:'Owner Name', type:'text', section:'Owner_Identity', req:true },
   { key:'Emirates_ID_System', label:'Owner ID No. (System)', type:'eid', section:'Owner_Identity', req:false, hint:'From billing system — leave blank if not available' },
   { key:'Owner_Emirates_ID_Validity', label:'Owner ID Validity', type:'select', section:'Owner_Identity', req:true },
-  { key:'Owner_Emirates_ID_Expiry_Date', label:'Owner ID Expiry Date', type:'date', section:'Owner_Identity', req:true },
+  { key:'Owner_x0020_Emirates_ID_Expiry_D', label:'Owner ID Expiry Date', type:'date', section:'Owner_Identity', req:true },
   { key:'Caller_Name', label:'Caller Name', type:'text', section:'Caller_Identity', req:true },
   { key:'Complainer_Role', label:'Caller Relationship to Owner', type:'select', section:'Caller_Identity', req:true },
   { key:'Alternative_Contact', label:'Caller No.', type:'text', section:'Caller_Identity', req:true, hint:'Caller phone number or contact' },
   { key:'Emirates_ID_Provided', label:'Caller ID No.', type:'eid', section:'Caller_Identity', req:true },
-  { key:'Caller_ID_Expiry_Date', label:'Caller ID Expiry Date', type:'date', section:'Caller_Identity', req:true },
+  { key:'Emirates_ID_Expiry_Date', label:'Caller ID Expiry Date', type:'date', section:'Caller_Identity', req:true },
   { key:'Email_Address', label:'Email Address', type:'text', section:'Account_Details', req:true },
   { key:'Account_Number', label:'Account Number', type:'numeric', section:'Account_Details', req:true },
   { key:'MSISDN', label:'MSISDN', type:'numeric', section:'Account_Details', req:true, dup:true },
@@ -843,6 +843,12 @@ function bcrFixAgentNames(apply){
     });
   });
 }
+function spNormalizeLegacyFields(o,item){
+  if(!o.Owner_x0020_Emirates_ID_Expiry_D&&item.Owner_Emirates_ID_Expiry_Date!=null)
+    o.Owner_x0020_Emirates_ID_Expiry_D=valueFromSp('Owner_x0020_Emirates_ID_Expiry_D',item.Owner_Emirates_ID_Expiry_Date);
+  if(!o.Emirates_ID_Expiry_Date&&item.Caller_ID_Expiry_Date!=null)
+    o.Emirates_ID_Expiry_Date=valueFromSp('Emirates_ID_Expiry_Date',item.Caller_ID_Expiry_Date);
+}
 function spMapItem(item){
   var o={Id:item.Id};
   RECORD_SP_FIELDS.forEach(function(f){
@@ -850,12 +856,14 @@ function spMapItem(item){
     if(item[f]==null) return;
     o[f]=valueFromSp(f, item[f]);
   });
+  spNormalizeLegacyFields(o,item);
   if(o.Agent_Email) o.Agent_Name=resolveAgentName(o.Agent_Email,o.Agent_Name);
   return makeRecord(o);
 }
 function loadRecordsFromSharePoint(cb){
   ensureSpUserNameIndex(function(){
-    var site=getSpSite(), sel=RECORD_SP_FIELDS.join(',');
+    var site=getSpSite();
+    var sel=RECORD_SP_FIELDS.concat(['Owner_Emirates_ID_Expiry_Date','Caller_ID_Expiry_Date']).filter(function(v,i,a){return a.indexOf(v)===i;}).join(',');
     var url=site+spListPath(SP_CONFIG.recordsList,"/items?$select="+encodeURIComponent(sel)+"&$top=5000&$orderby=Contact_Date desc");
     spGet(url,function(err,data){
       if(err){ toast('Failed to load '+SP_CONFIG.recordsList+' — '+err.message,'error'); BCR.all=[]; if(cb)cb(); return; }
