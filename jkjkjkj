@@ -389,7 +389,7 @@ var SP_CONFIG = {
 };
 var RECORD_SP_FIELDS = [
   'Id','Reference_ID','Serial_Number','Contact_Date','Contact_Time','Entry_Month',
-  'Agent_Name','Agent_Email','Touch_Point','Calling_Number_Chat_Social_Email','Owner_Location',
+  'Agent_Name','Agent_Email','Touch_Point','Calling_Number_Chat_Social_Email','Customer_Location',
   'Customer_Type','Complainer_Role','Caller_Name','Caller_ID_Expiry_Date','Customer_Name','Emirates_ID_System',
   'Emirates_ID_Provided','Owner_Emirates_ID_Validity','Emirates_ID_Expiry_Date','Owner_Emirates_ID_Expiry_Date',
   'Email_Address','Alternative_Contact',
@@ -402,7 +402,7 @@ var EID_FIELD_KEYS=['Emirates_ID_System','Emirates_ID_Provided'];
 
 var FALLBACK_CHOICES = {
   Touch_Point:['Voice','Chat','Email','Social_Media','Retail_Own','Retail_Franchise','Service_Manager'],
-  Owner_Location:['Inside_UAE','Outside_UAE'],
+  Customer_Location:['Inside_UAE','Outside_UAE'],
   Customer_Type:['Emarati','Non_Emarati'],
   Complainer_Role:['Owner','Family_Member','Friend','Tenant','PSD'],
   Customer_Segment:['Consumer','Enterprise'],
@@ -433,7 +433,7 @@ var FORM_FIELDS = [
   { key:'Touch_Point', label:'Touch Point', type:'select', section:'Contact_Context', req:true },
   { key:'Calling_Number_Chat_Social_Email', label:'Calling Number / Chat / Social / Email', type:'text', section:'Contact_Context', req:true },
   { key:'Contact_Date', label:'Contact Date', type:'date', section:'Contact_Context', req:true },
-  { key:'Owner_Location', label:'Owner Location', type:'select', section:'Contact_Context', req:true },
+  { key:'Customer_Location', label:'Owner Location', type:'select', section:'Contact_Context', req:true },
   { key:'Customer_Type', label:'Customer Type', type:'select', section:'Contact_Context', req:true },
   { key:'Customer_Name', label:'Owner Name', type:'text', section:'Owner_Identity', req:true },
   { key:'Emirates_ID_System', label:'Owner ID No. (System)', type:'eid', section:'Owner_Identity', req:false, hint:'From billing system — leave blank if not available' },
@@ -474,7 +474,7 @@ var FILTER_DIMS = [
   { id:'Agent_Name', label:'Agent' },
   { id:'Touch_Point', label:'Touch Point' },
   { id:'Customer_Type', label:'Type' },
-  { id:'Owner_Location', label:'Owner Location' },
+  { id:'Customer_Location', label:'Owner Location' },
   { id:'Customer_Segment', label:'Segment' },
   { id:'Service_Status', label:'Service Status' },
   { id:'Complaint_Summary', label:'Complaint' },
@@ -586,10 +586,7 @@ function initials(n){ return String(n||'?').split(' ').filter(Boolean).map(funct
 function uniq(arr){ return Array.from(new Set(arr)); }
 function pretty(v){ return String(v==null?'':v).replace(/_/g,' '); }
 function fieldLabel(f){ return f.label || pretty(f.key); }
-function ownerLocation(r){ return r.Owner_Location || r.Customer_Location || ''; }
 function getChoices(key){
-  if(key==='Owner_Location'&&(!CHOICES.Owner_Location||!CHOICES.Owner_Location.length)&&CHOICES.Customer_Location)
-    return CHOICES.Customer_Location;
   if(CHOICES[key]&&CHOICES[key].length) return CHOICES[key];
   if(FALLBACK_CHOICES[key]&&FALLBACK_CHOICES[key].length) return FALLBACK_CHOICES[key];
   return [];
@@ -652,10 +649,8 @@ function ensureListMetadata(cb){
     if(!err&&data.d&&data.d.results){
       data.d.results.forEach(function(f){
         SP_FIELD_TYPES[f.InternalName]=f.TypeAsString;
-        if(f.Choices&&f.Choices.results&&f.Choices.results.length){
+        if(f.Choices&&f.Choices.results&&f.Choices.results.length)
           CHOICES[f.InternalName]=f.Choices.results.slice();
-          if(f.InternalName==='Customer_Location') CHOICES.Owner_Location=f.Choices.results.slice();
-        }
       });
       SP_META_LOADED=true;
     }
@@ -856,15 +851,11 @@ function spMapItem(item){
     o[f]=valueFromSp(f, item[f]);
   });
   if(o.Agent_Email) o.Agent_Name=resolveAgentName(o.Agent_Email,o.Agent_Name);
-  if(!o.Owner_Location&&item.Customer_Location!=null) o.Owner_Location=valueFromSp('Owner_Location',item.Customer_Location);
   return makeRecord(o);
 }
 function loadRecordsFromSharePoint(cb){
   ensureSpUserNameIndex(function(){
-    var site=getSpSite();
-    var sel=RECORD_SP_FIELDS.slice();
-    if(sel.indexOf('Customer_Location')<0) sel.push('Customer_Location');
-    sel=sel.join(',');
+    var site=getSpSite(), sel=RECORD_SP_FIELDS.join(',');
     var url=site+spListPath(SP_CONFIG.recordsList,"/items?$select="+encodeURIComponent(sel)+"&$top=5000&$orderby=Contact_Date desc");
     spGet(url,function(err,data){
       if(err){ toast('Failed to load '+SP_CONFIG.recordsList+' — '+err.message,'error'); BCR.all=[]; if(cb)cb(); return; }
@@ -885,7 +876,6 @@ function saveRecordToSharePoint(rec,cb){
         var v=valueForSp(f, rec[f]);
         if(v!=null&&v!=='') body[f]=v;
       });
-      if(rec.Owner_Location) body.Customer_Location=rec.Owner_Location;
       spPost(site+spListPath(SP_CONFIG.recordsList,'/items'),body,function(err,data){
         if(err){ toast('Save failed — '+err.message,'error'); if(cb)cb(err); return; }
         if(data&&data.d) rec.Id=data.d.Id;
@@ -999,7 +989,7 @@ function seedRecords(){
     ['Email','Outside_UAE','Non_Emarati','Family_Member','Omar Farooq','Bilal Farooq','784-1994-8889990-9','omar@email.com','ACC10009','0568889999','Consumer','BAU','Mobile_Only','Barred','Deactivate_My_Line','Registered_Query',7],
     ['Retail_Own','Inside_UAE','Emarati','Owner','Hassan Noor','Hassan Noor','784-1989-1231231-0','hassan@email.com','ACC10010','0501230000','Consumer','Ignite','Mobile_Fiber','Barred','Store_Visit','Customer_Informed_Per_Script',8]
   ];
-  var keys = ['Touch_Point','Owner_Location','Customer_Type','Complainer_Role','Caller_Name','Customer_Name','Emirates_ID_Provided','Email_Address','Account_Number','MSISDN','Customer_Segment','Customer_Stack','Service_Calling_For','Service_Status','Complaint_Summary','Action_Taken'];
+  var keys = ['Touch_Point','Customer_Location','Customer_Type','Complainer_Role','Caller_Name','Customer_Name','Emirates_ID_Provided','Email_Address','Account_Number','MSISDN','Customer_Segment','Customer_Stack','Service_Calling_For','Service_Status','Complaint_Summary','Action_Taken'];
   var out = [];
   rows.forEach(function(r, i){
     var o = {}; keys.forEach(function(k,j){ o[k]=r[j]; });
@@ -1078,8 +1068,8 @@ function applyFilters(){
       data=data.filter(function(r){ return r.Touch_Point===tp; });
     } else {
       var pf = {
-        Inside_UAE:function(r){return ownerLocation(r)==='Inside_UAE';},
-        Outside_UAE:function(r){return ownerLocation(r)==='Outside_UAE';},
+        Inside_UAE:function(r){return r.Customer_Location==='Inside_UAE';},
+        Outside_UAE:function(r){return r.Customer_Location==='Outside_UAE';},
         Consumer:function(r){return r.Customer_Segment==='Consumer';},
         Enterprise:function(r){return r.Customer_Segment==='Enterprise';}
       }[BCR.activePanel];
@@ -1095,8 +1085,8 @@ function getStats(list){
   var s = { total:list.length };
   s.emarati = list.filter(function(r){return r.Customer_Type==='Emarati';}).length;
   s.nonEmarati = list.filter(function(r){return r.Customer_Type==='Non_Emarati';}).length;
-  s.inside = list.filter(function(r){return ownerLocation(r)==='Inside_UAE';}).length;
-  s.outside = list.filter(function(r){return ownerLocation(r)==='Outside_UAE';}).length;
+  s.inside = list.filter(function(r){return r.Customer_Location==='Inside_UAE';}).length;
+  s.outside = list.filter(function(r){return r.Customer_Location==='Outside_UAE';}).length;
   s.consumer = list.filter(function(r){return r.Customer_Segment==='Consumer';}).length;
   s.enterprise = list.filter(function(r){return r.Customer_Segment==='Enterprise';}).length;
   s.dup = list.filter(function(r){return r.Duplicate_Flag==='Yes';}).length;
@@ -1935,7 +1925,6 @@ function validateForm(d){
   return ok;
 }
 function populateForm(d){
-  if(!d.Owner_Location&&d.Customer_Location) d.Owner_Location=d.Customer_Location;
   FORM_FIELDS.forEach(function(f){
     var el=$('fld_'+f.key);
     if(!el) return;
