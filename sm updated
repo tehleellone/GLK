@@ -7024,6 +7024,36 @@ if (window.TSM_SE_ACTIVE) {
                     width: 140
                 },
                 {
+                    field: 'secondaryPocName',
+                    headerName: 'Secondary POC Name',
+                    width: 150
+                },
+                {
+                    field: 'secondaryPocEmail',
+                    headerName: 'Secondary POC Email',
+                    width: 180
+                },
+                {
+                    field: 'secondaryPocPhone',
+                    headerName: 'Secondary POC Contact',
+                    width: 140
+                },
+                {
+                    field: 'technicalPocName',
+                    headerName: 'Technical POC Name',
+                    width: 150
+                },
+                {
+                    field: 'technicalPocEmail',
+                    headerName: 'Technical POC Email',
+                    width: 180
+                },
+                {
+                    field: 'technicalPocPhone',
+                    headerName: 'Technical POC Contact',
+                    width: 140
+                },
+                {
                     field: 'accountType',
                     headerName: 'Account Type',
                     width: 150
@@ -7175,6 +7205,8 @@ onclick="sendTransferReminderEmailMain('${esc(a.amEmail)}','${esc(a.adEmail)}','
                     }
                 }
             ];
+
+            window.SM_DASHBOARD_COLUMN_DEFS = columnDefs.slice();
 
             // Store parent data globally for expand/collapse
             window.PARENT_ROWS = parentRows;
@@ -7357,16 +7389,31 @@ ${USER_CONTEXT.userName}`
         }
 
         function smGetExportColumns() {
+            if (window.SM_DASHBOARD_COLUMN_DEFS && window.SM_DASHBOARD_COLUMN_DEFS.length) {
+                return window.SM_DASHBOARD_COLUMN_DEFS.filter(function (col) {
+                    return col.field && col.field !== 'actions';
+                });
+            }
             if (!agGridApi) return [];
             return agGridApi.getColumns().filter(function (col) {
                 return col.getColId() !== 'actions';
+            }).map(function (col) {
+                return col.getColDef();
             });
         }
 
         function smFormatExportCellValue(col, row) {
-            const colDef = col.getColDef();
+            const colDef = col.getColDef ? col.getColDef() : col;
             const field = colDef.field;
             let raw = field ? row[field] : '';
+
+            if (typeof colDef.valueGetter === 'function') {
+                try {
+                    raw = colDef.valueGetter({ data: row, colDef: colDef });
+                } catch (e) {
+                    raw = field ? row[field] : '';
+                }
+            }
 
             if (field === 'code') {
                 return row._isExportChild ? '  ↳ ' + (row.code || '') : (row.code || '');
@@ -7434,7 +7481,8 @@ ${USER_CONTEXT.userName}`
 
             html += '<tr>';
             exportColumns.forEach(function (col) {
-                const headerName = col.getColDef().headerName || col.getColId();
+                const colDef = col.getColDef ? col.getColDef() : col;
+                const headerName = colDef.headerName || colDef.field || (col.getColId ? col.getColId() : '');
                 html += '<th style="' + thStyle + '">' + headerName + '</th>';
             });
             html += '</tr>';
@@ -7449,8 +7497,9 @@ ${USER_CONTEXT.userName}`
 
                 html += '<tr>';
                 exportColumns.forEach(function (col) {
-                    const field = col.getColDef().field;
-                    const isNumeric = col.getColDef().type === 'numericColumn' || field === 'avg';
+                    const colDef = col.getColDef ? col.getColDef() : col;
+                    const field = colDef.field;
+                    const isNumeric = colDef.type === 'numericColumn' || field === 'avg';
                     const cellValue = smFormatExportCellValue(col, a);
                     const fontWeight = field === 'code' ? ';font-weight:' + (a._isExportChild ? '400' : '700') : '';
                     const align = isNumeric ? ';text-align:right' : '';
