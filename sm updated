@@ -1516,13 +1516,25 @@
             overflow: hidden !important
         }
 
-        .ag-theme-alpine .ag-header,
+        .ag-theme-alpine .ag-header {
+            background: var(--bg-secondary) !important;
+            border-bottom: 2px solid var(--border-s) !important;
+        }
+
         .ag-theme-alpine .ag-header-row,
         .ag-theme-alpine .ag-header-viewport,
         .ag-theme-alpine .ag-pinned-left-header,
         .ag-theme-alpine .ag-pinned-right-header {
             background: var(--bg-secondary) !important;
-            border-bottom: 2px solid var(--border-s) !important
+            border-bottom: none !important;
+        }
+
+        .ag-theme-alpine .ag-header-row.ag-header-row-column-group {
+            border-bottom: 1px solid var(--border) !important;
+        }
+
+        .ag-theme-alpine .ag-header-cell.ag-header-span-height {
+            border-bottom: none !important;
         }
 
         .ag-theme-alpine .ag-header-cell {
@@ -7221,7 +7233,8 @@ onclick="sendTransferReminderEmailMain('${esc(a.amEmail)}','${esc(a.adEmail)}','
                 paginationPageSize: 50,
                 paginationPageSizeSelector: [25, 50, 100, 200],
                 rowHeight: 60,
-                headerHeight: 50,
+                groupHeaderHeight: 36,
+                headerHeight: 44,
                 animateRows: true,
                 enableCellTextSelection: true,
                 suppressMenuHide: false,
@@ -10130,14 +10143,27 @@ async function ownerFetchUserRole(email) {
         }
 
         /* HEADER - most important fix */
-        .ag-theme-alpine .ag-header,
+        .ag-theme-alpine .ag-header {
+            background: var(--bg-secondary, var(--bg-card)) !important;
+            background-color: var(--bg-secondary, var(--bg-card)) !important;
+            border-bottom: 2px solid var(--accent) !important;
+        }
+
         .ag-theme-alpine .ag-header-row,
         .ag-theme-alpine .ag-header-viewport,
         .ag-theme-alpine .ag-pinned-left-header,
         .ag-theme-alpine .ag-pinned-right-header {
             background: var(--bg-secondary, var(--bg-card)) !important;
             background-color: var(--bg-secondary, var(--bg-card)) !important;
-            border-bottom: 2px solid var(--accent) !important;
+            border-bottom: none !important;
+        }
+
+        .ag-theme-alpine .ag-header-row.ag-header-row-column-group {
+            border-bottom: 1px solid var(--border-color, var(--border)) !important;
+        }
+
+        .ag-theme-alpine .ag-header-cell.ag-header-span-height {
+            border-bottom: none !important;
         }
 
         .ag-theme-alpine .ag-header-cell {
@@ -10228,18 +10254,23 @@ async function ownerFetchUserRole(email) {
 
         /* DURALUX OVERRIDES */
         [data-theme="duralux"] .ag-theme-alpine .ag-header,
+        [data-theme="duralux-dark"] .ag-theme-alpine .ag-header {
+            background: var(--bg-secondary, var(--bg-card)) !important;
+            background-color: var(--bg-secondary, var(--bg-card)) !important;
+            border-bottom-color: #4c6fff !important;
+        }
+
         [data-theme="duralux"] .ag-theme-alpine .ag-header-row,
         [data-theme="duralux"] .ag-theme-alpine .ag-header-cell,
         [data-theme="duralux"] .ag-theme-alpine .ag-pinned-left-header,
         [data-theme="duralux"] .ag-theme-alpine .ag-pinned-right-header,
-        [data-theme="duralux-dark"] .ag-theme-alpine .ag-header,
         [data-theme="duralux-dark"] .ag-theme-alpine .ag-header-row,
         [data-theme="duralux-dark"] .ag-theme-alpine .ag-header-cell,
         [data-theme="duralux-dark"] .ag-theme-alpine .ag-pinned-left-header,
         [data-theme="duralux-dark"] .ag-theme-alpine .ag-pinned-right-header {
             background: var(--bg-secondary, var(--bg-card)) !important;
             background-color: var(--bg-secondary, var(--bg-card)) !important;
-            border-bottom-color: #4c6fff !important;
+            border-bottom: none !important;
         }
 
         [data-theme="duralux"] .ag-theme-alpine .ag-row-hover,
