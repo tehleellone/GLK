@@ -3763,7 +3763,12 @@ let charts = {};
             };
         }
 
-        async function fetchRevenueEnabled() {
+        function isAccessControlAdmin() {
+            const email = (USER_CONTEXT.userEmail || '').toLowerCase();
+            return email === 'ubaid.mir@du.ae' || email === 'tehleel.lone@du.ae';
+        }
+
+        async function fetchAccessControlSettings() {
             try {
                 let url = SP_URL + "/_api/web/lists/getbytitle('" + SP_ACCESS_LIST + "')/items?" +
                     "$select=ID,UserEmailID,RevenueEnabled,POCDetailsEnabled&" +
@@ -3792,17 +3797,25 @@ let charts = {};
                 window.POC_DETAILS_ENABLED = results.some(r => parseAccessControlYesNo(r.POCDetailsEnabled));
                 window.REVENUE_CONTROL_ITEMS = results;
                 console.log('[RevenueEnabled]', window.REVENUE_ENABLED);
-                console.log('[POCDetailsEnabled]', window.POC_DETAILS_ENABLED);
+                console.log('[POCDetailsEnabled]', window.POC_DETAILS_ENABLED, '(global for all users)');
                 updateRevenueToggleBtn();
                 updatePocToggleBtn();
             } catch (e) {
-                console.warn('fetchRevenueEnabled failed:', e);
+                console.warn('fetchAccessControlSettings failed:', e);
                 window.REVENUE_ENABLED = false;
                 window.POC_DETAILS_ENABLED = false;
             }
         }
 
+        async function fetchRevenueEnabled() {
+            return fetchAccessControlSettings();
+        }
+
         async function toggleRevenueEnabled() {
+            if (!isAccessControlAdmin()) {
+                alert('Only authorised admins can change this setting.');
+                return;
+            }
             try {
                 const newValue = !window.REVENUE_ENABLED;
                 const items = window.REVENUE_CONTROL_ITEMS || [];
@@ -3876,6 +3889,10 @@ let charts = {};
         }
 
         async function togglePocDetailsEnabled() {
+            if (!isAccessControlAdmin()) {
+                alert('Only authorised admins can change this setting.');
+                return;
+            }
             try {
                 const newValue = !window.POC_DETAILS_ENABLED;
                 const items = window.REVENUE_CONTROL_ITEMS || [];
@@ -7839,9 +7856,8 @@ else if (sectionId === 'psdView') {
                 if (typeof lucide !== 'undefined') {
                     lucide.createIcons();
                 }
-                // Show revenue toggle only to authorised users
-                const userEmail = (USER_CONTEXT.userEmail || '').toLowerCase();
-                if (userEmail === 'ubaid.mir@du.ae' || userEmail === 'tehleel.lone@du.ae') {
+                // Show revenue/POC toggles only to authorised admins (global effect applies to all users)
+                if (isAccessControlAdmin()) {
                     const btn = document.getElementById('revenueToggleBtn');
                     if (btn) btn.style.display = 'inline-flex';
                     const pocBtn = document.getElementById('pocToggleBtn');
@@ -7857,15 +7873,16 @@ else if (sectionId === 'psdView') {
               if (hasAccess) {
     console.log('[✓] Access granted - Loading dashboard data');
 
-    if (USER_CONTEXT.role === 'Admin' || USER_CONTEXT.role === 'Line Manager' || USER_CONTEXT.role === 'Service Manager' || USER_CONTEXT.role === 'Read Only' || USER_CONTEXT.role === 'TSM Manager' || USER_CONTEXT.role === 'Auditor' || USER_CONTEXT.role === 'TSM_SE_Viewer') {
-        init();
-    } else if (USER_CONTEXT.role === 'Account Manager' || USER_CONTEXT.role === 'Account Director') {
-        initAMView();
-    } else if (isPsdRole(USER_CONTEXT.role)) {
-        initPsdShell();
-    }
-    // TSM_SE data loader
-    if (typeof tsmSeInit === 'function') tsmSeInit();
+    fetchAccessControlSettings().finally(function () {
+        if (USER_CONTEXT.role === 'Admin' || USER_CONTEXT.role === 'Line Manager' || USER_CONTEXT.role === 'Service Manager' || USER_CONTEXT.role === 'Read Only' || USER_CONTEXT.role === 'TSM Manager' || USER_CONTEXT.role === 'Auditor' || USER_CONTEXT.role === 'TSM_SE_Viewer') {
+            init();
+        } else if (USER_CONTEXT.role === 'Account Manager' || USER_CONTEXT.role === 'Account Director') {
+            initAMView();
+        } else if (isPsdRole(USER_CONTEXT.role)) {
+            initPsdShell();
+        }
+        if (typeof tsmSeInit === 'function') tsmSeInit();
+    });
                 } else {
                     console.log('[!] No dashboard access - Account Search only');
                 }
@@ -8925,6 +8942,7 @@ async function ownerFetchUserRole(email) {
 
         async function openEditRequest(accountCode) {
             try {
+                await fetchAccessControlSettings();
                 document.querySelectorAll('.dashboard-section').forEach(function (s) { s.style.display = 'none'; });
                 document.getElementById('editRequestView').style.display = 'block';
                 var contentDiv = document.querySelector('.content');
@@ -9209,6 +9227,7 @@ async function ownerFetchUserRole(email) {
             const wrap = document.getElementById('editPocFields');
             if (!wrap) return;
             const values = window.EDIT_POC_VALUES;
+            // Global flag — when enabled by admin, all users with edit access can change POC fields
             const editable = !!window.POC_DETAILS_ENABLED;
 
             const configs = {
