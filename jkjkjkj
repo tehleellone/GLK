@@ -586,6 +586,43 @@ function initials(n){ return String(n||'?').split(' ').filter(Boolean).map(funct
 function uniq(arr){ return Array.from(new Set(arr)); }
 function pretty(v){ return String(v==null?'':v).replace(/_/g,' '); }
 function fieldLabel(f){ return f.label || pretty(f.key); }
+
+var EXPORT_META_COLUMNS = [
+  { key:'Reference_ID', label:'Reference ID' },
+  { key:'Serial_Number', label:'Serial Number' },
+  { key:'Contact_Date', label:'Contact Date' },
+  { key:'Contact_Time', label:'Contact Time' },
+  { key:'Entry_Month', label:'Entry Month' },
+  { key:'Agent_Name', label:'Agent Name' },
+  { key:'Agent_Email', label:'Agent Email' }
+];
+var EXPORT_TAIL_COLUMNS = [
+  { key:'Duplicate_Flag', label:'Duplicate Flag' },
+  { key:'Previous_Entry_ID', label:'Previous Entry ID' },
+  { key:'Script_Topic', label:'Script Topic' },
+  { key:'Internal_Notes', label:'Internal Notes' }
+];
+
+function getExportColumns(){
+  var seen={}, cols=[];
+  function add(c){
+    if(!c||!c.key||c.key==='Id'||seen[c.key]) return;
+    seen[c.key]=1;
+    cols.push({ key:c.key, label:c.label||pretty(c.key) });
+  }
+  EXPORT_META_COLUMNS.forEach(add);
+  FORM_FIELDS.forEach(function(f){ add({ key:f.key, label:fieldLabel(f) }); });
+  EXPORT_TAIL_COLUMNS.forEach(add);
+  return cols;
+}
+function getExportKeys(){ return getExportColumns().map(function(c){ return c.key; }); }
+function exportCellValue(k,v){
+  if(v==null||v==='') return '';
+  if(k==='Duplicate_Flag'||k==='Reference_ID'||k==='Serial_Number') return String(v);
+  if(k==='Contact_Date'||k==='Contact_Time'||k==='Entry_Month') return String(v);
+  if(typeof v==='string'&&v.indexOf('_')>=0) return pretty(v);
+  return String(v);
+}
 function getChoices(key){
   if(CHOICES[key]&&CHOICES[key].length) return CHOICES[key];
   if(FALLBACK_CHOICES[key]&&FALLBACK_CHOICES[key].length) return FALLBACK_CHOICES[key];
@@ -1499,14 +1536,6 @@ BcrSetFilter.prototype.getModel=function(){ return this.selected.size?{values:Ar
 BcrSetFilter.prototype.setModel=function(m){ this.selected=new Set(m&&m.values?m.values:[]); };
 BcrSetFilter.prototype.destroy=function(){};
 
-function getExportKeys(){
-  var seen={}, keys=[], add=function(k){ if(k&&k!=='Id'&&!seen[k]){ seen[k]=1; keys.push(k); } };
-  ['Reference_ID','Serial_Number','Contact_Date','Contact_Time','Entry_Month','Agent_Name','Agent_Email','Duplicate_Flag','Previous_Entry_ID'].forEach(add);
-  FORM_FIELDS.forEach(function(f){ add(f.key); });
-  RECORD_SP_FIELDS.forEach(add);
-  add('Internal_Notes');
-  return keys;
-}
 var _spUserNameByEmail=null;
 function isBadAgentName(n){ return !n || /^agent$/i.test(String(n).trim()); }
 function ingestSpUserRows(rows,map){
@@ -1585,8 +1614,9 @@ function renderGrid(){
   var dupR=function(p){ return p.value==='Yes'?'<span class="status-badge badge-dup">Yes</span>':'<span class="status-badge badge-no">No</span>'; };
   var wide={Complaint_Summary:1,Complaint_Details:1,Action_Taken:1,Internal_Notes:1,Calling_Number_Chat_Social_Email:1};
   var pinned={Reference_ID:1,Contact_Date:1,Agent_Name:1};
-  var cols=getExportKeys().map(function(k){
-    var col={field:k,headerName:k,width:wide[k]?180:125};
+  var cols=getExportColumns().map(function(c){
+    var k=c.key;
+    var col={field:k,headerName:c.label,width:wide[k]?180:125};
     if(pinned[k]) col.pinned='left';
     if(k==='Contact_Date') col.sort='desc';
     if(k==='Duplicate_Flag') col.cellRenderer=dupR;
@@ -1609,8 +1639,8 @@ function openDetail(r){
   if(!r) return;
   var html='<button type="button" class="detail-close" id="detailCloseBtn">Close</button>';
   html+='<h3>Record Detail — '+esc(r.Reference_ID)+'</h3><div class="review-grid">';
-  var order=getExportKeys();
-  order.forEach(function(k){ html+='<div class="review-item"><div class="review-key">'+k+'</div><div class="review-val">'+esc(pretty(r[k])||'—')+'</div></div>'; });
+  var order=getExportColumns();
+  order.forEach(function(c){ html+='<div class="review-item"><div class="review-key">'+esc(c.label)+'</div><div class="review-val">'+esc(exportCellValue(c.key,r[c.key])||'—')+'</div></div>'; });
   html+='</div>';
   if(isAdmin()){
     html+='<div style="margin-top:1rem"><div class="form-label">Internal_Notes (admin)</div><textarea class="form-textarea" id="detailNotes">'+esc(r.Internal_Notes||'')+'</textarea><button type="button" class="btn-primary" style="margin-top:.5rem" id="saveNotesBtn">Save Notes</button></div>';
@@ -1643,9 +1673,13 @@ $('detailDrawer').onclick=function(e){ if(e.target.id==='detailDrawer') closeDet
 /* ── exports ─────────────────────────────────────────────── */
 function exportExcel(){
   applyFilters();
-  var keys=getExportKeys();
-  var lines=[keys.join(',')];
-  BCR.filtered.forEach(function(r){ lines.push(keys.map(function(k){ return '"'+String(r[k]==null?'':r[k]).replace(/"/g,'""')+'"'; }).join(',')); });
+  var cols=getExportColumns();
+  var lines=[cols.map(function(c){ return '"'+String(c.label).replace(/"/g,'""')+'"'; }).join(',')];
+  BCR.filtered.forEach(function(r){
+    lines.push(cols.map(function(c){
+      return '"'+exportCellValue(c.key,r[c.key]).replace(/"/g,'""')+'"';
+    }).join(','));
+  });
   var blob=new Blob([lines.join('\n')],{type:'text/csv'});
   var a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='BCR_Records_'+todayStr()+'.csv'; a.click();
   toast('Excel (CSV) exported','success');
