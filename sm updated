@@ -6902,6 +6902,41 @@ if (window.TSM_SE_ACTIVE) {
         };
         SmSetColumnFilter.prototype.destroy = function () {};
 
+        function smGetPocColumnDefs() {
+            return [
+                { field: 'pocName', headerName: 'Primary POC Name', width: 150, hide: false },
+                { field: 'pocEmail', headerName: 'Primary POC Email', width: 180, hide: false },
+                { field: 'pocPhone', headerName: 'Primary POC Contact', width: 140, hide: false },
+                { field: 'secondaryPocName', headerName: 'Secondary POC Name', width: 150, hide: false },
+                { field: 'secondaryPocEmail', headerName: 'Secondary POC Email', width: 180, hide: false },
+                { field: 'secondaryPocPhone', headerName: 'Secondary POC Contact', width: 140, hide: false },
+                { field: 'technicalPocName', headerName: 'Technical POC Name', width: 150, hide: false },
+                { field: 'technicalPocEmail', headerName: 'Technical POC Email', width: 180, hide: false },
+                { field: 'technicalPocPhone', headerName: 'Technical POC Contact', width: 140, hide: false }
+            ];
+        }
+
+        function smEnsurePocColumnsVisible(api) {
+            if (!api) return;
+            smGetPocColumnDefs().forEach(function (col) {
+                try {
+                    api.setColumnsVisible([col.field], true);
+                } catch (e) {}
+            });
+        }
+
+        function smEnhanceColDefTree(col) {
+            if (col.children && col.children.length) {
+                return Object.assign({}, col, {
+                    children: col.children.map(function (child) {
+                        return smEnhanceColDefTree(child);
+                    })
+                });
+            }
+            if (!col.field || col.field === 'actions') return col;
+            return smEnhanceColDef(Object.assign({}, col));
+        }
+
         function smEnhanceColDef(col) {
             if (col.field === 'actions') return col;
             col.filter = SmSetColumnFilter;
@@ -7009,49 +7044,8 @@ if (window.TSM_SE_ACTIVE) {
                     width: 150
                 },
                 {
-                    field: 'pocName',
-                    headerName: 'POC Name',
-                    width: 150
-                },
-                {
-                    field: 'pocEmail',
-                    headerName: 'POC Email',
-                    width: 180
-                },
-                {
-                    field: 'pocPhone',
-                    headerName: 'POC Phone',
-                    width: 140
-                },
-                {
-                    field: 'secondaryPocName',
-                    headerName: 'Secondary POC Name',
-                    width: 150
-                },
-                {
-                    field: 'secondaryPocEmail',
-                    headerName: 'Secondary POC Email',
-                    width: 180
-                },
-                {
-                    field: 'secondaryPocPhone',
-                    headerName: 'Secondary POC Contact',
-                    width: 140
-                },
-                {
-                    field: 'technicalPocName',
-                    headerName: 'Technical POC Name',
-                    width: 150
-                },
-                {
-                    field: 'technicalPocEmail',
-                    headerName: 'Technical POC Email',
-                    width: 180
-                },
-                {
-                    field: 'technicalPocPhone',
-                    headerName: 'Technical POC Contact',
-                    width: 140
+                    headerName: 'POC Details',
+                    children: smGetPocColumnDefs()
                 },
                 {
                     field: 'accountType',
@@ -7214,8 +7208,7 @@ onclick="sendTransferReminderEmailMain('${esc(a.amEmail)}','${esc(a.adEmail)}','
 
             const gridOptions = {
                 columnDefs: columnDefs.map(function (col) {
-                    if (!col.field || col.field === 'actions') return col;
-                    return smEnhanceColDef(Object.assign({}, col));
+                    return smEnhanceColDefTree(col);
                 }),
                 rowData: parentRows,
                 defaultColDef: {
@@ -7234,6 +7227,7 @@ onclick="sendTransferReminderEmailMain('${esc(a.amEmail)}','${esc(a.adEmail)}','
                 suppressMenuHide: false,
                onGridReady: params => {
                     agGridApi = params.api;
+                    smEnsurePocColumnsVisible(params.api);
                 },
                 isExternalFilterPresent: () => {
                     return !!window._TRANSFER_FILTER_VAL;
@@ -7388,19 +7382,41 @@ ${USER_CONTEXT.userName}`
             });
         }
 
+        function smFlattenColumnDefs(defs) {
+            var flat = [];
+            (defs || []).forEach(function (col) {
+                if (col.children && col.children.length) {
+                    flat = flat.concat(smFlattenColumnDefs(col.children));
+                } else if (col.field && col.field !== 'actions') {
+                    flat.push(col);
+                }
+            });
+            return flat;
+        }
+
         function smGetExportColumns() {
+            var cols = [];
             if (window.SM_DASHBOARD_COLUMN_DEFS && window.SM_DASHBOARD_COLUMN_DEFS.length) {
-                return window.SM_DASHBOARD_COLUMN_DEFS.filter(function (col) {
-                    return col.field && col.field !== 'actions';
+                cols = smFlattenColumnDefs(window.SM_DASHBOARD_COLUMN_DEFS);
+            } else if (agGridApi) {
+                cols = agGridApi.getColumns().filter(function (col) {
+                    return col.getColId() !== 'actions';
+                }).map(function (col) {
+                    return col.getColDef();
                 });
             }
-            if (!agGridApi) return [];
-            return agGridApi.getColumns().filter(function (col) {
-                return col.getColId() !== 'actions';
-            }).map(function (col) {
-                return col.getColDef();
+            var existing = {};
+            cols.forEach(function (col) {
+                if (col.field) existing[col.field] = true;
             });
+            smGetPocColumnDefs().forEach(function (pocCol) {
+                if (!existing[pocCol.field]) cols.push(pocCol);
+            });
+            return cols;
         }
+
+        window.smGetPocColumnDefs = smGetPocColumnDefs;
+        window.smEnsurePocColumnsVisible = smEnsurePocColumnsVisible;
 
         function smFormatExportCellValue(col, row) {
             const colDef = col.getColDef ? col.getColDef() : col;
