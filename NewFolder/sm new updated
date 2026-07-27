@@ -6943,6 +6943,48 @@ if (window.TSM_SE_ACTIVE) {
             return 'Primary';
         }
 
+        function formatPhoneNumber(input) {
+            if (!input) return;
+            let value = input.value || '';
+            if (!value.startsWith('+971')) {
+                input.value = '+971';
+                return;
+            }
+            const numbers = value.slice(4).replace(/\D/g, '');
+            input.value = '+971' + numbers.slice(0, 9);
+        }
+        window.formatPhoneNumber = formatPhoneNumber;
+
+        function smIsValidUaePhone(phone) {
+            return /^\+971\d{9}$/.test(String(phone || '').trim());
+        }
+
+        function smValidatePocPhoneFields(values, changedFieldKeys) {
+            const fields = [
+                ['pocPhone', 'POC Contact', true],
+                ['secondaryPocPhone', 'Secondary POC Contact', false],
+                ['technicalPocPhone', 'Technical POC Contact', false]
+            ];
+            const changedSet = new Set(changedFieldKeys || []);
+            for (let i = 0; i < fields.length; i++) {
+                const key = fields[i][0];
+                const label = fields[i][1];
+                const primaryRequired = fields[i][2];
+                const val = String((values && values[key]) || '').trim();
+                const isChanged = changedSet.has(key);
+                if (!val || val === '+971') {
+                    if (isChanged && primaryRequired) {
+                        return label + ' is required (UAE format: +971 followed by 9 digits, e.g. +971501234567)';
+                    }
+                    continue;
+                }
+                if (isChanged && !smIsValidUaePhone(val)) {
+                    return label + ' must be UAE format: +971 followed by 9 digits (e.g. +971501234567)';
+                }
+            }
+            return null;
+        }
+
         function smGetRnpsPocDetails(row) {
             const tag = smNormalizeRnpsPoc(row && row.rnpsPoc);
             if (tag === 'Secondary') {
@@ -9478,8 +9520,12 @@ async function ownerFetchUserRole(email) {
                 cfg.fields.forEach(function (pair, idx) {
                     const inputId = 'edit' + cfg.prefix.charAt(0).toUpperCase() + cfg.prefix.slice(1) + ids[idx];
                     const inputType = idx === 1 ? 'email' : 'text';
-                    const val = values[pair[1]] || '';
-                    html += '<div class="filter-group"><label class="filter-label">' + pair[0] + '</label><input type="' + inputType + '" class="filter-select" id="' + inputId + '" value="' + String(val).replace(/"/g, '&quot;') + '" style="cursor:text;font-size:14px;padding:12px 16px;"></div>';
+                    const isContact = idx === 2;
+                    const val = isContact ? (values[pair[1]] || '+971') : (values[pair[1]] || '');
+                    const contactAttrs = isContact
+                        ? ' placeholder="+971501234567" maxlength="13" oninput="formatPhoneNumber(this)"'
+                        : '';
+                    html += '<div class="filter-group"><label class="filter-label">' + pair[0] + '</label><input type="' + inputType + '" class="filter-select" id="' + inputId + '" value="' + String(val).replace(/"/g, '&quot;') + '"' + contactAttrs + ' style="cursor:text;font-size:14px;padding:12px 16px;"></div>';
                 });
             }
             html += '</div></div>';
@@ -9587,6 +9633,16 @@ async function ownerFetchUserRole(email) {
 
             const pocChanges = getEditPocChanges();
             const pocChanged = pocChanges.length > 0;
+            if (window.POC_DETAILS_ENABLED && pocChanged) {
+                const phoneErr = smValidatePocPhoneFields(
+                    window.EDIT_POC_VALUES,
+                    pocChanges.map(function (c) { return c.field; })
+                );
+                if (phoneErr) {
+                    alert(phoneErr);
+                    return;
+                }
+            }
             const newRnpsPoc = smNormalizeRnpsPoc((document.querySelector('input[name="editRnpsPoc"]:checked') || {}).value);
             const rnpsPocChanged = newRnpsPoc !== smNormalizeRnpsPoc(EDIT_ACCOUNT_DATA.rnpsPoc);
 
