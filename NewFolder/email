@@ -1,0 +1,25 @@
+Good day,
+
+The portal updates from our call with Waseem are done. Summary:
+
+1) Dashboard — Total Requests
+Counts open orders only (Acknowledged, In Process, Assigned for Biometrics, Pending with user, On Hold). Cancelled and Completed still show as separate cards but are excluded from the total.
+
+2) Dashboard — Data View / CSV
+Added: End User Email, PO No, Activity No, SO No, MSISDN, Tariff (Rate Plan), Activation Date – SIM.
+
+3) Bulk delete (Form portal only)
+On Master Data List and Oracle Activation List: select rows → Bulk Delete → confirm.
+When deleting Master records, you can optionally also delete related Activation rows (same email).
+No auto-cleanup — you pick what to remove (test data, old entries, etc.).
+
+Your side:
+
+Upload the updated Dashboard + Form HTML to SharePoint
+Hard refresh the browser
+Use bulk delete to remove test/old records
+Check dashboard counts after cleanup
+Happy to jump on a quick call if useful.
+
+Regards,
+Tehleel
