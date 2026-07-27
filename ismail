@@ -1,0 +1,26 @@
+Dear Tehleel,
+
+Good day. Thank you for the call. Based on the call with Waseem, below small changes to be done in the Portal. Kindly let me know when can we have a quick call to discuss the below.
+Kindly let us align on the point 3 before you action on the same. Thank you for your usual support.
+
+1)	Dashboard > Dashboard > Status Overview
+
+Logic at Total Requests should be tweaked to count and display considered only the below listed statuses.
+•	Statuses to be kept as it is to count Total request (i.e. Open orders) – Acknowledged, In process, Assigned for Biometrics, Pending with use, On Hold
+•	Statuses to be excluded from Total request count – Cancelled and Completed (Do not remove it from Display but just exclude from being counted in total)
+
+ 
+
+2)	Dashboard > Data View / Data View & Management
+
+Below listed Additional fields to be added in the display and the same should be part of the report extraction (Export CSV).
+•	Fields to be included apart from already existing fields in display - End User Email,  PO No,  Activity No,  SO No,  MSISDN,  Tariff (Rate Plan),  Activation Date – SIM
+
+ 
+
+
+3)	Test Data & Old entries to be removed from Master Tab and Activation Tab - to get the correct dashboard count display (Dashboard > Master – Active lines and No of Handsets) & (Dashboard > Activation Tab – Status Overview)
+•	Records created for testing purposes to be removed from Master Tab as well as from Activation tab entries.
+•	Data entered earlier, before the Request ID and other changes are applied to be removed from Activation tab.
+
+Regards,
