@@ -996,23 +996,7 @@ var amGridApi = null;
             // Limit to 9 digits after +971
             input.value = prefix + numbers.slice(0, 9);
         }
-
-        function formatPhoneNumber(input) {
-            let value = input.value;
-
-            // Always keep +971 prefix
-            if (!value.startsWith('+971')) {
-                input.value = '+971';
-                return;
-            }
-
-            // Remove any non-digit characters after +971
-            const prefix = '+971';
-            const numbers = value.slice(4).replace(/\D/g, '');
-
-            // Limit to 9 digits after +971
-            input.value = prefix + numbers.slice(0, 9);
-        }
+        window.formatPhoneNumber = formatPhoneNumber;
 
         function getLastThreeMonths() {
             const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -1384,38 +1368,4 @@ Service Management System`);
                 console.error('Email notification error:', err);
                 // Don't throw error - just log it
             }
-        }
-
-        function formatPhoneNumber(input) {
-            let value = input.value;
-
-            // Always keep +971 prefix
-            if (!value.startsWith('+971')) {
-                input.value = '+971';
-                return;
-            }
-
-            // Remove any non-digit characters after +971
-            const prefix = '+971';
-            const numbers = value.slice(4).replace(/\D/g, '');
-
-            // Limit to 9 digits after +971
-            input.value = prefix + numbers.slice(0, 9);
-        }
-
-        function formatPhoneNumber(input) {
-            let value = input.value;
-
-            // Always keep +971 prefix
-            if (!value.startsWith('+971')) {
-                input.value = '+971';
-                return;
-            }
-
-            // Remove any non-digit characters after +971
-            const prefix = '+971';
-            const numbers = value.slice(4).replace(/\D/g, '');
-
-            // Limit to 9 digits after +971
-            input.value = prefix + numbers.slice(0, 9);
         }
