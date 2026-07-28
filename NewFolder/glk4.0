@@ -872,7 +872,7 @@ body[data-theme="dark"] .badge-warning,body[data-theme="duralux-dark"] .badge-wa
                     <span style="font-size:.68rem;font-weight:600;color:var(--t3);">All opp. statuses · Lead / Opportunity / Proposed = forecast stages</span>
                   </span>
                 </div>
-                <div class="chart-container" style="height:340px;"><canvas id="chartForecastPie"></canvas></div>
+                <div class="chart-container" style="height:380px;"><canvas id="chartForecastPie"></canvas></div>
                 <div id="forecastPieControlsWrap"></div>
               </div>
             </div>
@@ -890,7 +890,7 @@ body[data-theme="dark"] .badge-warning,body[data-theme="duralux-dark"] .badge-wa
                     <input type="number" id="bridgeTargetInp" value="10000000" min="0" step="100000" onchange="glkSetBridgeTarget(this.value)" style="width:120px;padding:.28rem .5rem;border-radius:6px;border:1px solid var(--border);background:var(--bg-input);color:var(--t1);font-size:.72rem;font-weight:700;">
                   </div>
                 </div>
-                <div class="chart-container" style="height:280px;"><canvas id="chartBridge"></canvas></div>
+                <div class="chart-container" style="height:380px;"><canvas id="chartBridge"></canvas></div>
                 <div id="bridgeControlsWrap"></div>
               </div>
             </div>
@@ -1199,37 +1199,50 @@ function glkPieExternalLabelsPlugin(groups,total,c){
     var ctx=chart.ctx,meta=chart.getDatasetMeta(0),ca=chart.chartArea;
     if(!meta||!meta.data||!ca) return;
     var cx=(ca.left+ca.right)/2,cy=(ca.top+ca.bottom)/2;
+    var outerR=meta.data[0]?meta.data[0].outerRadius:0;
+    var items=[];
     meta.data.forEach(function(arc,i){
       var g=groups[i];
       if(!g||g.value<=0) return;
       var pct=total>0?(g.value/total*100):0;
-      if(pct<2.5) return;
       var mid=(arc.startAngle+arc.endAngle)/2;
-      var outerR=arc.outerRadius;
-      var edgeX=cx+Math.cos(mid)*outerR,edgeY=cy+Math.sin(mid)*outerR;
-      var elbowR=outerR+12,labelR=outerR+28;
-      var ex=cx+Math.cos(mid)*elbowR,ey=cy+Math.sin(mid)*elbowR;
-      var lx=cx+Math.cos(mid)*labelR,ly=cy+Math.sin(mid)*labelR;
-      var right=Math.cos(mid)>=0;
-      ctx.save();
-      ctx.strokeStyle=g.color;
-      ctx.lineWidth=1.2;
-      ctx.beginPath();
-      ctx.moveTo(edgeX,edgeY);
-      ctx.lineTo(ex,ey);
-      ctx.lineTo(lx,ly);
-      ctx.stroke();
-      ctx.fillStyle=g.color;
-      ctx.font='bold 10px Inter,sans-serif';
-      ctx.textAlign=right?'left':'right';
-      ctx.textBaseline='bottom';
-      ctx.fillText(g.label,lx+(right?5:-5),ly-1);
-      ctx.fillStyle=c.text;
-      ctx.font='600 9px Inter,sans-serif';
-      ctx.textBaseline='top';
-      ctx.fillText(g.count+' · '+pct.toFixed(1)+'% · '+fmt(g.value),lx+(right?5:-5),ly+2);
-      ctx.restore();
+      items.push({g:g,pct:pct,mid:mid,right:Math.cos(mid)>=0});
     });
+    var left=items.filter(function(it){return !it.right;}).sort(function(a,b){return a.mid-b.mid;});
+    var right=items.filter(function(it){return it.right;}).sort(function(a,b){return a.mid-b.mid;});
+    var rowH=26,minGap=4;
+    function stackSide(list,side){
+      if(!list.length) return;
+      var n=list.length;
+      var totalH=n*rowH+(n-1)*minGap;
+      var startY=cy-totalH/2+rowH/2;
+      list.forEach(function(it,idx){
+        var ly=startY+idx*(rowH+minGap);
+        var lx=side==='right'?(ca.right+8):(ca.left-8);
+        var elbowX=side==='right'?(cx+outerR+6):(cx-outerR-6);
+        var edgeX=cx+Math.cos(it.mid)*outerR,edgeY=cy+Math.sin(it.mid)*outerR;
+        ctx.save();
+        ctx.strokeStyle=it.g.color;
+        ctx.lineWidth=1.2;
+        ctx.beginPath();
+        ctx.moveTo(edgeX,edgeY);
+        ctx.lineTo(elbowX,ly);
+        ctx.lineTo(lx,ly);
+        ctx.stroke();
+        ctx.fillStyle=it.g.color;
+        ctx.font='bold 10px Inter,sans-serif';
+        ctx.textAlign=side==='right'?'left':'right';
+        ctx.textBaseline='bottom';
+        ctx.fillText(it.g.label,lx+(side==='right'?4:-4),ly-1);
+        ctx.fillStyle=c.text;
+        ctx.font='600 9px Inter,sans-serif';
+        ctx.textBaseline='top';
+        ctx.fillText(it.g.count+' · '+it.pct.toFixed(1)+'% · '+fmt(it.g.value),lx+(side==='right'?4:-4),ly+1);
+        ctx.restore();
+      });
+    }
+    stackSide(left,'left');
+    stackSide(right,'right');
   }};
 }
 function glkFilterByChartPeriodYear(bids,period,year){
@@ -1323,7 +1336,7 @@ function glkBridgeMinPxPlugin(bars,minPx){
     if(!meta||!meta.data) return;
     meta.data.forEach(function(bar,i){
       var b=bars[i];
-      if(!b||!(b.type==='step'||b.type==='outforecast'||b.type==='gap')) return;
+      if(!b||!(b.type==='step'||b.type==='outforecast'||b.type==='gap'||b.type==='over')) return;
       if(bar.base==null||bar.y==null||isNaN(bar.base)||isNaN(bar.y)) return;
       var h=Math.abs(bar.base-bar.y);
       if(h<minPx) bar.y=bar.base-minPx;
@@ -3162,16 +3175,9 @@ function renderForecastPie(bids,c){
       borderRadius:6
     }]},
     options:{responsive:true,maintainAspectRatio:false,cutout:'58%',
-      layout:{padding:{top:24,bottom:24,left:80,right:80}},
+      layout:{padding:{top:20,bottom:12,left:118,right:118}},
       plugins:{
-        legend:{position:'bottom',labels:{color:c.text,font:{size:10,weight:'600'},padding:12,usePointStyle:true,pointStyleWidth:10,
-          generateLabels:function(chart){
-            return groups.map(function(g,i){
-              var pct=total>0?(g.value/total*100).toFixed(1):'0.0';
-              return {text:g.label+'  ·  '+g.count+' opps  ·  '+pct+'%  ·  '+fmt(g.value),fillStyle:colors[i],strokeStyle:colors[i],fontColor:c.text,hidden:false,index:i};
-            });
-          }
-        }},
+        legend:{display:false},
         tooltip:{backgroundColor:'rgba(15,10,30,.88)',padding:14,cornerRadius:12,titleFont:{size:13,weight:'700'},bodyFont:{size:12},
           callbacks:{
             title:function(items){return groups[items[0].dataIndex].label;},
@@ -3209,6 +3215,27 @@ function glkBridgeTargetLinePlugin(targetDispY,labelText,c){
     ctx.restore();
   }};
 }
+function glkBridgeOverZonePlugin(wonBilledVal,targetVal){
+  return {id:'glkBridgeOverZone',afterDatasetsDraw:function(chart){
+    if(wonBilledVal<=targetVal) return;
+    var y=chart.scales.y,meta=chart.getDatasetMeta(0),bar=meta&&meta.data?meta.data[0]:null;
+    if(!bar||!y) return;
+    var targetPy=y.getPixelForValue(targetVal/1e6);
+    var topPy=Math.min(bar.y,bar.base);
+    var x1=bar.x-bar.width/2,x2=bar.x+bar.width/2;
+    if(targetPy<=topPy) return;
+    var ctx=chart.ctx;
+    ctx.save();
+    ctx.fillStyle='rgba(14,165,233,.22)';
+    ctx.fillRect(x1,topPy,x2-x1,targetPy-topPy);
+    ctx.fillStyle='#0ea5e9';
+    ctx.font='bold 9px Inter';
+    ctx.textAlign='center';
+    ctx.textBaseline='bottom';
+    ctx.fillText('+'+fmt(wonBilledVal-targetVal)+' secured over target',bar.x,topPy-4);
+    ctx.restore();
+  }};
+}
 function renderBridge(bids,c){
   destroyChart('bridge');
   var metric=chartMetric;
@@ -3218,11 +3245,10 @@ function renderBridge(bids,c){
   var wonBilledVal=calc.wonBilledVal,top=calc.top,top10Sum=calc.top10Sum;
   var inForecastOthers=calc.inForecastOthers,outForecastVal=calc.outForecastVal;
   var total=calc.total,gap=calc.gap,over=calc.over;
-  var gapVal=over?0:gap;
   var bars=[],barMeta=[],sectionGroups=[],labelList=[];
   var trueCum=0,dispTopM=0;
   var targetM=targetVal/1e6;
-  var minStepM=0.2;
+  var minStepM=Math.max(0.55,targetM*0.06);
   var STEP_COLORS=['#1d4ed8','#2563eb','#3b82f6','#60a5fa','#93c5fd','#4f46e5','#6366f1','#818cf8','#a5b4fc','#c7d2fe'];
   function dispHM(v){return Math.max(v/1e6,minStepM);}
   function pushBar(b,meta){
@@ -3233,7 +3259,7 @@ function renderBridge(bids,c){
     return idx;
   }
   var wbM=wonBilledVal/1e6;
-  dispTopM=wbM>0?Math.max(wbM,minStepM):0;
+  dispTopM=wbM>0?wbM:0;
   var wbIdx=pushBar({
     value:wonBilledVal,trueCum:wonBilledVal,
     displayStart:0,displayEnd:dispTopM,
@@ -3280,28 +3306,43 @@ function renderBridge(bids,c){
     },'Opportunity · Out Forecast · '+fmt(outForecastVal));
     sectionGroups.push({key:'outf',label:'Out Forecast',color:'#ea580c',startIdx:outIdx,endIdx:outIdx});
   }
+  var gapVal=over?0:gap;
+  var overVal=over?Math.abs(gap):0;
   if(gapVal>0){
-    var gStart=dispTopM,gEnd=dispTopM+dispHM(gapVal);
+    var gStart=dispTopM;
+    var gEnd=Math.max(dispTopM+dispHM(gapVal),targetM);
     dispTopM=gEnd;
     var gIdx=pushBar({
       value:gapVal,trueCum:targetVal,
       displayStart:gStart,displayEnd:gEnd,color:'#f59e0b',type:'gap',
-      meta:'Gap · '+fmt(gapVal)+' short',custName:'Gap'
-    },'Gap · '+fmt(gapVal));
-    sectionGroups.push({key:'gap',label:'Gap',color:'#f59e0b',startIdx:gIdx,endIdx:gIdx});
+      meta:'Gap · '+fmt(gapVal)+' short of target',custName:'Gap'
+    },'Gap · '+fmt(gapVal)+' short');
+    sectionGroups.push({key:'gap',label:'Gap to Target',color:'#f59e0b',startIdx:gIdx,endIdx:gIdx});
+  }else if(overVal>0){
+    var ovStart=dispTopM,ovEnd=dispTopM+dispHM(overVal);
+    dispTopM=ovEnd;
+    var ovIdx=pushBar({
+      value:overVal,trueCum:total,
+      displayStart:ovStart,displayEnd:ovEnd,color:'#0ea5e9',type:'over',
+      meta:'Over Target · +'+fmt(overVal),custName:'Over Target'
+    },'Over Target · +'+fmt(overVal));
+    sectionGroups.push({key:'over',label:'Over Target',color:'#0ea5e9',startIdx:ovIdx,endIdx:ovIdx});
   }
-  var targetOffScale=targetM>dispTopM*2.5&&targetM>total/1e6;
+  var targetOffScale=targetM>dispTopM*1.8;
   var targetDisp=targetOffScale?null:targetM;
-  var yMax=Math.max(dispTopM,targetDisp||0,0.001)*1.12;
+  var yMax=Math.max(dispTopM,targetDisp||0,targetM,0.001)*1.08;
   var floatData=bars.map(glkBridgeFloatBar);
   var bg=bars.map(function(b){return b.color;});
   var bridgePlugins=[
-    glkBridgeMinPxPlugin(bars,24),
+    glkBridgeMinPxPlugin(bars,42),
     glkBridgeBarLabelPlugin(bars),
     glkBridgeGroupPlugin(sectionGroups,c),
     glkBridgeConnectorPlugin(bars)
   ];
-  if(targetDisp!=null) bridgePlugins.push(glkBridgeTargetLinePlugin(targetDisp,'Target '+fmt(targetVal),c));
+  if(targetDisp!=null){
+    bridgePlugins.push(glkBridgeTargetLinePlugin(targetDisp,'Target '+fmt(targetVal),c));
+    bridgePlugins.push(glkBridgeOverZonePlugin(wonBilledVal,targetVal));
+  }
   var canvas=el('chartBridge');
   if(!canvas) return;
   try{
@@ -3314,12 +3355,12 @@ function renderBridge(bids,c){
       backgroundColor:bg,
       borderRadius:5,
       borderSkipped:false,
-      barPercentage:.9,
-      categoryPercentage:.86,
-      maxBarThickness:56
+      barPercentage:.88,
+      categoryPercentage:.82,
+      maxBarThickness:64
     }]},
     options:{responsive:true,maintainAspectRatio:false,
-      layout:{padding:{bottom:72,top:targetOffScale?20:12,left:6,right:10}},
+      layout:{padding:{bottom:78,top:targetOffScale?20:12,left:6,right:10}},
       plugins:{
         legend:{display:false},
         tooltip:{backgroundColor:'rgba(15,10,30,.88)',padding:14,cornerRadius:12,titleFont:{size:12,weight:'700'},bodyFont:{size:12},
@@ -3328,7 +3369,8 @@ function renderBridge(bids,c){
             label:function(ctx){
               var b=bars[ctx.dataIndex];
               if(b.type==='base') return '  Won + Billed '+fmt(b.value);
-              if(b.type==='gap') return '  Gap '+fmt(b.value)+' short';
+              if(b.type==='gap') return '  Gap '+fmt(b.value)+' short of target';
+              if(b.type==='over') return '  Over Target +'+fmt(b.value);
               if(b.type==='outforecast') return '  Out Forecast '+fmt(b.value);
               return '  +'+fmt(b.value);
             },
@@ -3341,7 +3383,7 @@ function renderBridge(bids,c){
         }
       },
       scales:{
-        x:{ticks:{display:true,color:c.text,font:{size:9,weight:'600'},maxRotation:45,minRotation:0,autoSkip:false},grid:{display:false}},
+        x:{ticks:{display:false},grid:{display:false}},
         y:{min:0,max:yMax,grace:0,ticks:{color:c.text,font:{size:10},callback:function(v){return v+'M';}},grid:{color:c.grid},
           title:{display:true,text:'AED (M) · '+(isBest?'Best Case':'Worst Case'),color:c.text,font:{size:9,weight:'600'}}}
       }
@@ -3350,7 +3392,7 @@ function renderBridge(bids,c){
   }catch(err){console.error('[GLK] Bridge chart error:',err);}
   var wrap=el('bridgeControlsWrap');
   if(wrap){
-    var gapTxt=over?('<span style="color:#0ea5e9;">+'+fmt(Math.abs(gap))+' over target</span>'):('<span style="color:#f59e0b;">'+fmt(gapVal)+' short of target</span>');
+    var gapTxt=over?('<span style="color:#0ea5e9;">+'+fmt(overVal)+' over target</span>'):('<span style="color:#f59e0b;">'+fmt(gapVal)+' short of target</span>');
     wrap.innerHTML='<div style="display:flex;flex-direction:column;gap:.45rem;margin-top:.65rem;">'+
       glkBridgeControlsHtml(bids)+
       '<div style="font-size:.68rem;color:var(--t3);font-weight:600;line-height:1.5;">'+
