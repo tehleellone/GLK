@@ -869,7 +869,7 @@ body[data-theme="dark"] .badge-warning,body[data-theme="duralux-dark"] .badge-wa
                 <div class="chart-title" style="justify-content:space-between;">
                   <span style="display:flex;flex-direction:column;gap:.15rem;">
                     <span style="display:flex;align-items:center;gap:.35rem;"><svg viewBox="0 0 24 24"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>Pipeline Mix</span>
-                    <span style="font-size:.68rem;font-weight:600;color:var(--t3);">Status breakdown · Lead / Opportunity / Proposed = forecast stages</span>
+                    <span style="font-size:.68rem;font-weight:600;color:var(--t3);">All opp. statuses · Lead / Opportunity / Proposed = forecast stages</span>
                   </span>
                 </div>
                 <div class="chart-container" style="height:280px;"><canvas id="chartForecastPie"></canvas></div>
@@ -1035,9 +1035,9 @@ const PIPELINE_PIE_GROUPS=[
   {key:'cancelled',label:'Cancelled',color:'#7f1d1d',match:b=>b.status==='Cancelled'},
   {key:'won',label:'Won',color:'#059669',match:b=>b.status==='Won'},
   {key:'billed',label:'Billed',color:'#10b981',match:b=>b.status==='Billed'},
-  {key:'lead',label:'Lead',color:'#64748b',match:b=>b.status==='Lead'},
-  {key:'opportunity',label:'Opportunity',color:'#ea580c',match:b=>b.status==='Opportunity'},
-  {key:'proposed',label:'Proposed',color:'#2563eb',match:b=>b.status==='Proposed'},
+  {key:'lead',label:'Lead (Not Forecasted)',color:'#64748b',match:b=>b.status==='Lead'},
+  {key:'opportunity',label:'Opportunity (Out Forecast)',color:'#ea580c',match:b=>b.status==='Opportunity'},
+  {key:'proposed',label:'Proposed (In Forecast)',color:'#2563eb',match:b=>b.status==='Proposed'},
 ];
 
 // ══════════════════════════════════════════════════════════════════
@@ -1275,13 +1275,14 @@ function glkBridgeFloatBar(b){
   return [b.displayStart,b.displayEnd];
 }
 function glkBridgeMinPxPlugin(bars,minPx){
-  minPx=minPx||42;
+  minPx=minPx||28;
   return {id:'glkBridgeMinPx',afterLayout:function(chart){
     var meta=chart.getDatasetMeta(0);
     if(!meta||!meta.data) return;
     meta.data.forEach(function(bar,i){
       var b=bars[i];
-      if(!b||!(b.type==='step'||b.type==='outforecast'||b.type==='gap'||b.type==='base')) return;
+      if(!b||!(b.type==='step'||b.type==='outforecast'||b.type==='gap')) return;
+      if(bar.base==null||bar.y==null||isNaN(bar.base)||isNaN(bar.y)) return;
       var h=Math.abs(bar.base-bar.y);
       if(h<minPx) bar.y=bar.base-minPx;
     });
@@ -3168,96 +3169,92 @@ function renderBridge(bids,c){
   var total=calc.total,gap=calc.gap,over=calc.over;
   var gapVal=over?0:gap;
   var bars=[],barMeta=[],sectionGroups=[],labelList=[];
-  var trueCum=0,dispTop=0;
+  var trueCum=0,dispTopM=0;
+  var targetM=targetVal/1e6;
+  var minStepM=0.2;
   var STEP_COLORS=['#1d4ed8','#2563eb','#3b82f6','#60a5fa','#93c5fd','#4f46e5','#6366f1','#818cf8','#a5b4fc','#c7d2fe'];
-  var estY=Math.max(total,gapVal,targetVal,1);
-  var minStep=Math.max(estY*0.045,75000);
-  function dispH(v){return Math.max(v,minStep);}
+  function dispHM(v){return Math.max(v/1e6,minStepM);}
   function pushBar(b,meta){
     var idx=bars.length;
     bars.push(b);
     barMeta.push({label:meta||b.meta||''});
-    labelList.push('');
+    labelList.push(b.custName||'');
     return idx;
   }
-  // 1) Won + Billed (full bar from 0)
+  var wbM=wonBilledVal/1e6;
+  dispTopM=wbM>0?Math.max(wbM,minStepM):0;
   var wbIdx=pushBar({
-    value:wonBilledVal,trueEnd:wonBilledVal,trueCum:wonBilledVal,
-    displayStart:0,displayEnd:Math.max(wonBilledVal,wonBilledVal>0?dispH(wonBilledVal):0),
+    value:wonBilledVal,trueCum:wonBilledVal,
+    displayStart:0,displayEnd:dispTopM,
     color:'#16a34a',type:'base',meta:'Won + Billed · '+fmt(wonBilledVal),custName:'Won+Billed'
   },'Won + Billed · '+fmt(wonBilledVal));
   sectionGroups.push({key:'wb',label:'Won + Billed',color:'#16a34a',startIdx:wbIdx,endIdx:wbIdx});
   trueCum=wonBilledVal;
-  dispTop=bars[wbIdx].displayEnd;
-  // 2) Top 10 in-forecast (Proposed), smallest → largest
   var infStart=-1;
   top.items.forEach(function(p,i){
     if(p.value<=0) return;
     trueCum+=p.value;
-    var dStart=dispTop,dEnd=dispTop+dispH(p.value);
-    dispTop=dEnd;
+    var dStart=dispTopM,dEnd=dispTopM+dispHM(p.value);
+    dispTopM=dEnd;
     var idx=pushBar({
-      value:p.value,trueEnd:trueCum,trueCum:trueCum,
+      value:p.value,trueCum:trueCum,
       displayStart:dStart,displayEnd:dEnd,
       color:STEP_COLORS[i%STEP_COLORS.length],type:'step',
-      meta:'In Forecast · '+p.name+' · '+fmt(p.value),
+      meta:'Proposed (In Forecast) · '+p.name+' · '+fmt(p.value),
       custName:glkBridgeBarLabel(p.name,p.value)
-    },'In Forecast · '+p.name+' · '+fmt(p.value));
+    },'Proposed · '+p.name+' · '+fmt(p.value));
     if(infStart<0){infStart=idx;sectionGroups.push({key:'inf',label:'In Forecast',color:'#2563eb',startIdx:idx,endIdx:idx});}
     else sectionGroups[sectionGroups.length-1].endIdx=idx;
   });
   if(inForecastOthers>0){
     trueCum+=inForecastOthers;
-    var dStart=dispTop,dEnd=dispTop+dispH(inForecastOthers);
-    dispTop=dEnd;
+    var dStart=dispTopM,dEnd=dispTopM+dispHM(inForecastOthers);
+    dispTopM=dEnd;
     var oIdx=pushBar({
-      value:inForecastOthers,trueEnd:trueCum,trueCum:trueCum,
+      value:inForecastOthers,trueCum:trueCum,
       displayStart:dStart,displayEnd:dEnd,color:'#3b82f6',type:'step',
-      meta:'In Forecast · Others · '+fmt(inForecastOthers),custName:'Others'
+      meta:'Proposed (In Forecast) · Others · '+fmt(inForecastOthers),custName:'Others'
     },'In Forecast · Others · '+fmt(inForecastOthers));
-    if(sectionGroups.length&&sectionGroups[sectionGroups.length-1].key==='inf'){
-      sectionGroups[sectionGroups.length-1].endIdx=oIdx;
-    }else{
-      sectionGroups.push({key:'inf',label:'In Forecast',color:'#2563eb',startIdx:oIdx,endIdx:oIdx});
-    }
+    if(sectionGroups.length&&sectionGroups[sectionGroups.length-1].key==='inf') sectionGroups[sectionGroups.length-1].endIdx=oIdx;
+    else sectionGroups.push({key:'inf',label:'In Forecast',color:'#2563eb',startIdx:oIdx,endIdx:oIdx});
   }
-  // 3) Out Forecast (Best case only)
   if(isBest&&outForecastVal>0){
     trueCum+=outForecastVal;
-    var odStart=dispTop,odEnd=dispTop+dispH(outForecastVal);
-    dispTop=odEnd;
+    var odStart=dispTopM,odEnd=dispTopM+dispHM(outForecastVal);
+    dispTopM=odEnd;
     var outIdx=pushBar({
-      value:outForecastVal,trueEnd:trueCum,trueCum:trueCum,
+      value:outForecastVal,trueCum:trueCum,
       displayStart:odStart,displayEnd:odEnd,color:'#ea580c',type:'outforecast',
-      meta:'Out Forecast · '+fmt(outForecastVal),custName:'Out Forecast'
-    },'Out Forecast · '+fmt(outForecastVal));
+      meta:'Opportunity (Out Forecast) · '+fmt(outForecastVal),custName:'Out Forecast'
+    },'Opportunity · Out Forecast · '+fmt(outForecastVal));
     sectionGroups.push({key:'outf',label:'Out Forecast',color:'#ea580c',startIdx:outIdx,endIdx:outIdx});
   }
-  // 4) Gap (shortfall to target)
   if(gapVal>0){
-    var gStart=dispTop,gEnd=dispTop+dispH(gapVal);
-    dispTop=gEnd;
+    var gStart=dispTopM,gEnd=dispTopM+dispHM(gapVal);
+    dispTopM=gEnd;
     var gIdx=pushBar({
-      value:gapVal,trueEnd:targetVal,trueCum:targetVal,
+      value:gapVal,trueCum:targetVal,
       displayStart:gStart,displayEnd:gEnd,color:'#f59e0b',type:'gap',
-      meta:'Gap · '+fmt(gapVal)+' short of target',custName:'Gap'
-    },'Gap · '+fmt(gapVal)+' short');
+      meta:'Gap · '+fmt(gapVal)+' short',custName:'Gap'
+    },'Gap · '+fmt(gapVal));
     sectionGroups.push({key:'gap',label:'Gap',color:'#f59e0b',startIdx:gIdx,endIdx:gIdx});
   }
-  var forecastDispTop=dispTop;
-  var targetOffScale=targetVal>total*2.5&&targetVal>total;
-  var targetDisp=targetOffScale?null:targetVal;
-  var yMax=Math.max(forecastDispTop,targetDisp||0,targetVal,0.001)*1.08;
+  var targetOffScale=targetM>dispTopM*2.5&&targetM>total/1e6;
+  var targetDisp=targetOffScale?null:targetM;
+  var yMax=Math.max(dispTopM,targetDisp||0,0.001)*1.12;
   var floatData=bars.map(glkBridgeFloatBar);
   var bg=bars.map(function(b){return b.color;});
   var bridgePlugins=[
-    glkBridgeMinPxPlugin(bars,36),
+    glkBridgeMinPxPlugin(bars,24),
     glkBridgeBarLabelPlugin(bars),
     glkBridgeGroupPlugin(sectionGroups,c),
     glkBridgeConnectorPlugin(bars)
   ];
   if(targetDisp!=null) bridgePlugins.push(glkBridgeTargetLinePlugin(targetDisp,'Target '+fmt(targetVal),c));
-  CHARTS.bridge=new Chart(el('chartBridge'),{
+  var canvas=el('chartBridge');
+  if(!canvas) return;
+  try{
+  CHARTS.bridge=new Chart(canvas,{
     type:'bar',
     plugins:bridgePlugins,
     data:{labels:labelList,glkBars:bars,datasets:[{
@@ -3293,12 +3290,13 @@ function renderBridge(bids,c){
         }
       },
       scales:{
-        x:{ticks:{display:false},grid:{display:false},border:{display:true,color:c.grid||'rgba(148,163,184,.3)'}},
-        y:{min:0,max:yMax,grace:'0%',ticks:{display:false},grid:{color:c.grid},border:{display:false},
-          title:{display:true,text:'AED on bars · '+(isBest?'Best Case':'Worst Case'),color:c.text,font:{size:9,weight:'600'}}}
+        x:{ticks:{display:true,color:c.text,font:{size:9,weight:'600'},maxRotation:45,minRotation:0,autoSkip:false},grid:{display:false}},
+        y:{min:0,max:yMax,grace:0,ticks:{color:c.text,font:{size:10},callback:function(v){return v+'M';}},grid:{color:c.grid},
+          title:{display:true,text:'AED (M) · '+(isBest?'Best Case':'Worst Case'),color:c.text,font:{size:9,weight:'600'}}}
       }
     }
   });
+  }catch(err){console.error('[GLK] Bridge chart error:',err);}
   var wrap=el('bridgeControlsWrap');
   if(wrap){
     var gapTxt=over?('<span style="color:#0ea5e9;">+'+fmt(Math.abs(gap))+' over target</span>'):('<span style="color:#f59e0b;">'+fmt(gapVal)+' short of target</span>');
