@@ -2382,6 +2382,10 @@
                         <div class="nav-icon"><i data-lucide="phone"></i></div>
                         <div class="nav-label">Contact Us</div>
                     </div>
+                    <div class="nav-item" data-section="mePendingView" onclick="switchDashboardSection('mePendingView');initMEPending();">
+                        <div class="nav-icon"><i data-lucide="clipboard-list"></i></div>
+                        <div class="nav-label">ME Pending Tracking</div>
+                    </div>
 
 
 
@@ -2688,6 +2692,20 @@
     </div>
     <div id="qaContent">
         <div id="qaContainer"></div>
+    </div>
+</div>
+<div class="dashboard-section" style="display:none;" id="mePendingView">
+    <div style="display:flex;justify-content:flex-end;margin-bottom:.75rem;">
+        <button type="button" class="export-btn tab-refresh-btn" data-section="mePendingView" onclick="refreshTabData('mePendingView')" style="padding:.45rem .9rem;font-size:.82rem;">
+            <i data-lucide="refresh-cw" style="width:14px;height:14px;display:inline-block;vertical-align:middle;margin-right:6px;"></i>Refresh
+        </button>
+    </div>
+    <div id="mePendingLoading" style="text-align:center;padding:60px;color:var(--t2);">
+        <i data-lucide="loader-2" style="width:40px;height:40px;animation:spin 1s linear infinite;color:var(--acc);display:inline-block;"></i>
+        <div style="margin-top:12px;font-weight:600;">Loading ME Pending Tracking...</div>
+    </div>
+    <div id="mePendingContent" style="display:none;">
+        <div id="mePendingRoot"></div>
     </div>
 </div>
 <div class="dashboard-section" style="display:none;" id="rnpsView">
@@ -4542,7 +4560,7 @@ function computeLMRNPS(rnpsGrouped) {
                     accountType: parseChoiceField(item.AccountType) || '',
                     rnpsEligibility: parseChoiceField(item.RNPS_Eligibility) || '',
                     rnpsPoc: smNormalizeRnpsPoc(parseChoiceField(item.RNPS_POC) || 'Primary'),
-                    rnpsNotEligibleReason: item.RNPS_Not_Eligible_Reason || '',
+                    rnpsNotEligibleReason: smPlainTextFromSharePoint(item.RNPS_Not_Eligible_Reason),
 
                     // [NEW] Store last 3 months values with keys
                     [lastThreeMonths[0].key]: monthRevenues[0] || 0, // e.g., 'oct25'
@@ -5501,7 +5519,7 @@ if (rnpsNav) rnpsNav.style.display = 'flex';
 
                 // Auditor: hide all nav items except allowed ones
                 if (USER_CONTEXT.role === 'Auditor') {
-                    var allowedSections = ['qaView', 'suggestionsView', 'processDocsView', 'contactUsView'];
+                    var allowedSections = ['qaView', 'suggestionsView', 'processDocsView', 'contactUsView', 'mePendingView'];
                     document.querySelectorAll('.nav-item').forEach(function(item) {
                         var section = item.getAttribute('data-section');
                         var labelEl = item.querySelector('.nav-label');
@@ -6945,6 +6963,31 @@ if (window.TSM_SE_ACTIVE) {
             return String(val || '').trim().toLowerCase() === 'no';
         }
 
+        function smPlainTextFromSharePoint(val) {
+            if (val == null || val === '') return '';
+            if (typeof val === 'object') {
+                if (val.results && val.results.length) return smPlainTextFromSharePoint(val.results[0]);
+                if (val.Value != null) return smPlainTextFromSharePoint(val.Value);
+                return '';
+            }
+            var s = String(val).trim();
+            if (!s) return '';
+            if (/<[a-z][\s\S]*>/i.test(s)) {
+                var tmp = document.createElement('div');
+                tmp.innerHTML = s;
+                return (tmp.textContent || tmp.innerText || '').trim();
+            }
+            return s;
+        }
+
+        function smEscapeHtml(val) {
+            return String(val == null ? '' : val)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;');
+        }
+
         function onEditRnpsEligibilityChange() {
             smSyncEditRnpsFieldsUi();
         }
@@ -7219,7 +7262,10 @@ if (window.TSM_SE_ACTIVE) {
                 {
                     field: 'rnpsNotEligibleReason',
                     headerName: 'Reason for RNPS not Eligible',
-                    width: 220
+                    width: 220,
+                    valueFormatter: function (params) {
+                        return smPlainTextFromSharePoint(params.value) || '';
+                    }
                 },
                 {
                     field: 'rnpsPoc',
@@ -7640,6 +7686,7 @@ ${USER_CONTEXT.userName}`
                 return formatCurrency(raw || 0);
             }
             if (field === 'accountType' || field === 'rnpsEligibility' || field === 'rnpsPoc' || field === 'rnpsNotEligibleReason') {
+                if (field === 'rnpsNotEligibleReason') return smPlainTextFromSharePoint(raw) || '';
                 return raw || '';
             }
             if (field === '_rnpsPocName' || field === '_rnpsPocEmail' || field === '_rnpsPocPhone') {
@@ -7998,6 +8045,9 @@ else if (sectionId === 'qaView') {
 else if (sectionId === 'rnpsView') {
     if (typeof rnpsInit === 'function') rnpsInit();
 }
+else if (sectionId === 'mePendingView') {
+    if (typeof initMEPending === 'function') initMEPending();
+}
 else if (sectionId === 'contactUsView') {
     if (typeof cuLoadContacts === 'function') cuLoadContacts();
 }
@@ -8058,6 +8108,9 @@ else if (sectionId === 'psdView') {
                         break;
                     case 'rnpsView':
                         if (typeof rnpsInit === 'function') rnpsInit();
+                        break;
+                    case 'mePendingView':
+                        if (typeof meptInit === 'function') await meptInit(true);
                         break;
                     case 'contactUsView':
                         if (typeof cuLoadContacts === 'function') cuLoadContacts();
@@ -9319,7 +9372,7 @@ async function ownerFetchUserRole(email) {
                     html += '<div class="edit-field-card" id="editRnpsNotEligibleReasonWrap" style="display:none;grid-column:1/-1;">' +
                         '<div class="edit-field-label">Reason for RNPS not Eligible *</div>' +
                         '<textarea class="filter-select" id="editRnpsNotEligibleReason" rows="3" placeholder="Enter reason..." style="resize:vertical;cursor:text;width:100%;font-size:14px;padding:12px 16px;">' +
-                        String(account.rnpsNotEligibleReason || '').replace(/</g, '&lt;').replace(/>/g, '&gt;') +
+                        smEscapeHtml(account.rnpsNotEligibleReason || '') +
                         '</textarea></div>';
                 } else {
                     html += '<div class="edit-field-card">' +
@@ -9328,7 +9381,7 @@ async function ownerFetchUserRole(email) {
                     if (smIsRnpsNotEligible(account.rnpsEligibility)) {
                         html += '<div class="edit-field-card" style="grid-column:1/-1;">' +
                             '<div class="edit-field-label">Reason for RNPS not Eligible</div>' +
-                            '<div class="edit-field-value">' + (account.rnpsNotEligibleReason || '—') + '</div></div>';
+                            '<div class="edit-field-value">' + smEscapeHtml(account.rnpsNotEligibleReason || '—') + '</div></div>';
                     }
                 }
 
@@ -9789,9 +9842,12 @@ async function ownerFetchUserRole(email) {
             window.EDIT_RNPS_ELIGIBILITY = effectiveRnpsEligibility;
             changes.forEach(([label, oldVal, newVal]) => {
                 const hasChanged = oldVal !== newVal;
+                const safeLabel = smEscapeHtml(label);
+                const safeOld = smEscapeHtml(oldVal);
+                const safeNew = smEscapeHtml(newVal);
                 html += `<div style="padding: 12px; background: ${hasChanged ? 'rgba(16, 185, 129, 0.15)' : 'rgba(168, 85, 247, 0.1)'}; border-radius: 8px; border: ${hasChanged ? '2px solid var(--success)' : 'none'};">
-            <div style="font-size: 11px; color: var(--text-secondary); margin-bottom: 4px; font-weight: 600;">${label}</div>
-            <div style="font-size: 14px; font-weight: 600;">${hasChanged ? `${oldVal} <i data-lucide="arrow-right" style="width: 14px; height: 14px; display: inline-block; vertical-align: middle; margin: 0 4px;"></i> ${newVal}` : newVal}</div>
+            <div style="font-size: 11px; color: var(--text-secondary); margin-bottom: 4px; font-weight: 600;">${safeLabel}</div>
+            <div style="font-size: 14px; font-weight: 600;">${hasChanged ? `${safeOld} <i data-lucide="arrow-right" style="width: 14px; height: 14px; display: inline-block; vertical-align: middle; margin: 0 4px;"></i> ${safeNew}` : safeNew}</div>
         </div>`;
             });
 
@@ -10593,6 +10649,7 @@ async function ownerFetchUserRole(email) {
     </script>
     </div><!-- End SharePoint Compatibility Wrapper -->
     <!-- Modular view scripts -->
+<script src="http://sharedspaces:8086/sites/SM/Shared%20Documents/me-pending.js"></script>
 <script src="http://sharedspaces:8086/sites/SM/Shared%20Documents/pending.js"></script>
 <script src="http://sharedspaces:8086/sites/SM/Shared%20Documents/am-ad.js"></script>
 <script src="http://sharedspaces:8086/sites/SM/Shared%20Documents/transfer.js"></script>
