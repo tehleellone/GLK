@@ -202,6 +202,132 @@
       .trim();
   }
 
+  function fneEscapeHtml(val) {
+    return String(val == null ? '' : val)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  function fneCurrentUserDisplayName() {
+    const u = fneCurrentUser();
+    return (u && (u.name || u.email)) ? String(u.name || u.email) : 'Unknown';
+  }
+
+  function fneFormatCommentStamp(date) {
+    const d = date instanceof Date ? date : new Date();
+    return d.toLocaleString('en-GB', {
+      day: '2-digit', month: 'short', year: 'numeric',
+      hour: '2-digit', minute: '2-digit',
+    });
+  }
+
+  function fneParseCommentEntries(text) {
+    if (!text || text === '—') return [];
+    const raw = String(text).trim();
+    if (!raw) return [];
+    const entries = [];
+    const re = /\[([^\]]+)\]\s*\n([\s\S]*?)(?=\n\n\[|$)/g;
+    let m;
+    while ((m = re.exec(raw)) !== null) {
+      const header = m[1].trim();
+      const body = m[2].trim();
+      if (!body) continue;
+      const dashIdx = header.indexOf('—');
+      const when = dashIdx >= 0 ? header.slice(0, dashIdx).trim() : header;
+      const who = dashIdx >= 0 ? header.slice(dashIdx + 1).trim() : 'Unknown';
+      entries.push({ when: when, who: who || 'Unknown', text: body });
+    }
+    if (!entries.length) entries.push({ when: '', who: '', text: raw, legacy: true });
+    return entries;
+  }
+
+  function fneBuildCommentsForSave(existingRaw, newComment) {
+    const newText = (newComment || '').trim();
+    if (!newText) return (existingRaw || '').trim() || null;
+    const entry = '[' + fneFormatCommentStamp(new Date()) + ' — ' + fneCurrentUserDisplayName() + ']\n' + newText;
+    const prev = (existingRaw || '').trim();
+    return prev ? prev + '\n\n' + entry : entry;
+  }
+
+  function fneRenderCommentHistory(entries) {
+    const wrap = document.getElementById('fne_comments_history_wrap');
+    const box = document.getElementById('fne_comments_history');
+    if (!wrap || !box) return;
+    if (!entries || !entries.length) {
+      wrap.style.display = 'block';
+      box.innerHTML = '<div class="fne-comment-history-empty">No comments yet.</div>';
+      return;
+    }
+    wrap.style.display = 'block';
+    box.innerHTML = entries.map(function(entry) {
+      const meta = entry.when || entry.who
+        ? '<div class="fne-comment-entry-meta">' +
+          (entry.when ? '<span><strong>Date:</strong> ' + fneEscapeHtml(entry.when) + '</span>' : '') +
+          (entry.who ? '<span><strong>By:</strong> ' + fneEscapeHtml(entry.who) + '</span>' : '') +
+          '</div>'
+        : '';
+      return '<div class="fne-comment-entry">' + meta +
+        '<div class="fne-comment-entry-text">' + fneEscapeHtml(entry.text) + '</div></div>';
+    }).join('');
+  }
+
+  function fneClearCommentHistoryUi() {
+    const wrap = document.getElementById('fne_comments_history_wrap');
+    const box = document.getElementById('fne_comments_history');
+    if (wrap) wrap.style.display = 'none';
+    if (box) box.innerHTML = '';
+  }
+
+  function fneExtractCommentsFromVersionHistory(entries) {
+    const labels = new Set(['Comments (New)', 'Comments', FNE_F.COMMENTS_NEW, FNE_F.COMMENTS]);
+    const out = [];
+    (entries || []).forEach(function(entry) {
+      (entry.changes || []).forEach(function(ch) {
+        if (!labels.has(ch.label)) return;
+        const text = fneCleanSpHistoryValue(ch.newVal);
+        if (!text || text === '—') return;
+        out.push({
+          when: fneHistoryFmtDate(entry.created),
+          who: entry.editor || 'Unknown',
+          text: text,
+        });
+      });
+    });
+    return out;
+  }
+
+  function fneMergeCommentEntries(primary, secondary) {
+    const seen = new Set();
+    const merged = [];
+    function push(entry) {
+      const key = (entry.when || '') + '|' + (entry.who || '') + '|' + (entry.text || '');
+      if (seen.has(key)) return;
+      seen.add(key);
+      merged.push(entry);
+    }
+    (primary || []).forEach(push);
+    (secondary || []).forEach(push);
+    return merged;
+  }
+
+  function fneLoadCommentHistory(itemId, fallbackRaw) {
+    const box = document.getElementById('fne_comments_history');
+    const wrap = document.getElementById('fne_comments_history_wrap');
+    if (!box || !wrap) return;
+    wrap.style.display = 'block';
+    box.innerHTML = '<div class="fne-comment-history-loading">Loading comment history...</div>';
+    const parsed = fneParseCommentEntries(fallbackRaw || '');
+    fneBuildItemHistoryEntries(itemId).then(function(entries) {
+      const fromVersions = fneExtractCommentsFromVersionHistory(entries);
+      const merged = parsed.length ? fneMergeCommentEntries(parsed, fromVersions) : fromVersions;
+      fneRenderCommentHistory(merged);
+    }).catch(function() {
+      fneRenderCommentHistory(parsed);
+    });
+  }
+
 function fneIsAdmin() {
   const role = (USER && USER.role ? String(USER.role) : '').toLowerCase();
   return !!(
@@ -1339,6 +1465,21 @@ if (fneIsAdmin()) {
   .fne-history-changes-table tr:last-child td { border-bottom: none; }
   .fne-history-old { color: var(--t3); text-decoration: line-through; }
   .fne-history-new { color: var(--t1); font-weight: 700; }
+
+  /* Comment history (edit form) */
+  .fne-comment-history { display: flex; flex-direction: column; gap: 10px; max-height: 320px; overflow-y: auto; }
+  .fne-comment-entry {
+    background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 10px;
+    padding: 12px 14px; border-left: 3px solid #06b6d4;
+  }
+  .fne-comment-entry-meta {
+    display: flex; flex-wrap: wrap; gap: 8px 14px; font-size: .72rem; color: var(--t3); margin-bottom: 6px;
+  }
+  .fne-comment-entry-meta strong { color: var(--t2); font-weight: 700; }
+  .fne-comment-entry-text { font-size: .82rem; color: var(--t1); line-height: 1.45; white-space: pre-wrap; word-break: break-word; }
+  .fne-comment-history-empty { font-size: .8rem; color: var(--t3); font-style: italic; padding: 8px 0; }
+  .fne-comment-history-loading { font-size: .8rem; color: var(--t3); padding: 8px 0; }
+
   @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
   </style>
   
@@ -1524,7 +1665,11 @@ if (fneIsAdmin()) {
         <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
         Comments
       </div>
-      <textarea id="fne_comments_new" class="fne-input fne-textarea" placeholder="Enter notes, comments or updates about this project..."></textarea>
+      <textarea id="fne_comments_new" class="fne-input fne-textarea" placeholder="Add a new comment (saved with your name and timestamp)..."></textarea>
+      <div id="fne_comments_history_wrap" style="display:none;margin-top:1rem;">
+        <div style="font-size:.72rem;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:.5rem;">Comment History</div>
+        <div id="fne_comments_history" class="fne-comment-history"></div>
+      </div>
     </div>
   
     <!-- ══ ATTACHMENTS ══ -->
@@ -1829,6 +1974,7 @@ function fneOpenForm(itemId, fromList) {
       if (delBtn)    delBtn.style.display = 'none';
       const histBtn = document.getElementById('fneViewHistoryBtn');
       if (histBtn) histBtn.style.display = 'none';
+      fneClearCommentHistoryUi();
       fneSetLockState('exp_rfs', false);
       fneSetLockState('impl_start', false);
       fneSetActualRfsMaxDate();
@@ -1890,7 +2036,7 @@ function fneOpenForm(itemId, fromList) {
     set('fne_acc_dir',      clean(item.accountDirector));
     set('fne_am_email',     item.amEmail || '');
     set('fne_fne_mgr',      clean(item.fneManager));
-    set('fne_comments_new', fneHtmlToPlain(item.commentsNew));
+    set('fne_comments_new', '');
     set('fne_blocker',      clean(item.blocker));
     set('fne_temp_conn',    clean(item.tempConnType));
   
@@ -1919,6 +2065,7 @@ function fneOpenForm(itemId, fromList) {
     if (tabs) tabs.style.display = 'none';
     fneSetEntryMode('single');
     fneApplyCriticalProjectsAccess();
+    fneLoadCommentHistory(itemId, item.commentsNewRaw || item.commentsNew);
   }
   // ══════════════════════════════════════════════════════════════════
   function fneSetLockState(fieldKey, locked) {
@@ -1967,6 +2114,7 @@ function fneOpenForm(itemId, fromList) {
     if (txt) txt.textContent = 'Project Health: —';
     const sub = document.getElementById('fneHealthSub');
     if (sub) sub.textContent = 'Set Expected RFS and Building Status to calculate';
+    fneClearCommentHistoryUi();
   }
   
   // ══════════════════════════════════════════════════════════════════
@@ -2177,6 +2325,9 @@ if (!fneIsAdmin()) {
     const gn = id => { const v = parseFloat(gv(id)); return isNaN(v) ? null : v; };
 
     const critSnapshot = fneIsPowerUser() ? gv('fne_critical_projects') : '';
+    const existingCommentsRaw = FNE_EDIT_ID
+      ? ((FNE_LIST_DATA.find(function(i) { return i.id === FNE_EDIT_ID; }) || {}).commentsNewRaw || '')
+      : '';
     const shouldNotifyCritical = fneIsPowerUser() &&
       fneIsCriticalYes(critSnapshot) &&
       !fneIsCriticalYes(FNE_EDIT_CRITICAL_PREV);
@@ -2223,7 +2374,7 @@ if (!fneIsAdmin()) {
       [FNE_F.VERTICAL]:     gv('fne_vertical'),
       [FNE_F.ACC_DIR]:      gv('fne_acc_dir')      || null,
       [FNE_F.FNE_MGR]:      gv('fne_fne_mgr'),
-      [FNE_F.COMMENTS_NEW]: gv('fne_comments_new') || null,
+      [FNE_F.COMMENTS_NEW]: fneBuildCommentsForSave(existingCommentsRaw, gv('fne_comments_new')),
       [FNE_F.CONTRACT_DUR]: gn('fne_contract_dur'),
       [FNE_F.OTC]:          gn('fne_otc'),
       [FNE_F.MRC]:          gn('fne_mrc'),
@@ -2662,6 +2813,7 @@ if (!fneIsAdmin()) {
       rfsBaseline:     it[FNE_F.RFS_BASELINE] || null,
       criticalProjects:it[FNE_F.CRITICAL_PROJ]|| '—',
       commentsNew:     fneHtmlToPlain(it[FNE_F.COMMENTS_NEW]) || '—',
+      commentsNewRaw:  fneHtmlToPlain(it[FNE_F.COMMENTS_NEW]) || '',
       implStart:       it[FNE_F.IMPL_START]   || null,
       projectHealth:   it[FNE_F.PROJ_HEALTH]  || '—',
       spi:             n(it[FNE_F.SPI]),
@@ -2674,22 +2826,54 @@ if (!fneIsAdmin()) {
     };
   }
   
+  function fneListMatchesBarFilters(item) {
+    for (const key in FNE_LIST_MS_CFG) {
+      const cfg = FNE_LIST_MS_CFG[key];
+      const sel = FNE_LIST_MS_STATE[key];
+      if (!sel || sel.size === 0) continue;
+      const val = item[cfg.field];
+      if (!sel.has(val) && !sel.has(String(val))) return false;
+    }
+    const rfsMig = fneGetRfsMigrationFilter();
+    if (rfsMig === 'approaching' && !fneIsApproachingRfs(item)) return false;
+    if (rfsMig === 'overdue' && !fneIsOverdueRfs(item)) return false;
+    return true;
+  }
+
   function fneListApplyFilter() {
     fneEnsurePowerUserUi();
-    const rfsMig = fneGetRfsMigrationFilter();
-    const filtered = FNE_LIST_DATA.filter(function(item) {
-      for (const key in FNE_LIST_MS_CFG) {
-        const cfg = FNE_LIST_MS_CFG[key];
-        const sel = FNE_LIST_MS_STATE[key];
-        if (!sel || sel.size === 0) continue;
-        const val = item[cfg.field];
-        if (!sel.has(val) && !sel.has(String(val))) return false;
-      }
-      if (rfsMig === 'approaching' && !fneIsApproachingRfs(item)) return false;
-      if (rfsMig === 'overdue' && !fneIsOverdueRfs(item)) return false;
-      return true;
-    });
+    const filtered = FNE_LIST_DATA.filter(fneListMatchesBarFilters);
     fneRenderGrid(filtered);
+  }
+
+  function fneGetExportRows() {
+    if (FNE_GRID_API && typeof FNE_GRID_API.forEachNodeAfterFilterAndSort === 'function') {
+      const rows = [];
+      FNE_GRID_API.forEachNodeAfterFilterAndSort(function(node) {
+        if (node.data) rows.push(node.data);
+      });
+      return rows;
+    }
+    return FNE_LIST_DATA.filter(fneListMatchesBarFilters);
+  }
+
+  function fneDescribeActiveListFilters() {
+    const parts = [];
+    Object.keys(FNE_LIST_MS_CFG).forEach(function(key) {
+      const cfg = FNE_LIST_MS_CFG[key];
+      const sel = FNE_LIST_MS_STATE[key];
+      if (!sel || !sel.size) return;
+      parts.push(cfg.field + ': ' + [...sel].join(', '));
+    });
+    const rfsMig = fneGetRfsMigrationFilter();
+    if (rfsMig === 'approaching') parts.push('Target Migration: Approaching');
+    else if (rfsMig === 'overdue') parts.push('Target Migration: Overdue');
+    const search = document.getElementById('fneListSearch');
+    if (search && search.value.trim()) parts.push('Search: "' + search.value.trim() + '"');
+    if (FNE_GRID_API && typeof FNE_GRID_API.isAnyFilterPresent === 'function' && FNE_GRID_API.isAnyFilterPresent()) {
+      parts.push('Column filters active');
+    }
+    return parts.length ? parts.join(' · ') : 'No filters (all records)';
   }
 
   function fneListReset() {
@@ -3756,7 +3940,11 @@ if (!fneIsAdmin()) {
   //  EXPORT EXCEL
   // ══════════════════════════════════════════════════════════════════
   function fneExportExcel() {
-    const data  = FNE_LIST_DATA;
+    const data  = fneGetExportRows();
+    if (!data.length) {
+      fneToast('No records to export — adjust filters or load data first', 'error');
+      return;
+    }
     const cols  = ['id','fneManager','amName','customerName','subRequest','implType','projectType',
                     'vertical','accountDirector','requestStatus','projectHealth','buildingStatus','sla',
                     'mrc','otc','tcv','contractDuration','estimatedCost','pmManDays','startDate','expectedRFS',
@@ -3770,28 +3958,75 @@ if (!fneIsAdmin()) {
                     'Site Survey Reference','Account Code','Unit Number','Customer Address','Comments','Year'];
     const fmt2  = v => { const n=parseFloat(v); if(isNaN(n))return'—'; if(n>=1e6)return(n/1e6).toFixed(2)+'M'; if(n>=1e3)return(n/1e3).toFixed(1)+'K'; return n.toFixed(0); };
     const fmtD  = iso => { if(!iso)return'—'; const d=new Date(iso); return isNaN(d)?'—':d.toLocaleDateString('en-GB'); };
-    const numFlds  = new Set(['mrc','otc','tcv','estimatedCost','ospCivilET']);
+    const numFlds  = new Set(['mrc','otc','tcv','estimatedCost','ospCivilET','sla','contractDuration','unitNo','accountCode','year']);
     const dateFlds = new Set(['startDate','expectedRFS','rfsBaseline','implStart','targetMigDate']);
-  
-    let html = '<html><head><meta charset="utf-8"></head><body><table border="1" cellpadding="4" cellspacing="0">';
-    html += '<tr>' + hdrs.map(h => `<th style="background:#2563eb;color:white;font-weight:bold;padding:10px;">${h}</th>`).join('') + '</tr>';
-    data.forEach((row, i) => {
-      const bg = i % 2 === 0 ? '#f8faff' : '#ffffff';
-      html += '<tr>' + cols.map(c => {
+
+    const statusStyle = {
+      'Completed': 'background:#DCFCE7;color:#166534;font-weight:bold;',
+      'In Progress': 'background:#DBEAFE;color:#1E40AF;font-weight:bold;',
+      'Inprogress': 'background:#DBEAFE;color:#1E40AF;font-weight:bold;',
+      'On Hold': 'background:#FEF3C7;color:#92400E;font-weight:bold;',
+      'Cancelled': 'background:#FEE2E2;color:#991B1B;font-weight:bold;',
+    };
+    const healthStyle = {
+      'Green': 'background:#DCFCE7;color:#166534;font-weight:bold;',
+      'Amber': 'background:#FEF3C7;color:#92400E;font-weight:bold;',
+      'Red': 'background:#FEE2E2;color:#991B1B;font-weight:bold;',
+      'No Expected RFS to calculate Project Health': 'background:#F3F4F6;color:#374151;font-weight:bold;',
+    };
+    const buildStyle = {
+      'RFS': 'background:#DCFCE7;color:#166534;font-weight:bold;',
+      'Partial RFS': 'background:#FEF3C7;color:#92400E;font-weight:bold;',
+      'Not Connected': 'background:#FEE2E2;color:#991B1B;font-weight:bold;',
+    };
+    const colorFields = {
+      requestStatus: statusStyle,
+      projectHealth: healthStyle,
+      buildingStatus: buildStyle,
+    };
+
+    const filterNote = fneDescribeActiveListFilters();
+    const exportedOn = new Date().toLocaleString('en-GB');
+
+    let html = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">';
+    html += '<head><meta charset="utf-8">';
+    html += '<!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet>';
+    html += '<x:Name>FNE Tracker</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions>';
+    html += '</x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]-->';
+    html += '<style>td,th{mso-number-format:"\\@";border:1px solid #CBD5E1;} .num{mso-number-format:"0.00";}</style>';
+    html += '</head><body>';
+    html += '<table border="1" cellpadding="6" cellspacing="0" style="border-collapse:collapse;font-family:Calibri,Arial,sans-serif;font-size:11pt;">';
+    html += '<tr><td colspan="' + hdrs.length + '" style="background:#1E3A8A;color:#FFFFFF;font-weight:bold;font-size:12pt;padding:10px;">FNE Tracker Export — ' + fneEscapeHtml(exportedOn) + '</td></tr>';
+    html += '<tr><td colspan="' + hdrs.length + '" style="background:#EFF6FF;color:#1E3A8A;padding:8px;">Filters: ' + fneEscapeHtml(filterNote) + ' · Exported rows: ' + data.length + '</td></tr>';
+    html += '<tr>' + hdrs.map(function(h) {
+      return '<th style="background:#2563EB;color:#FFFFFF;font-weight:bold;padding:10px;border:1px solid #1D4ED8;text-align:center;white-space:nowrap;">' + fneEscapeHtml(h) + '</th>';
+    }).join('') + '</tr>';
+
+    data.forEach(function(row, i) {
+      const bg = i % 2 === 0 ? '#F8FAFF' : '#FFFFFF';
+      html += '<tr>' + cols.map(function(c) {
         let v = row[c];
-        if (v === undefined || v === null) v = '—';
-        if (numFlds.has(c))  v = fmt2(v);
-        if (dateFlds.has(c)) v = fmtD(v);
-        return `<td style="background:${bg};padding:8px;">${v}</td>`;
+        if (v === undefined || v === null || v === '—') v = '—';
+        let extra = 'padding:8px;border:1px solid #CBD5E1;background:' + bg + ';vertical-align:top;';
+        if (numFlds.has(c) && v !== '—') {
+          v = fmt2(v);
+          extra += 'text-align:right;mso-number-format:"0.00";';
+        } else if (dateFlds.has(c)) {
+          v = fmtD(v);
+        } else if (colorFields[c] && colorFields[c][v]) {
+          extra = colorFields[c][v] + 'padding:8px;border:1px solid #CBD5E1;text-align:center;vertical-align:top;';
+        }
+        return '<td style="' + extra + '">' + fneEscapeHtml(v) + '</td>';
       }).join('') + '</tr>';
     });
     html += '</table></body></html>';
-  
+
     const blob = new Blob([html], { type: 'application/vnd.ms-excel' });
     const a    = document.createElement('a');
     a.href     = URL.createObjectURL(blob);
-    a.download = 'FNE_Tracker_' + new Date().toISOString().split('T')[0] + '.xls';
+    a.download = 'FNE_Tracker_' + data.length + 'rows_' + new Date().toISOString().split('T')[0] + '.xls';
     a.click();
+    fneToast('Exported ' + data.length + ' filtered record(s) to Excel', 'success');
   }
   
   // ══════════════════════════════════════════════════════════════════
