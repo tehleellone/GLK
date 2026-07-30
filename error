@@ -1,0 +1,213 @@
+Failed to load resource: the server responded with a status of 404 (NOT FOUND)
+Dashboard.aspx:1 Refused to execute script from 'http://sharedspaces:8086/sites/SM/Shared%20Documents/me-pending.js' because its MIME type ('') is not executable, and strict MIME type checking is enabled.
+tsm-se.js?v=4:1115 [TSM_SE] Module loaded - SP List mode (2026 months only)
+Dashboard.aspx:5668 [✓] Access granted: Tehleel.Lone@du.ae | Role: Admin
+Dashboard.aspx:8810 [INFO] User: Tehleel Lone | Role: Admin
+Dashboard.aspx:8817 [✓] Access granted - Loading dashboard data
+Dashboard.aspx:4450 [RevenueEnabled] true
+Dashboard.aspx:4451 [POCDetailsEnabled] false (global for all users)
+Dashboard.aspx:6023 Loading SharePoint...
+Dashboard.aspx:4643 DOJ data loaded: 30 records
+Dashboard.aspx:4691 Account Mapping loaded: 172 records
+Dashboard.aspx:4450 [RevenueEnabled] true
+Dashboard.aspx:4451 [POCDetailsEnabled] false (global for all users)
+Dashboard.aspx:6299 [populateFilters] role: Admin | isTSMManager: false
+Dashboard.aspx:6533 [applyFilters] window.ALL_FILTERED now has: 5130 accounts
+Dashboard.aspx:6534 [applyFilters] Groups: 2370
+Dashboard.aspx:6535 [applyFilters] Children: 2760
+ag-grid-community.min.js:1 AG Grid: duplicate node id 'parent_5.30080' detected from getRowId callback, this could cause issues in your grid.
+(anonymous) @ ag-grid-community.min.js:1
+ag-grid-community.min.js:1 AG Grid: duplicate node id 'parent_6.245841' detected from getRowId callback, this could cause issues in your grid.
+(anonymous) @ ag-grid-community.min.js:1
+ag-grid-community.min.js:1 AG Grid: duplicate node id 'parent_6.116544' detected from getRowId callback, this could cause issues in your grid.
+(anonymous) @ ag-grid-community.min.js:1
+ag-grid-community.min.js:1 AG Grid: duplicate node id 'parent_5.58945' detected from getRowId callback, this could cause issues in your grid.
+(anonymous) @ ag-grid-community.min.js:1
+ag-grid-community.min.js:1 AG Grid: duplicate node id 'parent_6.268493' detected from getRowId callback, this could cause issues in your grid.
+(anonymous) @ ag-grid-community.min.js:1
+ag-grid-community.min.js:1 AG Grid: duplicate node id 'parent_6.159837' detected from getRowId callback, this could cause issues in your grid.
+(anonymous) @ ag-grid-community.min.js:1
+ag-grid-community.min.js:1 AG Grid: duplicate node id 'parent_6.310425' detected from getRowId callback, this could cause issues in your grid.
+(anonymous) @ ag-grid-community.min.js:1
+ag-grid-community.min.js:1 AG Grid: duplicate node id 'parent_6.167292' detected from getRowId callback, this could cause issues in your grid.
+(anonymous) @ ag-grid-community.min.js:1
+ag-grid-community.min.js:1 AG Grid: duplicate node id 'parent_5.29293' detected from getRowId callback, this could cause issues in your grid.
+(anonymous) @ ag-grid-community.min.js:1
+ag-grid-community.min.js:1 AG Grid: duplicate node id 'parent_5.83208' detected from getRowId callback, this could cause issues in your grid.
+(anonymous) @ ag-grid-community.min.js:1
+analytics.js:160 [Analytics] Session started, SP ID: 17492
+Dashboard.aspx:2986 Uncaught ReferenceError: initMEPending is not defined
+    at HTMLDivElement.onclick (Dashboard.aspx:2986:179)
+[NEW] Explain Console errors by using Copilot in Edge: click  to explain an error. Learn more
+
+
+
+Details:_
+
+
+
+
+
+
+
+ ME_Pending_Tracking  Settings
+List Information
+Name:
+ME_Pending_Tracking
+Web Address:
+http://sharedspaces:8086/sites/SM/Lists/ME_Pending_Tracking/AllItems.aspx
+
+
+Columns
+A column stores information about each item in the list. The following columns are currently available in this list:
+Column (click to edit)TypeRequired
+ Title 
+Single line of text
+ Email_Received_Date 
+Date and Time
+ Sender_Type 
+Choice
+ Subject_Line 
+Single line of text
+ Account_Code 
+Single line of text
+ Customer_Name 
+Single line of text
+ Pending_With 
+Choice
+ Case_Status 
+Choice
+ Issue_Type 
+Choice
+ Agent_Name 
+Single line of text
+ Team_Name 
+Choice
+ Resolved_Date 
+Date and Time
+ Priority 
+Choice
+ Remarks 
+Multiple lines of text
+ Logged_By 
+Single line of text
+ Modified 
+Date and Time
+ Created 
+Date and Time
+ Created By 
+Person or Group
+ Modified By 
+Person or Group
+
+
+pull out internal names for this
+
+Copilot said:
+Based on the SharePoint List Settings URL parameters (&Field= values), the internal names of the columns in ME_Pending_Tracking are:
+
+
+
+
+Plain Text
+Title
+Email_Received_Date
+Sender_Type
+Subject_Line
+Account_Code
+Customer_Name
+Pending_With
+Case_Status
+Issue_Type
+Agent_Name
+Team_Name
+Resolved_Date
+Priority
+Remarks
+Logged_By
+Modified
+Created
+Author
+Editor
+
+Show more lines
+Column Display Name ↔ Internal Name
+Display Name	Internal Name
+Title	Title
+Email_Received_Date	Email_Received_Date
+Sender_Type	Sender_Type
+Subject_Line	Subject_Line
+Account_Code	Account_Code
+Customer_Name	Customer_Name
+Pending_With	Pending_With
+Case_Status	Case_Status
+Issue_Type	Issue_Type
+Agent_Name	Agent_Name
+Team_Name	Team_Name
+Resolved_Date	Resolved_Date
+Priority	Priority
+Remarks	Remarks
+Logged_By	Logged_By
+Modified	Modified
+Created	Created
+Created By	Author
+Modified By	Editor
+Internal Names for Power Automate / REST API
+Use these exactly:
+
+
+
+
+Plain Text
+Title
+Email_Received_Date
+Sender_Type
+Subject_Line
+Account_Code
+Customer_Name
+Pending_With
+Case_Status
+Issue_Type
+Agent_Name
+Team_Name
+Resolved_Date
+Priority
+Remarks
+Logged_By
+Modified
+Created
+Author
+Editor
+
+Show more lines
+Example REST API Query
+
+
+
+HTTP
+_api/web/lists/getbytitle('ME_Pending_Tracking')/items?$select=Title,Email_Received_Date,Sender_Type,Subject_Line,Account_Code,Customer_Name,Pending_With,Case_Status,Issue_Type,Agent_Name,Team_Name,Resolved_Date,Priority,Remarks,Logged_By,Author/Title,Editor/Title&$expand=Author,Editor
+Example Power Automate Dynamic References
+
+
+
+Plain Text
+item()?['Title']
+item()?['Email_Received_Date']
+item()?['Sender_Type']
+item()?['Subject_Line']
+item()?['Account_Code']
+item()?['Customer_Name']
+item()?['Pending_With']
+item()?['Case_Status']
+item()?['Issue_Type']
+item()?['Agent_Name']
+item()?['Team_Name']
+item()?['Resolved_Date']
+item()?['Priority']
+item()?['Remarks']
+item()?['Logged_By']
+item()?['Author']
+item()?['Editor']
+
+Show more lines
+Note: These internal names are inferred from the List Settings page links and are very likely correct. If you need the exact JSON schema for a Power Automate Create Item or Update Item action, these are the names to use.
