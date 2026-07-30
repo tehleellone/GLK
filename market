@@ -767,6 +767,9 @@ body[data-theme="dark"] .badge-warning,body[data-theme="duralux-dark"] .badge-wa
 .rf-modal-removed-grid{height:190px;min-height:190px;flex:0 0 190px;}
 .rf-modal-grid-host{height:100%;width:100%;min-height:inherit;}
 .rf-modal-grid-host .ag-theme-alpine{height:100%!important;width:100%;border-radius:10px;border:1px solid var(--border);}
+.rf-modal-grid-host .ag-header-cell-label{white-space:normal;line-height:1.25;}
+.rf-modal-grid-host .ag-body-horizontal-scroll{min-height:16px;}
+.rf-modal-grid-host .ag-body-horizontal-scroll-viewport{overflow-x:auto!important;}
 .rf-modal-section-title{font-size:.72rem;font-weight:800;color:var(--t3);text-transform:uppercase;letter-spacing:.04em;margin:0;padding-top:.5rem;border-top:1px solid var(--border);}
 .rf-modal-drill{width:min(96vw,1420px)!important;height:min(92vh,940px)!important;max-height:92vh!important;}
 .ag-theme-alpine .ag-row.rf-removed-row .ag-cell{opacity:.65;text-decoration:line-through;}
@@ -4456,30 +4459,31 @@ function rfModalMetricFormatter(v){
 function rfBuildModalColDefs(isRemoved){
   const metricLabel=RF_METRICS.find(function(m){ return m.key===rfMetric; }).label;
   const moneyFields=['mrc','otc','tcv','pcv','gaPoints','gaLines'];
+  function col(cfg,kind){ const c=glkCol(cfg,kind); c.minWidth=c.minWidth||c.width||120; return c; }
   const cols=[
-    glkCol({field:'customerName',headerName:'Customer',width:175,pinned:'left'}),
-    glkCol({field:'productFamily',headerName:'Product Family',width:130}),
-    glkCol({field:'productCategory',headerName:'Product Category',width:145}),
-    glkCol({field:'services',headerName:'Services',width:155}),
-    glkCol({field:'amName',headerName:'Account Manager',width:140}),
-    glkCol({field:'headDirector',headerName:'Head Director',width:140}),
-    glkCol({field:'accountDirector',headerName:'Account Director',width:140}),
-    glkCol({field:'expectedActivation',headerName:'Expected Activation',width:145,valueFormatter:function(p){ return fmtDate(p.value); }},'date'),
-    glkCol({field:'mrc',headerName:'MRC',width:105,valueFormatter:function(p){ return fmt(p.value); }},'money'),
-    glkCol({field:'otc',headerName:'OTC',width:105,valueFormatter:function(p){ return fmt(p.value); }},'money'),
-    glkCol({field:'tcv',headerName:'TCV',width:110,valueFormatter:function(p){ return fmt(p.value); }},'money'),
-    glkCol({field:'pcv',headerName:'Cat. Value',width:110,valueFormatter:function(p){ return fmt(p.value); }},'money'),
-    glkCol({field:'gaLines',headerName:'GA Lines',width:100,valueFormatter:function(p){ return fmtGA(p.value); },filterValueGetter:function(p){ return fmtGA(p.data.gaLines); }}),
-    glkCol({field:'status',headerName:'Status',width:115,cellRenderer:function(p){
+    col({field:'customerName',headerName:'Customer',width:200,pinned:'left'}),
+    col({field:'productFamily',headerName:'Product Family',width:140}),
+    col({field:'productCategory',headerName:'Product Category',width:155}),
+    col({field:'services',headerName:'Services',width:170}),
+    col({field:'amName',headerName:'Account Manager',width:155}),
+    col({field:'headDirector',headerName:'Head Director',width:155}),
+    col({field:'accountDirector',headerName:'Account Director',width:160}),
+    col({field:'expectedActivation',headerName:'Expected Activation',width:160,valueFormatter:function(p){ return fmtDate(p.value); }},'date'),
+    col({field:'mrc',headerName:'MRC',width:115,valueFormatter:function(p){ return fmt(p.value); }},'money'),
+    col({field:'otc',headerName:'OTC',width:115,valueFormatter:function(p){ return fmt(p.value); }},'money'),
+    col({field:'tcv',headerName:'TCV',width:120,valueFormatter:function(p){ return fmt(p.value); }},'money'),
+    col({field:'pcv',headerName:'Cat. Value',width:120,valueFormatter:function(p){ return fmt(p.value); }},'money'),
+    col({field:'gaLines',headerName:'GA Lines',width:110,valueFormatter:function(p){ return fmtGA(p.value); },filterValueGetter:function(p){ return fmtGA(p.data.gaLines); }}),
+    col({field:'status',headerName:'Status',width:125,cellRenderer:function(p){
       var s=p.value||'—',cl=STATUS_WON.includes(s)?'badge-success':STATUS_LOST.includes(s)?'badge-danger':'badge-warning';
       return '<span class="status-badge '+cl+'">'+s+'</span>';
     }}),
-    glkCol({field:'closureProb',headerName:'Closure Prob.',width:120,cellRenderer:function(p){
+    col({field:'closureProb',headerName:'Closure Prob.',width:135,cellRenderer:function(p){
       var v=p.value||'—',col=v==='100%'?'#16a34a':v==='75%'?'rgba(22,163,74,.8)':v==='50%'?'#b45309':'#dc2626';
       return '<span style="font-weight:700;color:'+col+'">'+v+'</span>';
     }}),
-    glkCol({field:rfMetric,headerName:metricLabel+' (active)',width:120,hide:rfMetric==='count'||moneyFields.indexOf(rfMetric)>=0,valueFormatter:function(p){ return rfModalMetricFormatter(p.value); },cellStyle:{fontWeight:'700'},filterValueGetter:function(p){ return rfModalMetricFormatter(p.data[rfMetric]); }}, rfMetric==='count'?'text':'money'),
-    {headerName:'Action',width:96,pinned:'right',sortable:false,filter:false,resizable:false,
+    col({field:rfMetric,headerName:metricLabel+' (active)',width:130,hide:rfMetric==='count'||moneyFields.indexOf(rfMetric)>=0,valueFormatter:function(p){ return rfModalMetricFormatter(p.value); },cellStyle:{fontWeight:'700'},filterValueGetter:function(p){ return rfModalMetricFormatter(p.data[rfMetric]); }}, rfMetric==='count'?'text':'money'),
+    {headerName:'Action',width:100,minWidth:100,pinned:'right',sortable:false,filter:false,resizable:false,
       cellRenderer:function(p){
         const id=p.data&&p.data.id;
         if(!id) return '';
@@ -4493,7 +4497,7 @@ function rfBuildModalColDefs(isRemoved){
     }
   ];
   if(rfMetric==='count'){
-    cols.splice(cols.length-1,0,glkCol({field:'_count',headerName:'Count',width:80,valueGetter:function(){ return 1; },filterValueGetter:function(){ return '1'; }},'text'));
+    cols.splice(cols.length-1,0,col({field:'_count',headerName:'Count',width:90,valueGetter:function(){ return 1; },filterValueGetter:function(){ return '1'; }},'text'));
   }
   return cols;
 }
@@ -4509,25 +4513,23 @@ function rfRenderModalGrid(container, rows, isRemoved){
   gridDiv.className='ag-theme-alpine';
   host.appendChild(gridDiv);
   container.appendChild(host);
-  const api=agGrid.createGrid(gridDiv,{
+  return agGrid.createGrid(gridDiv,{
     columnDefs:rfBuildModalColDefs(isRemoved),
     rowData:rows,
-    defaultColDef:{sortable:true,filter:GlkValueListFilter,filterValueGetter:glkGridTextVal,resizable:true},
+    defaultColDef:{sortable:true,filter:GlkValueListFilter,filterValueGetter:glkGridTextVal,resizable:true,minWidth:110,wrapHeaderText:true,autoHeaderHeight:true},
     suppressMenuHide:true,
+    suppressHorizontalScroll:false,
+    alwaysShowHorizontalScroll:true,
     popupParent:document.body,
     pagination:true,
     paginationPageSize:isRemoved?10:50,
     paginationPageSizeSelector:isRemoved?[10,25,50]:[25,50,100,250],
     rowHeight:42,
-    headerHeight:44,
+    headerHeight:48,
     animateRows:true,
     enableCellTextSelection:true,
-    getRowClass:function(){ return isRemoved?'rf-removed-row':''; },
-    onFirstDataRendered:function(e){ try{ e.api.sizeColumnsToFit(); }catch(err){} },
-    onGridSizeChanged:function(e){ try{ e.api.sizeColumnsToFit(); }catch(err){} }
+    getRowClass:function(){ return isRemoved?'rf-removed-row':''; }
   });
-  setTimeout(function(){ try{ api.sizeColumnsToFit(); }catch(e){} },0);
-  return api;
 }
 function rfRenderModal(){
   if(!rfModalCtx) return;
