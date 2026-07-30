@@ -1,0 +1,40 @@
+1. Create SharePoint list: ME_Pending_Tracking
+
+Column name	Type	Choices (if Choice)
+Title
+Text
+auto reference ID
+Email_Received_Date
+Date
+Sender_Type
+Choice
+Customer, Internal, Vendor, AM, LM, Other
+Subject_Line
+Text
+Account_Code
+Text
+Customer_Name
+Text
+Pending_With
+Choice
+Agent, SM, LM, AM, AD, Customer, PSD, Other
+Case_Status
+Choice
+In Progress, Resolved
+Issue_Type
+Choice
+Billing, Technical, Service, Escalation, Documentation, Other
+Agent_Name
+Text
+Team_Name
+Choice
+DSM, TSM_ME, TSM_SE, PSD
+Resolved_Date
+Date
+Priority
+Choice
+Low, Medium, High
+Remarks
+Multiple lines (plain text)
+Logged_By
+Text
