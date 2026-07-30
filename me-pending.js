@@ -1,4 +1,3 @@
-// ============================================================
 // me-pending.js — ME Pending Tracking v1
 // SharePoint list: ME_Pending_Tracking
 // ============================================================
@@ -36,7 +35,9 @@
         activeKpi: null,
         activeAgent: null,
         editingId: null,
-        loaded: false
+        loaded: false,
+        chartsVisible: false,
+        formVisible: false
     };
 
     function meptSpUrl() {
@@ -252,25 +253,49 @@
                 '<div id="meptKpiTiles" style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:16px;"></div>' +
                 '<div id="meptFilters" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;margin-bottom:16px;"></div>' +
                 '<div id="meptAgentTiles" style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:16px;"></div>' +
-                '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">' +
-                    '<div class="edit-revenue-card" style="padding:16px;"><div style="font-size:12px;font-weight:700;color:var(--t3);margin-bottom:8px;">Case Status</div><canvas id="meptChartStatus" height="180"></canvas></div>' +
-                    '<div class="edit-revenue-card" style="padding:16px;"><div style="font-size:12px;font-weight:700;color:var(--t3);margin-bottom:8px;">Open Cases by Team</div><canvas id="meptChartTeam" height="180"></canvas></div>' +
+                '<div style="margin-bottom:16px;">' +
+                    '<button type="button" id="meptChartsToggleBtn" class="reset-btn" onclick="meptToggleCharts()" style="padding:10px 16px;font-size:13px;font-weight:700;">' +
+                    '<i data-lucide="bar-chart-3" style="width:14px;height:14px;display:inline-block;vertical-align:middle;margin-right:6px;"></i>Show Analytics Charts</button>' +
+                '</div>' +
+                '<div id="meptChartsWrap" style="display:none;margin-bottom:16px;">' +
+                    '<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;">' +
+                        '<div class="edit-revenue-card" style="padding:16px;">' +
+                            '<div style="font-size:12px;font-weight:700;color:var(--t3);margin-bottom:8px;">Case Status</div>' +
+                            '<div style="position:relative;height:220px;max-height:220px;overflow:hidden;"><canvas id="meptChartStatus"></canvas></div>' +
+                        '</div>' +
+                        '<div class="edit-revenue-card" style="padding:16px;">' +
+                            '<div style="font-size:12px;font-weight:700;color:var(--t3);margin-bottom:8px;">Open Cases by Team</div>' +
+                            '<div style="position:relative;height:220px;max-height:220px;overflow:hidden;"><canvas id="meptChartTeam"></canvas></div>' +
+                        '</div>' +
+                    '</div>' +
+                '</div>' +
+                '<div id="meptFormPanel" class="edit-section-block" style="display:none;margin-bottom:20px;border:1px solid var(--border);border-radius:16px;padding:20px;background:var(--bg-card);">' +
+                    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">' +
+                        '<h3 class="table-title" id="meptFormTitle" style="margin:0;"><i data-lucide="file-plus-2" style="width:18px;height:18px;display:inline-block;vertical-align:middle;margin-right:6px;"></i>Log Case</h3>' +
+                        '<button type="button" class="reset-btn" onclick="meptCloseForm()" style="padding:8px 14px;">Close</button>' +
+                    '</div>' +
+                    '<div id="meptFormBody"></div>' +
+                    '<div style="display:flex;gap:12px;margin-top:20px;padding-top:16px;border-top:1px solid var(--border);">' +
+                        '<button type="button" class="export-btn" onclick="meptSaveForm()" style="flex:1;padding:12px;"><i data-lucide="save" style="width:14px;height:14px;display:inline-block;vertical-align:middle;margin-right:6px;"></i>Save Case</button>' +
+                        '<button type="button" class="reset-btn" onclick="meptCloseForm()" style="padding:12px 20px;">Cancel</button>' +
+                    '</div>' +
                 '</div>' +
                 '<div id="meptGrid" class="ag-theme-alpine" style="height:560px;width:100%;"></div>' +
-            '</div>' +
-            '<div id="meptModal" style="display:none;position:fixed;inset:0;z-index:10060;background:rgba(0,0,0,.55);backdrop-filter:blur(4px);align-items:center;justify-content:center;padding:24px;">' +
-                '<div style="background:var(--bg-card);border:1px solid var(--border);border-radius:18px;max-width:920px;width:100%;max-height:90vh;overflow:auto;box-shadow:0 24px 64px rgba(0,0,0,.35);">' +
-                    '<div style="padding:18px 22px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">' +
-                        '<div style="font-size:18px;font-weight:800;" id="meptModalTitle">Log Case</div>' +
-                        '<button type="button" class="reset-btn" onclick="meptCloseForm()" style="padding:8px 12px;">Close</button>' +
-                    '</div>' +
-                    '<div id="meptFormBody" style="padding:22px;"></div>' +
-                    '<div style="padding:16px 22px;border-top:1px solid var(--border);display:flex;gap:12px;">' +
-                        '<button type="button" class="export-btn" onclick="meptSaveForm()" style="flex:1;">Save</button>' +
-                        '<button type="button" class="reset-btn" onclick="meptCloseForm()">Cancel</button>' +
-                    '</div>' +
-                '</div>' +
             '</div>';
+    }
+
+    function meptToggleCharts() {
+        MEPT.chartsVisible = !MEPT.chartsVisible;
+        var wrap = document.getElementById('meptChartsWrap');
+        var btn = document.getElementById('meptChartsToggleBtn');
+        if (wrap) wrap.style.display = MEPT.chartsVisible ? 'block' : 'none';
+        if (btn) {
+            btn.innerHTML = '<i data-lucide="bar-chart-3" style="width:14px;height:14px;display:inline-block;vertical-align:middle;margin-right:6px;"></i>' +
+                (MEPT.chartsVisible ? 'Hide Analytics Charts' : 'Show Analytics Charts');
+        }
+        if (MEPT.chartsVisible) meptRenderCharts();
+        else meptDestroyCharts();
+        if (typeof lucide !== 'undefined') lucide.createIcons();
     }
 
     function meptRenderKpis() {
@@ -344,7 +369,7 @@
     }
 
     function meptRenderCharts() {
-        if (typeof Chart === 'undefined') return;
+        if (!MEPT.chartsVisible || typeof Chart === 'undefined') return;
         meptDestroyCharts();
         var open = MEPT.allItems.filter(function (r) { return r.caseStatus === 'In Progress'; });
         var resolved = MEPT.allItems.filter(function (r) { return r.caseStatus === 'Resolved'; });
@@ -439,7 +464,8 @@
         meptRenderKpis();
         meptRenderFilters();
         meptRenderAgentTiles();
-        meptRenderCharts();
+        if (MEPT.chartsVisible) meptRenderCharts();
+        else meptDestroyCharts();
         meptRenderGrid();
         if (typeof lucide !== 'undefined') lucide.createIcons();
     }
@@ -474,8 +500,11 @@
             row = MEPT.allItems.find(function (r) { return r.id === itemId; });
         }
         MEPT.editingId = row ? row.id : null;
-        document.getElementById('meptModalTitle').textContent = row ? 'Edit Case' : 'Log Case';
-        var today = new Date().toISOString().slice(0, 10);
+        var titleEl = document.getElementById('meptFormTitle');
+        if (titleEl) {
+            titleEl.innerHTML = '<i data-lucide="file-plus-2" style="width:18px;height:18px;display:inline-block;vertical-align:middle;margin-right:6px;"></i>' +
+                (row ? 'Edit Case' : 'Log Case');
+        }
         var body = document.getElementById('meptFormBody');
         body.innerHTML =
             '<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;">' +
@@ -493,10 +522,16 @@
                 '<div class="filter-group"><label class="filter-label">Resolved Date</label><input type="date" class="filter-select" id="meptFormResolved" value="' + meptEsc(meptFmtDateInput(row ? row.resolvedDate : '')) + '" style="font-size:13px;padding:10px;"></div>' +
                 '<div class="filter-group" style="grid-column:1/-1;"><label class="filter-label">Remarks</label><textarea class="filter-select" id="meptFormRemarks" rows="3" style="resize:vertical;font-size:13px;padding:10px;">' + meptEsc(row ? row.remarks : '') + '</textarea></div>' +
             '</div>';
-        document.getElementById('meptModal').style.display = 'flex';
+        var panel = document.getElementById('meptFormPanel');
+        if (panel) {
+            panel.style.display = 'block';
+            MEPT.formVisible = true;
+            panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
         var statusEl = document.getElementById('meptFormStatus');
         if (statusEl) statusEl.onchange = meptFormStatusChanged;
         meptFormStatusChanged();
+        if (typeof lucide !== 'undefined') lucide.createIcons();
     }
 
     function meptFormStatusChanged() {
@@ -513,7 +548,9 @@
     }
 
     function meptCloseForm() {
-        document.getElementById('meptModal').style.display = 'none';
+        var panel = document.getElementById('meptFormPanel');
+        if (panel) panel.style.display = 'none';
+        MEPT.formVisible = false;
         MEPT.editingId = null;
     }
 
@@ -690,6 +727,7 @@
     };
     window.meptFormAccountBlur = meptFormAccountBlur;
     window.meptFormStatusChanged = meptFormStatusChanged;
+    window.meptToggleCharts = meptToggleCharts;
     window.meptExportExcel = meptExportExcel;
     window.meptExportPdf = meptExportPdf;
 
