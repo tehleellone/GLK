@@ -1047,6 +1047,34 @@ function safeValue(v){
   return v.toString();
 }
 
+function normalizeStatus(raw){
+  if(raw === null || raw === undefined || raw === "") return "";
+  var s = (typeof raw === "object" ? (raw.Value || raw.Label || "") : raw).toString().trim();
+  if(!s) return "";
+  if(CONFIG.statuses.indexOf(s) >= 0) return s;
+
+  var lower = s.toLowerCase().replace(/\s+/g, " ");
+  var aliases = {
+    "acknowledged": "Acknowledged",
+    "in process": "In Process",
+    "in progress": "In Process",
+    "assigned for biometrics": "Assigned for biometrics",
+    "pending with user": "Pending with user",
+    "pending with use": "Pending with user",
+    "on hold": "On Hold",
+    "cancelled": "Cancelled",
+    "canceled": "Cancelled",
+    "completed": "Completed",
+    "fulfilled": "Completed"
+  };
+  if(aliases[lower]) return aliases[lower];
+
+  for(var i = 0; i < CONFIG.statuses.length; i++){
+    if(CONFIG.statuses[i].toLowerCase() === lower) return CONFIG.statuses[i];
+  }
+  return s;
+}
+
 // ================= DATA PROCESSING =================
 function processData(rows){
   if(!rows || !rows.length){
@@ -1056,7 +1084,8 @@ function processData(rows){
 
   DATA.raw = rows.map(function(r){
     var srDate      = r.SR_x0020_Date || r.Created;
-    var status      = (r[CONFIG.statusField] || r.Status || "").toString();
+    var statusRaw   = r[CONFIG.statusField] || r.Status || "";
+    var status      = normalizeStatus(statusRaw);
     var transaction = r[CONFIG.transactionField];
     var completed   = r.Completed_x0020_Date;
 
@@ -1102,7 +1131,8 @@ function getStatusCounts(){
   var counts = {};
   CONFIG.statuses.forEach(function(s){ counts[s] = 0; });
   DATA.filtered.forEach(function(r){
-    if(counts.hasOwnProperty(r.status)){ counts[r.status]++; }
+    var s = normalizeStatus(r.status);
+    if(counts.hasOwnProperty(s)){ counts[s]++; }
   });
   return counts;
 }
@@ -1123,8 +1153,9 @@ function getAgingBuckets(){
 function getStatusCountsFromRaw(){
   var counts = {};
   CONFIG.statuses.forEach(function(s){ counts[s] = 0; });
-  DATA.raw.forEach(function(r){  // ← Use DATA.raw instead of DATA.filtered
-    if(counts.hasOwnProperty(r.status)){ counts[r.status]++; }
+  DATA.raw.forEach(function(r){
+    var s = normalizeStatus(r.status);
+    if(counts.hasOwnProperty(s)){ counts[s]++; }
   });
   return counts;
 }
