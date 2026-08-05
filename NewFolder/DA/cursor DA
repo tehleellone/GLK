@@ -127,6 +127,39 @@
     .config-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
     @media (max-width: 640px) { .config-row { grid-template-columns: 1fr; } }
     code { background: #eef2f6; padding: 2px 6px; border-radius: 4px; font-size: 0.85em; }
+    tr.clickable-row { cursor: pointer; }
+    tr.clickable-row:hover { background: #eef2f6 !important; }
+    .gap-box { font-size: 0.9rem; color: var(--muted); line-height: 1.6; }
+    .gap-box strong { color: var(--text); }
+    .gap-box ul { margin: 8px 0 0; padding-left: 20px; }
+    .modal-backdrop {
+      position: fixed; inset: 0; background: rgba(15, 23, 42, 0.5);
+      z-index: 1000; display: none; align-items: center; justify-content: center; padding: 20px;
+    }
+    .modal-backdrop.open { display: flex; }
+    .modal {
+      background: var(--card); border-radius: var(--radius); max-width: 960px; width: 100%;
+      max-height: 90vh; overflow: auto; padding: 24px; box-shadow: 0 20px 50px rgba(0,0,0,0.2);
+    }
+    .modal h2 { margin: 0 32px 4px 0; font-size: 1.2rem; }
+    .modal-sub { color: var(--muted); font-size: 0.85rem; margin-bottom: 16px; }
+    .modal-close {
+      float: right; border: none; background: #eef2f6; border-radius: 6px;
+      width: 32px; height: 32px; cursor: pointer; font-size: 1.2rem; line-height: 1;
+    }
+    .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+    @media (max-width: 720px) { .detail-grid { grid-template-columns: 1fr; } }
+    .detail-panel { background: #f8fafc; border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; }
+    .detail-panel h3 { margin: 0 0 10px; font-size: 0.95rem; }
+    .detail-line { font-size: 0.82rem; padding: 6px 0; border-bottom: 1px solid var(--border); }
+    .detail-line:last-child { border-bottom: none; }
+    .detail-formula { font-family: ui-monospace, monospace; font-size: 0.78rem; color: var(--muted); margin-top: 2px; }
+    .diff-banner {
+      padding: 12px 14px; border-radius: var(--radius); margin-bottom: 16px; font-size: 0.88rem;
+    }
+    .diff-banner.match { background: var(--ok-bg); border: 1px solid #a7d4bc; color: var(--ok); }
+    .diff-banner.gap { background: var(--warn-bg); border: 1px solid #fcd34d; color: #92400e; }
+    .diff-banner.big-gap { background: var(--err-bg); border: 1px solid #fca5a5; color: var(--err); }
   </style>
 </head>
 <body>
@@ -217,6 +250,19 @@
 
   <!-- RESULTS -->
   <section id="view-results" class="view">
+    <div class="card" style="margin-bottom:16px">
+      <h2>What is the gap?</h2>
+      <div class="gap-box">
+        <p><strong>Generated</strong> = what we calculate from SharePoint tenant contracts (MRC, proration from activation date, service-type columns, AP at AED 400/port).</p>
+        <p><strong>Finance</strong> = what du actually billed in <code>Data_dubai_request.xlsx</code> for the selected month (ex-VAT).</p>
+        <p><strong>Gap (Difference)</strong> = Generated − Finance. Click any tenant row below to see the full calculation and why it may differ.</p>
+        <ul>
+          <li><strong>Finance higher</strong> — often activation-month full MRC in finance invoice, but DA report only shows prorated days</li>
+          <li><strong>Report higher</strong> — contract in SharePoint but not billed yet, or finance row missing</li>
+          <li><strong>Service split</strong> — Guest Wifi / Secure Wifi / Wireline / AP mapped from SharePoint <code>Service Type</code></li>
+        </ul>
+      </div>
+    </div>
     <div id="summaryAlert"></div>
     <div class="grid grid-3" style="margin-bottom:16px">
       <div class="card">
@@ -243,7 +289,8 @@
       </div>
     </div>
     <div class="card" style="margin-bottom:16px">
-      <h2>Reconciliation issues <span id="issueCount" class="badge badge-warn">0</span></h2>
+      <h2>Reconciliation issues <span id="issueCount" class="badge badge-warn">0</span>
+        <span style="font-weight:400;font-size:0.85rem;color:var(--muted)">— click a row to see calculation</span></h2>
       <div class="scroll">
         <table>
           <thead>
@@ -263,7 +310,7 @@
       </div>
     </div>
     <div class="card">
-      <h2>Report preview (by account)</h2>
+      <h2>Report preview (by account) <span style="font-weight:400;font-size:0.85rem;color:var(--muted)">— click a row for calculation detail</span></h2>
       <div class="scroll">
         <table>
           <thead>
@@ -277,6 +324,8 @@
               <th class="num">Wireline</th>
               <th class="num">AP</th>
               <th class="num">Total</th>
+              <th class="num">Finance</th>
+              <th class="num">Gap</th>
               <th class="num">DA Share 70%</th>
             </tr>
           </thead>
@@ -289,6 +338,29 @@
       </div>
     </div>
   </section>
+</div>
+
+<div id="detailModal" class="modal-backdrop" aria-hidden="true">
+  <div class="modal" role="dialog">
+    <button type="button" class="modal-close" id="modalClose" title="Close">&times;</button>
+    <h2 id="modalTitle">Tenant detail</h2>
+    <div class="modal-sub" id="modalSub"></div>
+    <div id="modalDiffBanner"></div>
+    <div class="detail-grid">
+      <div class="detail-panel">
+        <h3>How we calculated (SharePoint)</h3>
+        <div id="modalGenerated"></div>
+      </div>
+      <div class="detail-panel">
+        <h3>Finance billing (du file)</h3>
+        <div id="modalFinance"></div>
+      </div>
+    </div>
+    <div class="detail-panel">
+      <h3>Contract-by-contract breakdown</h3>
+      <div id="modalContracts"></div>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -577,16 +649,72 @@
   }
 
   /* ---------- Report engine ---------- */
+  function serviceTypeLabel(row) {
+    var parts = [];
+    if (row.tw) parts.push("Tenant Wifi");
+    if (row.tsw) parts.push("Tenant Secure Wifi");
+    if (row.glw) parts.push("Guest Lounge Wifi");
+    if (row.wl || row.ap) parts.push("Wireline Internet");
+    return parts.join("/") || "—";
+  }
+
   function computeReport(spItems, month, year) {
     var byAccount = {};
     spItems.forEach(function (item) {
-      if (!item.account) return;
-      if (item.status === "Ceased") return;
-      var act = item.activation;
-      if (act && act > new Date(year, month, 0)) return;
+      var detail = {
+        contract: item.contract,
+        serviceType: item.serviceType,
+        mrc: item.mrc,
+        aps: item.aps,
+        activation: item.activation,
+        status: item.status,
+        terminal: item.terminal,
+        location: item.location,
+        airport: item.airport,
+        included: false,
+        skipReason: "",
+        proration: null,
+        lines: []
+      };
 
+      if (!item.account) {
+        detail.skipReason = "Missing account number";
+        return;
+      }
+      if (item.status === "Ceased") {
+        detail.skipReason = "Ceased — excluded from report";
+        pushDetail(byAccount, item, detail);
+        return;
+      }
+      var act = item.activation;
+      if (act && act > new Date(year, month, 0)) {
+        detail.skipReason = "Activates after " + MONTH_LABELS[month] + " " + year;
+        pushDetail(byAccount, item, detail);
+        return;
+      }
+
+      var dim = daysInMonth(year, month);
       var amount = prorate(item.mrc, act, year, month);
-      if (amount <= 0) return;
+      if (act && act.getFullYear() === year && act.getMonth() + 1 === month) {
+        var daysBilled = dim - act.getDate() + 1;
+        detail.proration = {
+          fullMrc: item.mrc,
+          activationDay: act.getDate(),
+          daysInMonth: dim,
+          daysBilled: daysBilled,
+          formula: item.mrc + " × (" + daysBilled + " ÷ " + dim + " days)"
+        };
+      } else if (act) {
+        detail.proration = { fullMrc: item.mrc, formula: "Full MRC — active before this month" };
+      } else {
+        detail.proration = { fullMrc: item.mrc, formula: "Full MRC — no activation date on record" };
+      }
+
+      if (amount <= 0) {
+        detail.skipReason = "Zero after proration";
+        pushDetail(byAccount, item, detail);
+        return;
+      }
 
       if (!byAccount[item.account]) {
         byAccount[item.account] = {
@@ -594,45 +722,97 @@
           accountRaw: item.accountRaw,
           name: item.name,
           airport: item.airport,
+          locations: [],
           tw: 0, tsw: 0, glw: 0, wl: 0, ap: 0, other: 0,
-          contracts: []
+          contracts: [],
+          details: []
         };
       }
       var acc = byAccount[item.account];
       if (item.name && item.name.length > acc.name.length) acc.name = item.name;
       if (item.airport) acc.airport = item.airport;
       acc.contracts.push(item.contract);
+      mergeLocation(acc, item);
 
       var bucket = BUCKET_MAP[item.serviceType];
-      if (!bucket) return;
+      if (!bucket) {
+        detail.skipReason = "Unknown service type: " + (item.serviceType || "(blank)");
+        acc.details.push(detail);
+        return;
+      }
 
+      detail.included = true;
       if (bucket === "wl") {
-        var apAmt = item.aps * AP_RATE;
-        var wlAmt = amount - (item.aps * AP_RATE * (amount / item.mrc || 1));
-        if (item.mrc > 0) {
-          apAmt = prorate(item.aps * AP_RATE, act, year, month);
-          wlAmt = amount - apAmt;
-        } else {
-          apAmt = 0; wlAmt = amount;
-        }
+        var apAmt = prorate(item.aps * AP_RATE, act, year, month);
+        var wlAmt = Math.round((amount - apAmt) * 100) / 100;
+        if (wlAmt < 0) { wlAmt = amount; apAmt = 0; }
         acc.ap += apAmt;
         acc.wl += wlAmt;
+        detail.lines.push({
+          column: "Wireline Internet with Ports",
+          amount: wlAmt,
+          formula: "Prorated MRC " + aed(amount) + " − AP " + aed(apAmt)
+        });
+        if (apAmt > 0) {
+          detail.lines.push({
+            column: "AP",
+            amount: apAmt,
+            formula: item.aps + " ports × AED " + AP_RATE + (detail.proration.formula.indexOf("×") >= 0 ? ", prorated" : "")
+          });
+        }
       } else {
+        var colNames = { tw: "Tenant Wifi", tsw: "Tenant Secure Wifi", glw: "Guest Lounge wifi", other: "Other Revenue" };
         acc[bucket] += amount;
+        detail.lines.push({
+          column: colNames[bucket] || bucket,
+          amount: amount,
+          formula: detail.proration.formula + " → " + aed(amount)
+        });
       }
+      acc.details.push(detail);
     });
 
     var rows = Object.keys(byAccount).map(function (k) {
       var r = byAccount[k];
-      r.total = r.tw + r.tsw + r.glw + r.wl + r.ap + r.other;
+      r.location = r.locations.join(", ") || (r.isDwc ? "DWC" : "DXB");
+      r.total = Math.round((r.tw + r.tsw + r.glw + r.wl + r.ap + r.other) * 100) / 100;
       r.vat = Math.round(r.total * VAT_RATE * 100) / 100;
       r.daShare = Math.round(r.total * DA_SHARE * 100) / 100;
       r.isDwc = (r.airport || "").toLowerCase().indexOf("dwc") >= 0 ||
                 (r.airport || "").toLowerCase().indexOf("maktoum") >= 0;
+      if (!r.location || r.location === "DXB" || r.location === "DWC") {
+        r.location = r.isDwc ? "DWC" : (r.locations[0] || "DXB");
+      }
       return r;
-    });
+    }).filter(function (r) { return r.total > 0; });
     rows.sort(function (a, b) { return b.total - a.total; });
     return rows;
+  }
+
+  function pushDetail(byAccount, item, detail) {
+    if (!item.account) return;
+    if (!byAccount[item.account]) {
+      byAccount[item.account] = {
+        account: item.account,
+        accountRaw: item.accountRaw,
+        name: item.name,
+        airport: item.airport,
+        locations: [],
+        tw: 0, tsw: 0, glw: 0, wl: 0, ap: 0, other: 0,
+        contracts: [],
+        details: []
+      };
+    }
+    mergeLocation(byAccount[item.account], item);
+    byAccount[item.account].details.push(detail);
+  }
+
+  function mergeLocation(acc, item) {
+    var parts = [item.terminal, item.location].filter(function (x) { return x && String(x).trim(); });
+    parts.forEach(function (p) {
+      var s = String(p).trim();
+      if (s && acc.locations.indexOf(s) < 0) acc.locations.push(s);
+    });
   }
 
   function aggregateFinance(financeRows) {
@@ -656,6 +836,28 @@
     return null;
   }
 
+  function explainGapReason(reportRow, finTotal, finLines) {
+    var diff = Math.round((reportRow.total - finTotal) * 100) / 100;
+    if (Math.abs(diff) <= 0.02) return "Amounts match.";
+    var reasons = [];
+    if (finTotal > reportRow.total + 0.02) {
+      reasons.push("Finance billed AED " + aed(finTotal - reportRow.total) + " more than our SharePoint calculation.");
+      var hasProration = (reportRow.details || []).some(function (d) {
+        return d.included && d.proration && d.proration.daysBilled;
+      });
+      if (hasProration) {
+        reasons.push("Likely cause: du invoice includes full monthly MRC for contracts activated this month, while the DA report only includes prorated days from activation date.");
+      }
+    } else {
+      reasons.push("Our calculation is AED " + aed(diff) + " higher than finance billing.");
+      reasons.push("Check if finance file is missing a contract row or billed a different amount.");
+    }
+    if (finLines.length > 1) {
+      reasons.push(finLines.length + " finance contract rows sum to this account total.");
+    }
+    return reasons.join(" ");
+  }
+
   function reconcile(reportRows, financeByAcct, manualMap, spItems, financeRows) {
     var issues = [];
     var spContracts = {};
@@ -676,19 +878,19 @@
           severity: "error",
           account: finContracts[c].account,
           tenant: finContracts[c].name,
-          issue: "Finance contract not in SharePoint: " + c,
+          issue: "Finance contract " + c + " is not in SharePoint — du billed it but we have no tenant record",
           generated: 0, finance: finContracts[c].revenue, manual: 0, diff: -finContracts[c].revenue
         });
       }
     });
 
     Object.keys(spContracts).forEach(function (c) {
-      if (!finContracts[c] && spContracts[c].mrc > 0) {
+      if (!finContracts[c] && spContracts[c].mrc > 0 && spContracts[c].status !== "Ceased") {
         issues.push({
           severity: "warn",
           account: spContracts[c].account,
           tenant: spContracts[c].name,
-          issue: "SharePoint contract not billed in finance file: " + c,
+          issue: "SharePoint contract " + c + " (MRC " + aed(spContracts[c].mrc) + ") not found in finance file for this month",
           generated: 0, finance: 0, manual: 0, diff: 0
         });
       }
@@ -697,6 +899,7 @@
     reportRows.forEach(function (r) {
       var fin = financeByAcct[r.account];
       var finTotal = fin ? fin.total : 0;
+      var finLines = financeRows.filter(function (f) { return f.account === r.account; });
       var manual = findManualMatch(r, manualMap);
       var manualTotal = manual ? manual.total : 0;
       var diffFin = Math.round((r.total - finTotal) * 100) / 100;
@@ -704,14 +907,11 @@
 
       if (Math.abs(diffFin) > 0.02) {
         var sev = Math.abs(diffFin) > 1000 ? "error" : "warn";
-        var reason = "Generated vs finance mismatch";
-        if (finTotal > r.total + 100) reason += " — finance may include activation-month MRC not in report";
-        if (r.total > finTotal + 100) reason += " — report may exceed finance billing";
         issues.push({
           severity: sev,
           account: r.account,
           tenant: r.name,
-          issue: reason,
+          issue: explainGapReason(r, finTotal, finLines),
           generated: r.total, finance: finTotal, manual: manualTotal, diff: diffFin
         });
       }
@@ -721,7 +921,7 @@
           severity: Math.abs(diffManual) > 500 ? "error" : "warn",
           account: r.account,
           tenant: r.name,
-          issue: "Generated vs uploaded manual report mismatch",
+          issue: "Differs from uploaded manual DA report by AED " + aed(Math.abs(diffManual)),
           generated: r.total, finance: finTotal, manual: manualTotal, diff: diffManual
         });
       }
@@ -731,7 +931,7 @@
           severity: "warn",
           account: r.account,
           tenant: r.name,
-          issue: "Account in SharePoint report but absent from finance file",
+          issue: "In SharePoint report (AED " + aed(r.total) + ") but no matching account in finance file",
           generated: r.total, finance: 0, manual: manualTotal, diff: r.total
         });
       }
@@ -744,13 +944,90 @@
           severity: "error",
           account: acct,
           tenant: financeByAcct[acct].name,
-          issue: "Finance billing exists but no SharePoint revenue generated",
+          issue: "Finance billed AED " + aed(financeByAcct[acct].total) + " but SharePoint produced no revenue for this account",
           generated: 0, finance: financeByAcct[acct].total, manual: 0, diff: -financeByAcct[acct].total
         });
       }
     });
 
     return issues;
+  }
+
+  /* ---------- Detail modal ---------- */
+  function openTenantDetail(account) {
+    var row = state.reportRows.find(function (r) { return r.account === account; });
+    if (!row) return;
+    var finLines = state.financeRows.filter(function (f) { return f.account === account; });
+    var finTotal = finLines.reduce(function (s, f) { return s + f.revenue; }, 0);
+    var diff = Math.round((row.total - finTotal) * 100) / 100;
+    var monthLabel = MONTH_LABELS[state.month] + " " + state.year;
+
+    $("modalTitle").textContent = row.name;
+    $("modalSub").textContent = "Account " + row.account + " · " + monthLabel + " · " + (row.isDwc ? "DWC" : "DXB");
+
+    var banner = $("modalDiffBanner");
+    var absDiff = Math.abs(diff);
+    if (absDiff <= 0.02) {
+      banner.className = "diff-banner match";
+      banner.textContent = "Match — Generated AED " + aed(row.total) + " = Finance AED " + aed(finTotal);
+    } else if (absDiff > 1000) {
+      banner.className = "diff-banner big-gap";
+      banner.textContent = "Gap: AED " + aed(diff) + " (Generated " + aed(row.total) + " − Finance " + aed(finTotal) + "). " + explainGapReason(row, finTotal, finLines);
+    } else {
+      banner.className = "diff-banner gap";
+      banner.textContent = "Gap: AED " + aed(diff) + " (Generated " + aed(row.total) + " − Finance " + aed(finTotal) + "). " + explainGapReason(row, finTotal, finLines);
+    }
+
+    var genHtml = "";
+    [["Tenant Wifi", row.tw], ["Tenant Secure Wifi", row.tsw], ["Guest Lounge wifi", row.glw],
+     ["Wireline Internet with Ports", row.wl], ["AP", row.ap], ["Other Revenue", row.other]].forEach(function (pair) {
+      if (pair[1] > 0) {
+        genHtml += '<div class="detail-line"><strong>' + pair[0] + '</strong>: AED ' + aed(pair[1]) + '</div>';
+      }
+    });
+    genHtml += '<div class="detail-line" style="margin-top:8px;border-top:2px solid var(--border)"><strong>Total Revenue</strong>: AED ' + aed(row.total) +
+      '<div class="detail-formula">VAT 5% = ' + aed(row.vat) + ' · DA Share 70% = ' + aed(row.daShare) + '</div></div>';
+    if (!genHtml) genHtml = '<div class="detail-line">No revenue included for this account.</div>';
+    $("modalGenerated").innerHTML = genHtml;
+
+    var finHtml = "";
+    if (!finLines.length) {
+      finHtml = '<div class="detail-line">No rows in finance file for account ' + row.account + '.</div>';
+    } else {
+      finLines.forEach(function (f) {
+        finHtml += '<div class="detail-line"><strong>' + (f.contract || "—") + '</strong> — ' + (f.service || f.rp || "") +
+          '<br>AED ' + aed(f.revenue) + ' (ex-VAT)<div class="detail-formula">' + (f.name || "") + '</div></div>';
+      });
+      finHtml += '<div class="detail-line" style="margin-top:8px;border-top:2px solid var(--border)"><strong>Finance total</strong>: AED ' + aed(finTotal) + '</div>';
+    }
+    $("modalFinance").innerHTML = finHtml;
+
+    var conHtml = "";
+    (row.details || []).forEach(function (d) {
+      conHtml += '<div class="detail-line"><strong>' + (d.contract || "—") + '</strong> · ' + (d.serviceType || "—") +
+        ' · MRC AED ' + aed(d.mrc);
+      if (d.aps) conHtml += ' · ' + d.aps + ' APs';
+      if (d.activation) conHtml += ' · Activated ' + d.activation.toLocaleDateString("en-GB");
+      conHtml += '<br>Status: ' + (d.status || "Active");
+      if (d.included && d.lines.length) {
+        d.lines.forEach(function (ln) {
+          conHtml += '<div class="detail-formula">→ ' + ln.column + ': AED ' + aed(ln.amount) + ' (' + ln.formula + ')</div>';
+        });
+      } else {
+        conHtml += '<div class="detail-formula">Excluded: ' + (d.skipReason || "not billed") + '</div>';
+      }
+      conHtml += '</div>';
+    });
+    if (!conHtml) conHtml = '<div class="detail-line">No SharePoint contracts linked to this account.</div>';
+    $("modalContracts").innerHTML = conHtml;
+
+    $("detailModal").classList.add("open");
+    $("detailModal").setAttribute("aria-hidden", "false");
+  }
+
+  function closeTenantDetail() {
+    $("detailModal").classList.remove("open");
+    $("detailModal").setAttribute("aria-hidden", "true");
   }
 
   /* ---------- UI render ---------- */
@@ -788,27 +1065,40 @@
     } else {
       state.issues.forEach(function (iss) {
         var tr = document.createElement("tr");
-        tr.className = iss.severity === "error" ? "row-err" : "row-warn";
+        tr.className = (iss.severity === "error" ? "row-err" : "row-warn") + (iss.account ? " clickable-row" : "");
         tr.innerHTML =
           '<td><span class="badge badge-' + (iss.severity === "error" ? "err" : "warn") + '">' + iss.severity + '</span></td>' +
           '<td>' + iss.account + '</td><td>' + iss.tenant + '</td><td>' + iss.issue + '</td>' +
           '<td class="num">' + aed(iss.generated) + '</td><td class="num">' + aed(iss.finance) + '</td>' +
           '<td class="num">' + (iss.manual ? aed(iss.manual) : "—") + '</td>' +
           '<td class="num">' + aed(iss.diff) + '</td>';
+        if (iss.account) {
+          tr.addEventListener("click", function () { openTenantDetail(iss.account); });
+        }
         ib.appendChild(tr);
       });
     }
 
     var rb = $("reportBody");
     rb.innerHTML = "";
+    var finByAcct = aggregateFinance(state.financeRows);
     state.reportRows.forEach(function (r) {
+      var finTotal = finByAcct[r.account] ? finByAcct[r.account].total : 0;
+      var gap = Math.round((r.total - finTotal) * 100) / 100;
       var tr = document.createElement("tr");
+      tr.className = "clickable-row";
+      tr.dataset.account = r.account;
+      if (Math.abs(gap) > 1000) tr.style.background = "var(--err-bg)";
+      else if (Math.abs(gap) > 0.02) tr.style.background = "var(--warn-bg)";
       tr.innerHTML =
         '<td>' + r.account + '</td><td>' + r.name + '</td><td>' + (r.isDwc ? "DWC" : "DXB") + '</td>' +
         '<td class="num">' + aed(r.tw) + '</td><td class="num">' + aed(r.tsw) + '</td>' +
         '<td class="num">' + aed(r.glw) + '</td><td class="num">' + aed(r.wl) + '</td>' +
         '<td class="num">' + aed(r.ap) + '</td><td class="num">' + aed(r.total) + '</td>' +
+        '<td class="num">' + (finTotal ? aed(finTotal) : "—") + '</td>' +
+        '<td class="num" style="font-weight:600">' + (finTotal ? aed(gap) : "—") + '</td>' +
         '<td class="num">' + aed(r.daShare) + '</td>';
+      tr.addEventListener("click", function () { openTenantDetail(r.account); });
       rb.appendChild(tr);
     });
 
@@ -857,36 +1147,105 @@
     });
   }
 
-  /* ---------- Export ---------- */
+  /* ---------- Export (matches Report format.xlsx layout) ---------- */
+  function xlCell(ws, r, c, val, formula) {
+    var addr = XLSX.utils.encode_cell({ r: r, c: c });
+    if (formula) {
+      ws[addr] = { t: "n", f: formula };
+    } else if (typeof val === "number") {
+      ws[addr] = { t: "n", v: val };
+    } else {
+      ws[addr] = { t: "s", v: val == null ? "" : String(val) };
+    }
+  }
+
+  function monthShortLabel(m, y) {
+    return MONTH_KEYS[m].charAt(0).toUpperCase() + MONTH_KEYS[m].slice(1) + "/1/" + y;
+  }
+
   function downloadReport() {
     var mm = String(state.month).padStart(2, "0");
     var yy = String(state.year).slice(-2);
-    var monthLabel = MONTH_LABELS[state.month] + " " + state.year;
+    var monthTag = mm + "-" + yy;
+    var monthDate = monthShortLabel(state.month, state.year);
+    var ws = {};
+    var dataStart = 9; /* row 10, 0-indexed */
+    var numSlots = Math.max(50, state.reportRows.length);
+    var totalRow = dataStart + numSlots;
 
-    var header = ["S.No", "Customer name", "Location", "Month", "Service Type", "Tenant Wifi", "Tenant Secure Wifi",
-      "Guest Lounge wifi", "Wireline Internet with Ports", "Other Revenue", "AP", "Comments", "Total Revenue", "VAT", "DA Revenue Share"];
-    var data = [header];
+    xlCell(ws, 2, 1, "Date");
+    xlCell(ws, 2, 3, monthDate);
+    xlCell(ws, 3, 1, "Signature ");
+    xlCell(ws, 5, 1, " Monthly Report (" + monthTag + ")");
+    xlCell(ws, 6, 6, "Revenue Breakdown");
+    xlCell(ws, 7, 6, "Tenant Services");
+
+    var headers = ["S.No", "Customer name ", "Location", "Month", "Service Type",
+      "Tenant Wifi", "Tenant Secure Wifi", "Guest Lounge wifi", "Wireline Internet with Ports",
+      "Other Revenue", "AP", "Comments", "Total Revenue", "VAT", "DA Revenue Share "];
+    headers.forEach(function (h, i) { xlCell(ws, 8, i + 1, h); });
+
     state.reportRows.forEach(function (r, i) {
-      var loc = r.isDwc ? "DWC" : "DXB";
-      var svcParts = [];
-      if (r.tw) svcParts.push("Tenant Wifi");
-      if (r.tsw) svcParts.push("Tenant Secure Wifi");
-      if (r.glw) svcParts.push("Guest Lounge Wifi");
-      if (r.wl || r.ap) svcParts.push("Wireline Internet");
-      data.push([
-        i + 1, r.name, loc, monthLabel, svcParts.join("/"),
-        r.tw, r.tsw, r.glw, r.wl, r.other, r.ap, "",
-        r.total, r.vat, r.daShare
-      ]);
+      var row = dataStart + i;
+      var excelRow = row + 1;
+      xlCell(ws, row, 1, i + 1);
+      xlCell(ws, row, 2, r.name);
+      xlCell(ws, row, 3, r.location || (r.isDwc ? "DWC" : "DXB"));
+      xlCell(ws, row, 4, monthDate);
+      xlCell(ws, row, 5, serviceTypeLabel(r));
+      if (r.tw) xlCell(ws, row, 6, r.tw);
+      if (r.tsw) xlCell(ws, row, 7, r.tsw);
+      if (r.glw) xlCell(ws, row, 8, r.glw);
+      if (r.wl) xlCell(ws, row, 9, r.wl);
+      if (r.other) xlCell(ws, row, 10, r.other);
+      if (r.ap) xlCell(ws, row, 11, r.ap);
+      xlCell(ws, row, 13, null, "SUM(G" + excelRow + ":L" + excelRow + ")");
+      xlCell(ws, row, 14, null, "N" + excelRow + "*5%");
+      xlCell(ws, row, 15, null, "N" + excelRow + "*70%");
     });
-    var totalRow = ["", "Total", "", "", "", 0, 0, 0, 0, 0, 0, "",
-      state.reportRows.reduce(function (s, r) { return s + r.total; }, 0), 0, 0];
-    data.push(totalRow);
 
-    var ws = XLSX.utils.aoa_to_sheet(data);
+    for (var e = state.reportRows.length; e < numSlots; e++) {
+      var emptyRow = dataStart + e;
+      var er = emptyRow + 1;
+      xlCell(ws, emptyRow, 1, e + 1);
+      xlCell(ws, emptyRow, 13, null, "SUM(G" + er + ":L" + er + ")");
+      xlCell(ws, emptyRow, 14, null, "N" + er + "*5%");
+      xlCell(ws, emptyRow, 15, null, "N" + er + "*70%");
+    }
+
+    var firstData = dataStart + 1;
+    var lastData = dataStart + numSlots;
+    xlCell(ws, totalRow, 2, "Total ");
+    ["G", "H", "I", "J", "K", "L"].forEach(function (col, idx) {
+      xlCell(ws, totalRow, 6 + idx, null, "SUM(" + col + firstData + ":" + col + lastData + ")");
+    });
+    var totalExcelRow = totalRow + 1;
+    var grandTotal = state.reportRows.reduce(function (s, r) { return s + r.total; }, 0);
+    xlCell(ws, totalRow, 13, Math.round(grandTotal * 100) / 100);
+    xlCell(ws, totalRow, 14, null, "SUM(O" + firstData + ":O" + lastData + ")");
+    xlCell(ws, totalRow, 15, null, "N" + totalExcelRow + "*70%");
+
+    xlCell(ws, totalRow + 2, 2, "Grey cell: Either the service has been suspended or terminated ");
+
+    ws["!ref"] = "A1:P" + (totalRow + 4);
+    ws["!merges"] = [
+      { s: { r: 5, c: 1 }, e: { r: 5, c: 15 } },
+      { s: { r: 6, c: 6 }, e: { r: 6, c: 10 } },
+      { s: { r: 7, c: 6 }, e: { r: 7, c: 9 } },
+      { s: { r: 2, c: 1 }, e: { r: 2, c: 2 } },
+      { s: { r: 2, c: 3 }, e: { r: 2, c: 5 } },
+      { s: { r: 3, c: 1 }, e: { r: 3, c: 2 } },
+      { s: { r: 3, c: 3 }, e: { r: 3, c: 5 } }
+    ];
+    ws["!cols"] = [
+      { wch: 4 }, { wch: 6 }, { wch: 36 }, { wch: 18 }, { wch: 14 }, { wch: 42 },
+      { wch: 12 }, { wch: 14 }, { wch: 14 }, { wch: 22 }, { wch: 12 }, { wch: 10 },
+      { wch: 12 }, { wch: 14 }, { wch: 10 }, { wch: 16 }
+    ];
+
     var wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Monthly Report " + mm + "-" + yy);
-    XLSX.writeFile(wb, "DA_Report_" + monthLabel.replace(/ /g, "_") + ".xlsx");
+    XLSX.utils.book_append_sheet(wb, ws, "Monthly Report Format - " + MONTH_KEYS[state.month].charAt(0).toUpperCase() + MONTH_KEYS[state.month].slice(1));
+    XLSX.writeFile(wb, "Monthly_Report_Format_" + monthTag + ".xlsx");
   }
 
   function downloadIssuesCsv() {
@@ -974,6 +1333,13 @@
   });
   $("financeFile").addEventListener("change", function () {
     onFinanceFileSelected(this.files[0]);
+  });
+  $("modalClose").addEventListener("click", closeTenantDetail);
+  $("detailModal").addEventListener("click", function (e) {
+    if (e.target === $("detailModal")) closeTenantDetail();
+  });
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape") closeTenantDetail();
   });
 })();
 </script>
