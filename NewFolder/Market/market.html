@@ -1428,6 +1428,7 @@ const SP_LIST   = 'GLK Pipeline Portal';
 const SP_ACCESS_LIST = 'Market_Access';
 const SP_ACCESS_LIST_URL = SP_SITE + '/Lists/Market_Access/AllItems.aspx';
 const PORTAL_ACCESS_MANAGERS = ['tehleel.lone@du.ae', 'abdulla.khoory@du.ae'];
+// Portal Access menu + approve/deny: ONLY these two emails — never Market_Access Role=Admin
 const ACCESS_REQUEST_RECIPIENTS = ['tehleel.lone@du.ae', 'abdulla.khoory@du.ae'];
 const STATUS_WON  = ['Won','Billed'];
 const STATUS_IP   = ['Lead','Opportunity','On Hold','Proposed'];
@@ -1608,6 +1609,9 @@ function spSendEmail(toList,subject,body,cb){
 }
 
 function normEmail(e){ return String(e||'').trim().toLowerCase(); }
+function paIsPortalAccessManager(){
+  return PORTAL_ACCESS_MANAGERS.indexOf(normEmail(USER.email))>=0;
+}
 function paEscHtml(s){
   return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
@@ -1621,7 +1625,7 @@ function mapAccessItem(item){
     role:String(item.Role||'Viewer').trim(),
     email:normEmail(item.UserEmailId),
     status:status,
-    processedBy:item.ProcessedBy||'',
+    processedBy:'',
     created:item.Created||''
   };
 }
@@ -1629,7 +1633,7 @@ function paIsActiveAccess(row){ return !!(row&&row.status==='Approved'); }
 
 function loadAccessRegistry(cb, opts){
   opts=opts||{};
-  let url=SP_SITE+"/_api/web/lists/getbytitle('"+SP_ACCESS_LIST+"')/items?$select=Id,Title,Role,UserEmailId,Status,ProcessedBy,Created&$top=5000&$orderby=Created desc";
+  let url=SP_SITE+"/_api/web/lists/getbytitle('"+SP_ACCESS_LIST+"')/items?$select=Id,Title,Role,UserEmailId,Status,Created&$top=5000&$orderby=Created desc";
   const filters=[];
   if(opts.statusFilter) filters.push("Status eq '"+String(opts.statusFilter).replace(/'/g,"''")+"'");
   if(opts.emailFilter){
@@ -1654,15 +1658,41 @@ function loadAccessRegistry(cb, opts){
   });
 }
 
+function findAccessEntryForEmail(email,cb){
+  email=normEmail(email);
+  loadAccessRegistry(function(err,rows){
+    if(err) return cb(err,null);
+    let entry=(rows||[]).find(function(r){ return r.email===email&&paIsActiveAccess(r); });
+    if(entry) return cb(null,entry);
+    loadAccessRegistry(function(err2,all){
+      if(err2) return cb(null,null);
+      entry=(all||[]).find(function(r){ return r.email===email&&paIsActiveAccess(r); });
+      cb(null,entry||null);
+    });
+  },{emailFilter:email});
+}
+function findPendingRequestForEmail(email,cb){
+  email=normEmail(email);
+  loadAccessRegistry(function(err,rows){
+    if(err) return cb(err,null);
+    let pending=(rows||[]).find(function(r){ return r.email===email&&r.status==='Pending'; });
+    if(pending) return cb(null,pending);
+    loadAccessRegistry(function(err2,all){
+      if(err2) return cb(null,null);
+      pending=(all||[]).find(function(r){ return r.email===email&&r.status==='Pending'; });
+      cb(null,pending||null);
+    });
+  },{emailFilter:email});
+}
+
 function checkUserRequestStatus(cb){
   if(USER_HAS_ACCESS) return cb(null,null);
   const email=normEmail(USER.email);
   if(!email) return cb(null,null);
-  loadAccessRegistry(function(err,rows){
-    if(err||!rows) return cb(null,null);
-    const pending=rows.find(function(r){ return r.status==='Pending'; });
+  findPendingRequestForEmail(email,function(err,pending){
+    if(err) return cb(null,null);
     cb(null,{pending:!!pending,pendingRow:pending});
-  },{emailFilter:email});
+  });
 }
 
 function sendAccessDecisionEmail(type,requesterEmail,requesterName,role){
@@ -1706,7 +1736,7 @@ function createAccessRequest(name,email,cb){
       const existing=mine[0];
       if(existing){
         if(existing.status==='Denied'){
-          paUpdateAccessItem(existing.id,{Title:name,Status:'Pending',ProcessedBy:''},function(updErr){
+          paUpdateAccessItem(existing.id,{Title:name,Status:'Pending'},function(updErr){
             if(updErr) return cb(updErr);
             cb(null,{duplicate:false,id:existing.id,reopened:true});
           });
@@ -1729,13 +1759,22 @@ function createAccessRequest(name,email,cb){
 }
 
 function updatePortalAccessNav(){
-  const show=CAN_MANAGE_PORTAL_ACCESS&&USER_HAS_ACCESS;
   const sec=el('navAdminSection');
   const nav=el('navPortalAccess');
-  if(sec) sec.style.display=show?'block':'none';
-  if(nav) nav.style.display=show?'flex':'none';
-  if(CAN_MANAGE_PORTAL_ACCESS&&USER_HAS_ACCESS){
-    loadAccessRegistry(function(err,rows){
+  const paView=el('portal-access-view');
+  const isMgr=paIsPortalAccessManager()&&USER_HAS_ACCESS;
+  CAN_MANAGE_PORTAL_ACCESS=isMgr;
+  if(sec) sec.style.display=isMgr?'block':'none';
+  if(nav) nav.style.display=isMgr?'flex':'none';
+  if(paView&&!isMgr) paView.style.display='none';
+  if(!isMgr){
+    if(nav){
+      const badge=nav.querySelector('.pa-nav-badge');
+      if(badge) badge.remove();
+    }
+    return;
+  }
+  loadAccessRegistry(function(err,rows){
       const pending=(rows||[]).length;
       let badge=nav?nav.querySelector('.pa-nav-badge'):null;
       if(pending>0){
@@ -1749,12 +1788,11 @@ function updatePortalAccessNav(){
         badge.remove();
       }
     },{statusFilter:'Pending'});
-  }
 }
 
 function resolveUserAccess(cb){
   const email=normEmail(USER.email);
-  CAN_MANAGE_PORTAL_ACCESS=PORTAL_ACCESS_MANAGERS.indexOf(email)>=0;
+  CAN_MANAGE_PORTAL_ACCESS=paIsPortalAccessManager();
   USER.accessError='';
 
   loadAccessRegistry(function(err,rows){
@@ -1762,7 +1800,7 @@ function resolveUserAccess(cb){
       USER.role='';
       USER.hasAccess=false;
       USER_HAS_ACCESS=false;
-      USER.accessError='Could not read the Market_Access list. Access denied until the list is available.';
+      USER.accessError='Could not read Market_Access. Give all users <strong>Read</strong> and <strong>Add</strong> permissions on the list (SharePoint list settings → Permissions).';
       if(cb) cb();
       return;
     }
@@ -1771,12 +1809,22 @@ function resolveUserAccess(cb){
       USER.role=(entry.role==='Admin'?'Admin':'Viewer');
       USER.hasAccess=true;
       USER_HAS_ACCESS=true;
-    } else {
-      USER.role='';
-      USER.hasAccess=false;
-      USER_HAS_ACCESS=false;
+      if(cb) cb();
+      return;
     }
-    if(cb) cb();
+    loadAccessRegistry(function(err2,all){
+      const entry2=!err2?(all||[]).find(function(r){ return r.email===email&&paIsActiveAccess(r); }):null;
+      if(entry2){
+        USER.role=(entry2.role==='Admin'?'Admin':'Viewer');
+        USER.hasAccess=true;
+        USER_HAS_ACCESS=true;
+      } else {
+        USER.role='';
+        USER.hasAccess=false;
+        USER_HAS_ACCESS=false;
+      }
+      if(cb) cb();
+    });
   },{emailFilter:email});
 }
 
@@ -1844,7 +1892,7 @@ function populateLanding(){
     if(!deniedMsg){
       deniedMsg='No <strong>Approved</strong> row in Market_Access for <strong>'+paEscHtml(USER.email||'your account')+'</strong>.';
       if(CAN_MANAGE_PORTAL_ACCESS){
-        deniedMsg+=' You are a portal admin — add yourself in SharePoint first: <a href="'+SP_ACCESS_LIST_URL+'" target="_blank" rel="noopener">Market_Access list</a>.';
+        deniedMsg+=' You are an access administrator — add yourself in SharePoint first: <a href="'+SP_ACCESS_LIST_URL+'" target="_blank" rel="noopener">Market_Access list</a>.';
       }
     }
     if(USER_REQUEST_STATUS&&USER_REQUEST_STATUS.pending){
@@ -1857,6 +1905,9 @@ function populateLanding(){
   }
 }
 function requestPortalAccess(){
+  if(USER_HAS_ACCESS) return;
+  const landing=el('landingPage');
+  if(!landing||!landing.classList.contains('is-visible')) return;
   const statusEl=el('requestAccessStatus');
   const btn=el('requestAccessBtn');
   const email=normEmail(USER.email);
@@ -1876,7 +1927,7 @@ function requestPortalAccess(){
   createAccessRequest(name,email,function(err,result){
     if(err){
       if(btn) btn.disabled=false;
-      if(statusEl){ statusEl.className='pa-status err'; statusEl.textContent='Could not submit request. Ensure Market_Access list has a Status column (Pending / Approved / Denied).'; }
+      if(statusEl){ statusEl.className='pa-status err'; statusEl.textContent='Could not submit request. Check Market_Access list permissions (users need Add items).'; }
       return;
     }
     if(result&&result.duplicate){
@@ -1933,6 +1984,7 @@ function launchDashboard(){
     const sel=el('colorSchemeSelector'); if(sel) sel.value=bt;
     applyTheme(bt,dm);
   }catch(e){}
+  updatePortalAccessNav();
   loadData();
 }
 
@@ -3552,8 +3604,8 @@ function glkShowRevenueForecast(){
   if(rfChartsVisible) rfScheduleChartRender();
 }
 function glkShowPortalAccess(){
-  if(!CAN_MANAGE_PORTAL_ACCESS||!USER_HAS_ACCESS){
-    alert('Portal Access management is only available to approved portal administrators.');
+  if(!paIsPortalAccessManager()||!USER_HAS_ACCESS){
+    alert('Portal Access is only available to Tehleel Lone and Abdulla Khoory.');
     return;
   }
   glkHideAllViews();
@@ -3572,7 +3624,7 @@ function paRefreshAll(){
   if(accessBox) accessBox.innerHTML='<div class="pa-empty">Loading...</div>';
   loadAccessRegistry(function(err){
     if(err){
-      const msg='<div class="pa-empty">Could not load Market_Access. Add column <strong>Status</strong> (Pending, Approved, Denied) and optional <strong>ProcessedBy</strong>.</div>';
+      const msg='<div class="pa-empty">Could not load Market_Access. Check list name, permissions, and that columns Title, Role, UserEmailId, Status exist.</div>';
       if(pendingBox) pendingBox.innerHTML=msg;
       if(accessBox) accessBox.innerHTML=msg;
       if(histBox) histBox.innerHTML='<div class="pa-empty">—</div>';
@@ -3630,7 +3682,7 @@ function paRenderRequestsHistory(){
   box.innerHTML=html;
 }
 function paApproveRequest(itemId){
-  if(!CAN_MANAGE_PORTAL_ACCESS){ alert('Not authorized.'); return; }
+  if(!paIsPortalAccessManager()){ alert('Not authorized.'); return; }
   const req=ACCESS_REGISTRY.find(function(r){ return r.id===itemId; });
   if(!req||req.status!=='Pending') return;
   const roleEl=el('paReqRole_'+itemId);
@@ -3639,8 +3691,7 @@ function paApproveRequest(itemId){
   if(statusEl){ statusEl.className='pa-status'; statusEl.textContent='Approving '+req.email+'...'; }
   paUpdateAccessItem(itemId,{
     Status:'Approved',
-    Role:role,
-    ProcessedBy:USER.email||USER.name
+    Role:role
   },function(err){
     if(err){
       if(statusEl){ statusEl.className='pa-status err'; statusEl.textContent='Could not approve: '+err.message; }
@@ -3652,15 +3703,14 @@ function paApproveRequest(itemId){
   });
 }
 function paDenyRequest(itemId){
-  if(!CAN_MANAGE_PORTAL_ACCESS){ alert('Not authorized.'); return; }
+  if(!paIsPortalAccessManager()){ alert('Not authorized.'); return; }
   const req=ACCESS_REGISTRY.find(function(r){ return r.id===itemId; });
   if(!req||req.status!=='Pending') return;
   if(!confirm('Deny access request for '+req.email+'?')) return;
   const statusEl=el('paRequestStatus');
   if(statusEl){ statusEl.className='pa-status'; statusEl.textContent='Denying '+req.email+'...'; }
   paUpdateAccessItem(itemId,{
-    Status:'Denied',
-    ProcessedBy:USER.email||USER.name
+    Status:'Denied'
   },function(err){
     if(err){
       if(statusEl){ statusEl.className='pa-status err'; statusEl.textContent='Could not deny request: '+err.message; }
@@ -3690,7 +3740,7 @@ function paRenderAccessTable(){
   box.innerHTML=html;
 }
 function paAddAccess(){
-  if(!CAN_MANAGE_PORTAL_ACCESS){ alert('Not authorized.'); return; }
+  if(!paIsPortalAccessManager()){ alert('Not authorized.'); return; }
   const nameEl=el('paName');
   const emailEl=el('paEmail');
   const roleEl=el('paRole');
@@ -3713,8 +3763,7 @@ function paAddAccess(){
     paUpdateAccessItem(existingRow.id,{
       Title:name,
       Role:role,
-      Status:'Approved',
-      ProcessedBy:USER.email||USER.name
+      Status:'Approved'
     },function(updErr){
       if(updErr){
         if(statusEl){ statusEl.className='pa-status err'; statusEl.textContent='Could not update user: '+updErr.message; }
@@ -3734,8 +3783,7 @@ function paAddAccess(){
       Title:name,
       Role:role,
       UserEmailId:email,
-      Status:'Approved',
-      ProcessedBy:USER.email||USER.name
+      Status:'Approved'
     },function(saveErr){
       if(saveErr){
         if(statusEl){ statusEl.className='pa-status err'; statusEl.textContent='Could not add user: '+saveErr.message; }
@@ -3750,7 +3798,7 @@ function paAddAccess(){
   });
 }
 function paRemoveAccess(itemId){
-  if(!CAN_MANAGE_PORTAL_ACCESS){ alert('Not authorized.'); return; }
+  if(!paIsPortalAccessManager()){ alert('Not authorized.'); return; }
   const row=ACCESS_REGISTRY.find(function(r){ return r.id===itemId; });
   if(!row) return;
   if(!confirm('Remove access for '+row.email+'?')) return;
