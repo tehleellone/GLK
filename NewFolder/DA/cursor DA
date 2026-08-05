@@ -177,11 +177,11 @@
           <label for="reportMonth">Report month</label>
           <select id="reportMonth">
             <option value="1">January</option>
-            <option value="2">February</option>
+            <option value="2" selected>February</option>
             <option value="3">March</option>
             <option value="4">April</option>
             <option value="5">May</option>
-            <option value="6" selected>June</option>
+            <option value="6">June</option>
             <option value="7">July</option>
             <option value="8">August</option>
             <option value="9">September</option>
@@ -189,6 +189,7 @@
             <option value="11">November</option>
             <option value="12">December</option>
           </select>
+          <div id="financeMonthsHint" style="font-size:0.8rem;color:var(--muted);margin-top:-10px;margin-bottom:12px"></div>
         </div>
         <div>
           <label for="reportYear">Report year</label>
@@ -316,6 +317,7 @@
   var state = {
     spItems: [],
     financeRows: [],
+    financeMeta: { headers: [], availableMonths: [] },
     manualRows: {},
     reportRows: [],
     issues: [],
@@ -424,26 +426,130 @@
     });
   }
 
+  /** Finance file has a title row then headers on row 2 — find CUST_CODE row */
+  function sheetRowsWithHeader(sheet) {
+    var aoa = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: "" });
+    var headerIdx = -1;
+    for (var i = 0; i < Math.min(aoa.length, 15); i++) {
+      var row = aoa[i];
+      if (!row) continue;
+      for (var j = 0; j < row.length; j++) {
+        if (String(row[j]).trim().toUpperCase() === "CUST_CODE") {
+          headerIdx = i;
+          break;
+        }
+      }
+      if (headerIdx >= 0) break;
+    }
+    if (headerIdx < 0) {
+      throw new Error("Could not find CUST_CODE column — is this a Data_dubai_request.xlsx file?");
+    }
+    var headers = aoa[headerIdx].map(function (h) { return String(h || "").trim(); });
+    var rows = [];
+    for (var r = headerIdx + 1; r < aoa.length; r++) {
+      var line = aoa[r];
+      if (!line || !line.length) continue;
+      var obj = {};
+      headers.forEach(function (h, c) {
+        if (h) obj[h] = line[c];
+      });
+      if (obj.CUST_CODE && String(obj.CUST_CODE).trim()) rows.push(obj);
+    }
+    return { headers: headers, rows: rows, headerRow: headerIdx + 1 };
+  }
+
+  function detectFinanceMonths(headers) {
+    var found = [];
+    headers.forEach(function (h) {
+      var lower = h.toLowerCase();
+      var m1 = /^([a-z]{3})_revenue$/.exec(lower);
+      if (m1) {
+        var idx = MONTH_KEYS.indexOf(m1[1]);
+        if (idx > 0) found.push({ month: idx, key: h, vatKey: null, label: MONTH_LABELS[idx] + " (ex-VAT)" });
+      }
+      var m2 = /^([A-Za-z]{3})_Rev$/i.exec(h);
+      if (m2) {
+        var idx2 = MONTH_KEYS.indexOf(m2[1].toLowerCase());
+        if (idx2 > 0 && !found.some(function (f) { return f.month === idx2; })) {
+          found.push({ month: idx2, key: h, vatKey: h, label: MONTH_LABELS[idx2] + " (inc-VAT)" });
+        }
+      }
+    });
+    found.sort(function (a, b) { return a.month - b.month; });
+    return found;
+  }
+
+  function getFinanceColumn(month, headers, availableMonths) {
+    var exVat = MONTH_KEYS[month] + "_revenue";
+    for (var i = 0; i < headers.length; i++) {
+      if (headers[i].toLowerCase() === exVat) return headers[i];
+    }
+    var monthPrefix = MONTH_KEYS[month];
+    for (var j = 0; j < headers.length; j++) {
+      if (/^[a-z]{3}_rev$/i.test(headers[j]) && headers[j].substring(0, 3).toLowerCase() === monthPrefix) {
+        return headers[j];
+      }
+    }
+    var avail = availableMonths.filter(function (m) { return m.month === month; });
+    if (avail.length) return avail[0].key;
+    return null;
+  }
+
   function parseFinance(wb, month, year) {
     var sheet = wb.Sheets[wb.SheetNames[0]];
-    var rows = XLSX.utils.sheet_to_json(sheet, { defval: "" });
-    var mKey = MONTH_KEYS[month] + "_revenue";
+    var parsed = sheetRowsWithHeader(sheet);
+    state.financeMeta.headers = parsed.headers;
+    state.financeMeta.availableMonths = detectFinanceMonths(parsed.headers);
+
+    var col = getFinanceColumn(month, parsed.headers, state.financeMeta.availableMonths);
+    if (!col) {
+      var names = state.financeMeta.availableMonths.map(function (m) { return m.label; }).join(", ");
+      throw new Error(
+        "No billing column for " + MONTH_LABELS[month] + " " + year + " in finance file. " +
+        (names ? "Available months: " + names : "No month columns found (expected feb_revenue, mar_revenue, etc.)")
+      );
+    }
+
     var out = [];
-    rows.forEach(function (r) {
-      var acct = acctKey(r.CUST_CODE || r["CUST_CODE"]);
+    parsed.rows.forEach(function (r) {
+      var acct = acctKey(r.CUST_CODE);
       if (!acct) return;
-      var rev = num(r[mKey]);
+      var rev = num(r[col]);
       if (rev === 0 && !r.CO_CODE) return;
       out.push({
         account: acct,
         contract: String(r.CO_CODE || "").trim(),
-        name: String(r.CUST_FNAME || r.CUST_FNAME || "").trim(),
+        name: String(r.CUST_FNAME || "").trim(),
         service: String(r.Service || "").trim(),
         rp: String(r.RP_DESCRIPTION || "").trim(),
         revenue: rev
       });
     });
+    if (!out.length) {
+      throw new Error("0 rows with revenue in column '" + col + "'. Pick a month that exists in the finance file.");
+    }
     return out;
+  }
+
+  function onFinanceFileSelected(file) {
+    if (!file) return;
+    readWorkbook(file).then(function (wb) {
+      var sheet = wb.Sheets[wb.SheetNames[0]];
+      var parsed = sheetRowsWithHeader(sheet);
+      var months = detectFinanceMonths(parsed.headers);
+      state.financeMeta = { headers: parsed.headers, availableMonths: months };
+      var hint = $("financeMonthsHint");
+      var sel = $("reportMonth");
+      if (!months.length) {
+        hint.textContent = "Warning: no month columns detected. Headers found: " + parsed.headers.slice(0, 12).join(", ");
+        return;
+      }
+      hint.textContent = "Finance file contains billing for: " + months.map(function (m) { return MONTH_LABELS[m.month]; }).join(", ");
+      var last = months[months.length - 1].month;
+      sel.value = String(last);
+    }).catch(function (e) {
+      $("financeMonthsHint").textContent = "Could not read finance file: " + e.message;
+    });
   }
 
   function parseManualReport(wb) {
@@ -820,9 +926,6 @@
       })
       .then(function (wb) {
         state.financeRows = parseFinance(wb, month, year);
-        if (!state.financeRows.length) {
-          throw new Error("No finance rows found for " + MONTH_KEYS[month] + "_revenue — check month matches finance file columns");
-        }
         if (manFile) {
           return readWorkbook(manFile).then(function (mwb) {
             state.manualRows = parseManualReport(mwb);
@@ -868,6 +971,9 @@
     fetchSharePointList($("listName").value.trim())
       .then(function (items) { setStatus("Connected — " + items.length + " list items retrieved."); })
       .catch(function (e) { setStatus("Failed: " + e.message, true); });
+  });
+  $("financeFile").addEventListener("change", function () {
+    onFinanceFileSelected(this.files[0]);
   });
 })();
 </script>
