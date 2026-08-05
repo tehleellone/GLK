@@ -1426,6 +1426,7 @@ const APP_NAME  = 'Revenue Pipeline & Forecast';
 const SP_SITE   = 'http://sharedspaces:8086/sites/GKA';
 const SP_LIST   = 'GLK Pipeline Portal';
 const SP_ACCESS_LIST = 'Market_Access';
+const SP_ACCESS_LIST_URL = SP_SITE + '/Lists/Market_Access/AllItems.aspx';
 const PORTAL_ACCESS_MANAGERS = ['tehleel.lone@du.ae', 'abdulla.khoory@du.ae'];
 const ACCESS_REQUEST_RECIPIENTS = ['tehleel.lone@du.ae', 'abdulla.khoory@du.ae'];
 const STATUS_WON  = ['Won','Billed'];
@@ -1613,7 +1614,7 @@ function paEscHtml(s){
 
 function mapAccessItem(item){
   const statusRaw=item.Status;
-  const status=statusRaw?String(statusRaw).trim():'Approved';
+  const status=statusRaw?String(statusRaw).trim():'';
   return {
     id:item.Id,
     title:item.Title||'',
@@ -1624,7 +1625,7 @@ function mapAccessItem(item){
     created:item.Created||''
   };
 }
-function paIsActiveAccess(row){ return row&&row.status==='Approved'; }
+function paIsActiveAccess(row){ return !!(row&&row.status==='Approved'); }
 
 function loadAccessRegistry(cb, opts){
   opts=opts||{};
@@ -1728,12 +1729,12 @@ function createAccessRequest(name,email,cb){
 }
 
 function updatePortalAccessNav(){
-  const show=CAN_MANAGE_PORTAL_ACCESS;
+  const show=CAN_MANAGE_PORTAL_ACCESS&&USER_HAS_ACCESS;
   const sec=el('navAdminSection');
   const nav=el('navPortalAccess');
   if(sec) sec.style.display=show?'block':'none';
   if(nav) nav.style.display=show?'flex':'none';
-  if(show){
+  if(CAN_MANAGE_PORTAL_ACCESS&&USER_HAS_ACCESS){
     loadAccessRegistry(function(err,rows){
       const pending=(rows||[]).length;
       let badge=nav?nav.querySelector('.pa-nav-badge'):null;
@@ -1754,16 +1755,17 @@ function updatePortalAccessNav(){
 function resolveUserAccess(cb){
   const email=normEmail(USER.email);
   CAN_MANAGE_PORTAL_ACCESS=PORTAL_ACCESS_MANAGERS.indexOf(email)>=0;
-
-  if(CAN_MANAGE_PORTAL_ACCESS){
-    USER.role='Admin';
-    USER.hasAccess=true;
-    USER_HAS_ACCESS=true;
-    loadAccessRegistry(function(){ if(cb) cb(); });
-    return;
-  }
+  USER.accessError='';
 
   loadAccessRegistry(function(err,rows){
+    if(err){
+      USER.role='';
+      USER.hasAccess=false;
+      USER_HAS_ACCESS=false;
+      USER.accessError='Could not read the Market_Access list. Access denied until the list is available.';
+      if(cb) cb();
+      return;
+    }
     const entry=(rows||[]).find(function(r){ return r.email===email&&paIsActiveAccess(r); });
     if(entry){
       USER.role=(entry.role==='Admin'?'Admin':'Viewer');
@@ -1824,26 +1826,33 @@ function populateLanding(){
     if(card) card.classList.remove('landing-denied');
     if(roleEl){
       roleEl.style.display='inline-block';
-      roleEl.textContent=USER.role+' access';
+      roleEl.textContent=USER.role+' · Market_Access';
     }
     btn.disabled=false;
     btn.innerHTML='<span class="btn-icon"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></span><span class="btn-text">Launch Dashboard</span><span class="btn-shine"></span>';
     btn.onclick=launchDashboard;
     if(reqBtn) reqBtn.style.display='none';
     if(reqStatus){ reqStatus.style.display='none'; reqStatus.textContent=''; }
-    el('accessNote').innerHTML='<svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:#16a34a;fill:none;stroke-width:2"><polyline points="20 6 9 17 4 12"/></svg><span style="color:#16a34a;font-weight:600;">Access granted — click above to proceed</span>';
+    el('accessNote').innerHTML='<svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:#16a34a;fill:none;stroke-width:2"><polyline points="20 6 9 17 4 12"/></svg><span style="color:#16a34a;font-weight:600;">Access granted via Market_Access (Status: Approved)</span>';
   } else {
     if(card) card.classList.add('landing-denied');
     if(roleEl) roleEl.style.display='none';
     btn.disabled=true;
     btn.innerHTML='<span class="btn-icon"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></span><span class="btn-text">Access Not Available</span><span class="btn-shine"></span>';
     btn.onclick=null;
+    let deniedMsg=USER.accessError;
+    if(!deniedMsg){
+      deniedMsg='No <strong>Approved</strong> row in Market_Access for <strong>'+paEscHtml(USER.email||'your account')+'</strong>.';
+      if(CAN_MANAGE_PORTAL_ACCESS){
+        deniedMsg+=' You are a portal admin — add yourself in SharePoint first: <a href="'+SP_ACCESS_LIST_URL+'" target="_blank" rel="noopener">Market_Access list</a>.';
+      }
+    }
     if(USER_REQUEST_STATUS&&USER_REQUEST_STATUS.pending){
       if(reqBtn) reqBtn.style.display='none';
       el('accessNote').innerHTML='<svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:#d97706;fill:none;stroke-width:2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg><span style="color:#d97706;font-weight:600;">Your access request is pending approval. You will receive an email once reviewed.</span>';
     } else {
       if(reqBtn) reqBtn.style.display='flex';
-      el('accessNote').innerHTML='<svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:#dc2626;fill:none;stroke-width:2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><span class="landing-access-denied-msg">You do not have access to this portal. Request access below or contact an administrator.</span>';
+      el('accessNote').innerHTML='<svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:#dc2626;fill:none;stroke-width:2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><span class="landing-access-denied-msg">'+deniedMsg+'</span>';
     }
   }
 }
@@ -3543,8 +3552,8 @@ function glkShowRevenueForecast(){
   if(rfChartsVisible) rfScheduleChartRender();
 }
 function glkShowPortalAccess(){
-  if(!CAN_MANAGE_PORTAL_ACCESS){
-    alert('Only portal administrators can manage access.');
+  if(!CAN_MANAGE_PORTAL_ACCESS||!USER_HAS_ACCESS){
+    alert('Portal Access management is only available to approved portal administrators.');
     return;
   }
   glkHideAllViews();
