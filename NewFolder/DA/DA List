@@ -1,0 +1,141 @@
+Name:	Du Tenant Information(Post Migration)
+Web Address:	http://sharedspaces:8086/sites/GLKLegal/Lists/Du Tenant InformationPost Migration/AllItems.aspx
+
+Columns
+A column stores information about each item in the list. The following columns are currently available in this list:
+Column (click to edit)	Type	Required
+Customer Name	Single line of text	
+Primary POC Name	Single line of text	
+Primary Contact No	Single line of text	
+Primary Email ID	Single line of text	
+Billing POC Name	Single line of text	
+Billing Contact No	Single line of text	
+Billing Email ID	Single line of text	
+Technical POC Name	Single line of text	
+Technical Contact No	Single line of text	
+Teachnical Email ID	Single line of text	
+Airport Name	Choice	
+Terminal	Choice	
+Specific Area/Location	Multiple lines of text	
+Billing Option	Choice	
+Comments	Multiple lines of text	
+Modified	Date and Time	
+Created	Date and Time	
+Service Type 1	Single line of text	
+Service Details 1	Single line of text	
+Package Details 1	Single line of text	
+Tenant Legal Entity Name	Single line of text	
+Migration/Activation date	Date and Time	
+Monthly Recurring Charge	Number	
+SSID / Tenant SSID	Single line of text	
+BW	Single line of text	
+Add. Aps	Single line of text	
+IP Details	Single line of text	
+IP Assignment	Single line of text	
+Natted IP	Single line of text	
+No of physical ports	Single line of text	
+My ID	Single line of text	
+Du Circuit ID	Calculated (calculation based on other columns)	
+Default or Dedicated Portal	Number	
+Access Points	Single line of text	
+VLAN if any	Single line of text	
+Username	Single line of text	
+Password	Single line of text	
+Service Status	Choice	
+Account Number	Single line of text	
+Work Order	Single line of text	
+Contract ID	Single line of text	
+OTC/OCC	Single line of text	
+Created By	Person or Group	
+Modified By	Person or Group
+
+
+
+internal names:
+Customer Name -> Title
+2
+Primary POC Name -> Primary_x0020_POC_x0020_Name
+3
+Primary Contact No -> Contact_x0020_No_x0020_1
+4
+Primary Email ID -> Email_x0020_ID_x0020_1
+5
+Billing POC Name -> Billing_x0020_POC_x0020_Name
+6
+Billing Contact No -> Contact_x0020_No_x0020_2
+7
+Billing Email ID -> Email_x0020_ID_x0020_2
+8
+Technical POC Name -> Technical_x0020_POC_x0020_Name
+9
+Technical Contact No -> Contact_x0020_No_x0020_3
+10
+Teachnical Email ID -> Email_x0020_ID_x0020_3
+11
+Airport Name -> Airport_x0020_Name
+12
+Terminal -> Terminal
+13
+Specific Area/Location -> Address
+14
+Billing Option -> Billing_x0020_Option
+15
+Comments -> Remarks
+16
+Service Type 1 -> Service_x0020_Type
+17
+Service Details 1 -> Servcie_x0020_Details
+18
+Package Details 1 -> Package_x0020_Details
+19
+Tenant Legal Entity Name -> field1
+20
+Migration/Activation date -> Expiry
+21
+Monthly Recurring Charge -> field3
+22
+SSID / Tenant SSID -> field4
+23
+BW -> field13
+24
+Add. Aps -> field14
+25
+IP Details -> field15
+26
+IP Assignment -> field16
+27
+Natted IP -> field17
+28
+No of physical ports -> field18
+29
+My ID -> My_x0020_ID
+30
+Du Circuit ID -> Unique_x0020_ID
+31
+Default or Dedicated Portal -> field19
+32
+Access Points -> field20
+33
+VLAN if any -> field21
+34
+Username -> field22
+35
+Password -> field23
+36
+Service Status -> field24
+37
+Account Number -> field25
+38
+Work Order -> field26
+39
+Contract ID -> field27
+40
+OTC/OCC -> field28
+41
+Created By -> Author
+42
+Modified By -> Editor
+43
+Created -> Created
+44
+Modified -> Modified 
