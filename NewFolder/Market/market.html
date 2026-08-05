@@ -1362,7 +1362,7 @@ body[data-theme="dark"] .badge-warning,body[data-theme="duralux-dark"] .badge-wa
         </h2>
         <div class="pa-panel" id="paRequestsPanel">
           <div class="pa-panel-title">Pending Access Requests</div>
-          <p class="pa-panel-sub">Review requests submitted from the landing page. Approve with a role or deny — the requester is emailed automatically.</p>
+          <p class="pa-panel-sub">Review pending rows from the <strong>Market_Access</strong> list (Status = Pending). Approve with a role or deny — the requester is emailed automatically.</p>
           <div class="pa-actions">
             <button type="button" class="pa-btn" onclick="paRefreshRequests()">Refresh Requests</button>
           </div>
@@ -1373,7 +1373,7 @@ body[data-theme="dark"] .badge-warning,body[data-theme="duralux-dark"] .badge-wa
         </div>
         <div class="pa-panel">
           <div class="pa-panel-title">Grant Access</div>
-          <p class="pa-panel-sub">Add users to the Market Access list. They will be able to sign in after you save their entry.</p>
+          <p class="pa-panel-sub">Manually add a user with Status = Approved (skips the request flow).</p>
           <div class="pa-form-grid">
             <div class="pa-field">
               <label for="paName">Display Name</label>
@@ -1398,7 +1398,7 @@ body[data-theme="dark"] .badge-warning,body[data-theme="duralux-dark"] .badge-wa
         </div>
         <div class="pa-panel">
           <div class="pa-panel-title">Current Access</div>
-          <p class="pa-panel-sub">Users with access to Revenue Pipeline &amp; Forecast (from SharePoint list <strong>Market_Access</strong>).</p>
+          <p class="pa-panel-sub">Active users (Status = Approved) in <strong>Market_Access</strong>.</p>
           <div class="pa-actions">
             <button type="button" class="pa-btn" onclick="paRefreshAccessList()">Refresh List</button>
           </div>
@@ -1408,7 +1408,7 @@ body[data-theme="dark"] .badge-warning,body[data-theme="duralux-dark"] .badge-wa
         </div>
         <div class="pa-panel">
           <div class="pa-panel-title">Processed Requests</div>
-          <p class="pa-panel-sub">Recently approved or denied requests.</p>
+          <p class="pa-panel-sub">Denied requests (Status = Denied).</p>
           <div class="pa-table-wrap" style="margin-top:.75rem;">
             <div id="paRequestsHistory"><div class="pa-empty">No processed requests yet.</div></div>
           </div>
@@ -1426,7 +1426,6 @@ const APP_NAME  = 'Revenue Pipeline & Forecast';
 const SP_SITE   = 'http://sharedspaces:8086/sites/GKA';
 const SP_LIST   = 'GLK Pipeline Portal';
 const SP_ACCESS_LIST = 'Market_Access';
-const SP_ACCESS_REQUESTS_LIST = 'Market_Access_Requests';
 const PORTAL_ACCESS_MANAGERS = ['tehleel.lone@du.ae', 'abdulla.khoory@du.ae'];
 const ACCESS_REQUEST_RECIPIENTS = ['tehleel.lone@du.ae', 'abdulla.khoory@du.ae'];
 const STATUS_WON  = ['Won','Billed'];
@@ -1442,8 +1441,6 @@ let ACCESS_REGISTRY = [];
 let USER_HAS_ACCESS = false;
 let CAN_MANAGE_PORTAL_ACCESS = false;
 let SP_ACCESS_ENTITY_TYPE = null;
-let SP_ACCESS_REQUESTS_ENTITY_TYPE = null;
-let ACCESS_REQUESTS = [];
 let USER_REQUEST_STATUS = null;
 let ALL_BIDS = [];
 let FILTERED  = [];
@@ -1614,11 +1611,26 @@ function paEscHtml(s){
   return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
-function loadAccessRequests(cb, opts){
+function mapAccessItem(item){
+  const statusRaw=item.Status;
+  const status=statusRaw?String(statusRaw).trim():'Approved';
+  return {
+    id:item.Id,
+    title:item.Title||'',
+    role:String(item.Role||'Viewer').trim(),
+    email:normEmail(item.UserEmailId),
+    status:status,
+    processedBy:item.ProcessedBy||'',
+    created:item.Created||''
+  };
+}
+function paIsActiveAccess(row){ return row&&row.status==='Approved'; }
+
+function loadAccessRegistry(cb, opts){
   opts=opts||{};
-  let url=SP_SITE+"/_api/web/lists/getbytitle('"+SP_ACCESS_REQUESTS_LIST+"')/items?$select=Id,Title,UserEmailId,Status,AssignedRole,ProcessedBy,Created&$top=500&$orderby=Created desc";
+  let url=SP_SITE+"/_api/web/lists/getbytitle('"+SP_ACCESS_LIST+"')/items?$select=Id,Title,Role,UserEmailId,Status,ProcessedBy,Created&$top=5000&$orderby=Created desc";
   const filters=[];
-  if(opts.pendingOnly) filters.push("Status eq 'Pending'");
+  if(opts.statusFilter) filters.push("Status eq '"+String(opts.statusFilter).replace(/'/g,"''")+"'");
   if(opts.emailFilter){
     const safe=String(opts.emailFilter).replace(/'/g,"''");
     filters.push("UserEmailId eq '"+safe+"'");
@@ -1626,40 +1638,18 @@ function loadAccessRequests(cb, opts){
   if(filters.length) url+="&$filter="+encodeURIComponent(filters.join(' and '));
   spGet(url,function(err,data){
     if(err||!data||!data.d){
-      console.warn('[Access] Could not load access requests:',err);
-      if(!opts.emailFilter&&!opts.pendingOnly) ACCESS_REQUESTS=[];
+      console.warn('[Access] Could not load Market_Access list:',err);
+      if(!opts.emailFilter&&!opts.statusFilter) ACCESS_REGISTRY=[];
       if(cb) cb(err);
       return;
     }
-    const rows=(data.d.results||[]).map(function(item){
-      return {
-        id:item.Id,
-        title:item.Title||'',
-        email:normEmail(item.UserEmailId),
-        status:String(item.Status||'Pending').trim(),
-        assignedRole:String(item.AssignedRole||'').trim(),
-        processedBy:item.ProcessedBy||'',
-        created:item.Created||''
-      };
-    });
-    if(opts.emailFilter||opts.pendingOnly){
+    const rows=(data.d.results||[]).map(mapAccessItem);
+    if(opts.emailFilter||opts.statusFilter){
       if(cb) cb(null,rows);
     } else {
-      ACCESS_REQUESTS=rows;
+      ACCESS_REGISTRY=rows;
       if(cb) cb(null);
     }
-  });
-}
-
-function ensureAccessRequestEntityType(cb){
-  if(SP_ACCESS_REQUESTS_ENTITY_TYPE){ if(cb) cb(null,SP_ACCESS_REQUESTS_ENTITY_TYPE); return; }
-  spGet(SP_SITE+"/_api/web/lists/getbytitle('"+SP_ACCESS_REQUESTS_LIST+"')?$select=ListItemEntityTypeFullName",function(err,data){
-    if(err||!data||!data.d||!data.d.ListItemEntityTypeFullName){
-      SP_ACCESS_REQUESTS_ENTITY_TYPE='SP.Data.Market_x0020_Access_x0020_RequestsListItem';
-    } else {
-      SP_ACCESS_REQUESTS_ENTITY_TYPE=data.d.ListItemEntityTypeFullName;
-    }
-    if(cb) cb(null,SP_ACCESS_REQUESTS_ENTITY_TYPE);
   });
 }
 
@@ -1667,11 +1657,10 @@ function checkUserRequestStatus(cb){
   if(USER_HAS_ACCESS) return cb(null,null);
   const email=normEmail(USER.email);
   if(!email) return cb(null,null);
-  loadAccessRequests(function(err,rows){
+  loadAccessRegistry(function(err,rows){
     if(err||!rows) return cb(null,null);
     const pending=rows.find(function(r){ return r.status==='Pending'; });
-    const denied=rows.find(function(r){ return r.status==='Denied'; });
-    cb(null,{pending:!!pending,pendingRow:pending,denied:!!denied});
+    cb(null,{pending:!!pending,pendingRow:pending});
   },{emailFilter:email});
 }
 
@@ -1697,54 +1686,44 @@ function sendAccessDecisionEmail(type,requesterEmail,requesterName,role){
   });
 }
 
-function createAccessRequest(name,email,cb){
-  ensureAccessRequestEntityType(function(err,entityType){
+function paUpdateAccessItem(itemId,patch,cb){
+  ensureAccessEntityType(function(err,entityType){
     if(err) return cb(err);
-    loadAccessRequests(function(err2,rows){
-      if(!err2&&rows&&rows.some(function(r){ return r.status==='Pending'; })){
-        return cb(null,{duplicate:true});
+    const body={__metadata:{type:entityType}};
+    Object.keys(patch).forEach(function(k){ body[k]=patch[k]; });
+    spMerge(SP_SITE+"/_api/web/lists/getbytitle('"+SP_ACCESS_LIST+"')/items("+itemId+")",body,cb);
+  });
+}
+
+function createAccessRequest(name,email,cb){
+  ensureAccessEntityType(function(err,entityType){
+    if(err) return cb(err);
+    loadAccessRegistry(function(err2,rows){
+      const mine=rows||[];
+      const pending=mine.find(function(r){ return r.status==='Pending'; });
+      if(pending) return cb(null,{duplicate:true});
+      const existing=mine[0];
+      if(existing){
+        if(existing.status==='Denied'){
+          paUpdateAccessItem(existing.id,{Title:name,Status:'Pending',ProcessedBy:''},function(updErr){
+            if(updErr) return cb(updErr);
+            cb(null,{duplicate:false,id:existing.id,reopened:true});
+          });
+          return;
+        }
+        if(existing.status==='Approved') return cb(null,{duplicate:true,alreadyApproved:true});
       }
-      spPost(SP_SITE+"/_api/web/lists/getbytitle('"+SP_ACCESS_REQUESTS_LIST+"')/items",{
+      spPost(SP_SITE+"/_api/web/lists/getbytitle('"+SP_ACCESS_LIST+"')/items",{
         __metadata:{type:entityType},
         Title:name,
         UserEmailId:email,
-        Status:'Pending'
+        Status:'Pending',
+        Role:'Viewer'
       },function(saveErr,data){
         if(saveErr) return cb(saveErr);
         cb(null,{duplicate:false,id:data&&data.d&&data.d.Id});
       });
     },{emailFilter:email});
-  });
-}
-
-function updateAccessRequest(itemId,patch,cb){
-  ensureAccessRequestEntityType(function(err,entityType){
-    if(err) return cb(err);
-    const body={__metadata:{type:entityType}};
-    Object.keys(patch).forEach(function(k){ body[k]=patch[k]; });
-    spMerge(SP_SITE+"/_api/web/lists/getbytitle('"+SP_ACCESS_REQUESTS_LIST+"')/items("+itemId+")",body,cb);
-  });
-}
-
-function paGrantAccessForUser(name,email,role,cb){
-  ensureAccessEntityType(function(err,entityType){
-    if(err) return cb(err);
-    const existing=ACCESS_REGISTRY.find(function(r){ return r.email===email; });
-    if(existing){
-      spMerge(SP_SITE+"/_api/web/lists/getbytitle('"+SP_ACCESS_LIST+"')/items("+existing.id+")",{
-        __metadata:{type:entityType},
-        Title:name||existing.title,
-        Role:role,
-        UserEmailId:email
-      },cb);
-      return;
-    }
-    spPost(SP_SITE+"/_api/web/lists/getbytitle('"+SP_ACCESS_LIST+"')/items",{
-      __metadata:{type:entityType},
-      Title:name,
-      Role:role,
-      UserEmailId:email
-    },cb);
   });
 }
 
@@ -1755,8 +1734,8 @@ function updatePortalAccessNav(){
   if(sec) sec.style.display=show?'block':'none';
   if(nav) nav.style.display=show?'flex':'none';
   if(show){
-    loadAccessRequests(function(err,rows){
-      const pending=(rows||ACCESS_REQUESTS).filter(function(r){ return r.status==='Pending'; }).length;
+    loadAccessRegistry(function(err,rows){
+      const pending=(rows||[]).length;
       let badge=nav?nav.querySelector('.pa-nav-badge'):null;
       if(pending>0){
         if(!badge&&nav){
@@ -1768,39 +1747,8 @@ function updatePortalAccessNav(){
       } else if(badge){
         badge.remove();
       }
-    },{pendingOnly:true});
+    },{statusFilter:'Pending'});
   }
-}
-
-function loadAccessRegistry(cb, opts){
-  opts=opts||{};
-  let url=SP_SITE+"/_api/web/lists/getbytitle('"+SP_ACCESS_LIST+"')/items?$select=Id,Title,Role,UserEmailId&$top=5000&$orderby=Title asc";
-  if(opts.emailFilter){
-    const safe=String(opts.emailFilter).replace(/'/g,"''");
-    url+="&$filter=UserEmailId eq '"+safe+"'";
-  }
-  spGet(url,function(err,data){
-    if(err||!data||!data.d){
-      console.warn('[Access] Could not load Market_Access list:',err);
-      if(!opts.emailFilter) ACCESS_REGISTRY=[];
-      if(cb) cb(err);
-      return;
-    }
-    const rows=(data.d.results||[]).map(function(item){
-      return {
-        id:item.Id,
-        title:item.Title||'',
-        role:String(item.Role||'Viewer').trim(),
-        email:normEmail(item.UserEmailId)
-      };
-    });
-    if(opts.emailFilter){
-      if(cb) cb(null,rows);
-    } else {
-      ACCESS_REGISTRY=rows;
-      if(cb) cb(null);
-    }
-  });
 }
 
 function resolveUserAccess(cb){
@@ -1816,7 +1764,7 @@ function resolveUserAccess(cb){
   }
 
   loadAccessRegistry(function(err,rows){
-    const entry=(rows||[]).find(function(r){ return r.email&&r.email===email; });
+    const entry=(rows||[]).find(function(r){ return r.email===email&&paIsActiveAccess(r); });
     if(entry){
       USER.role=(entry.role==='Admin'?'Admin':'Viewer');
       USER.hasAccess=true;
@@ -1919,7 +1867,7 @@ function requestPortalAccess(){
   createAccessRequest(name,email,function(err,result){
     if(err){
       if(btn) btn.disabled=false;
-      if(statusEl){ statusEl.className='pa-status err'; statusEl.textContent='Could not submit request. Ask an admin to create the Market_Access_Requests list.'; }
+      if(statusEl){ statusEl.className='pa-status err'; statusEl.textContent='Could not submit request. Ensure Market_Access list has a Status column (Pending / Approved / Denied).'; }
       return;
     }
     if(result&&result.duplicate){
@@ -3605,9 +3553,30 @@ function glkShowPortalAccess(){
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   const nav=el('navPortalAccess');
   if(nav) nav.classList.add('active');
-  paRefreshAccessList();
-  paRefreshRequests();
+  paRefreshAll();
 }
+function paRefreshAll(){
+  const pendingBox=el('paRequestsTable');
+  const accessBox=el('paAccessTable');
+  const histBox=el('paRequestsHistory');
+  if(pendingBox) pendingBox.innerHTML='<div class="pa-empty">Loading...</div>';
+  if(accessBox) accessBox.innerHTML='<div class="pa-empty">Loading...</div>';
+  loadAccessRegistry(function(err){
+    if(err){
+      const msg='<div class="pa-empty">Could not load Market_Access. Add column <strong>Status</strong> (Pending, Approved, Denied) and optional <strong>ProcessedBy</strong>.</div>';
+      if(pendingBox) pendingBox.innerHTML=msg;
+      if(accessBox) accessBox.innerHTML=msg;
+      if(histBox) histBox.innerHTML='<div class="pa-empty">—</div>';
+      return;
+    }
+    paRenderRequestsTable();
+    paRenderAccessTable();
+    paRenderRequestsHistory();
+    updatePortalAccessNav();
+  });
+}
+function paRefreshRequests(){ paRefreshAll(); }
+function paRefreshAccessList(){ paRefreshAll(); }
 function paFormatRequestDate(iso){
   if(!iso) return '—';
   try{ return new Date(iso).toLocaleString('en-GB'); }catch(e){ return '—'; }
@@ -3615,7 +3584,7 @@ function paFormatRequestDate(iso){
 function paRenderRequestsTable(){
   const box=el('paRequestsTable');
   if(!box) return;
-  const pending=ACCESS_REQUESTS.filter(function(r){ return r.status==='Pending'; });
+  const pending=ACCESS_REGISTRY.filter(function(r){ return r.status==='Pending'; });
   if(!pending.length){
     box.innerHTML='<div class="pa-empty">No pending access requests.</div>';
     return;
@@ -3636,75 +3605,51 @@ function paRenderRequestsTable(){
 function paRenderRequestsHistory(){
   const box=el('paRequestsHistory');
   if(!box) return;
-  const done=ACCESS_REQUESTS.filter(function(r){ return r.status!=='Pending'; });
-  if(!done.length){
-    box.innerHTML='<div class="pa-empty">No processed requests yet.</div>';
+  const denied=ACCESS_REGISTRY.filter(function(r){ return r.status==='Denied'; });
+  if(!denied.length){
+    box.innerHTML='<div class="pa-empty">No denied requests.</div>';
     return;
   }
-  let html='<table class="pa-table"><thead><tr><th>Name</th><th>Email</th><th>Status</th><th>Role</th><th>Processed By</th><th>Date</th></tr></thead><tbody>';
-  done.slice(0,40).forEach(function(row){
-    const stCls=row.status==='Approved'?'pa-req-approved':(row.status==='Denied'?'pa-req-denied':'');
+  let html='<table class="pa-table"><thead><tr><th>Name</th><th>Email</th><th>Status</th><th>Processed By</th><th>Date</th></tr></thead><tbody>';
+  denied.slice(0,40).forEach(function(row){
     html+='<tr><td>'+paEscHtml(row.title||'—')+'</td><td>'+paEscHtml(row.email||'—')+'</td>'+
-      '<td><span class="pa-role-badge '+stCls+'">'+paEscHtml(row.status)+'</span></td>'+
-      '<td>'+paEscHtml(row.assignedRole||'—')+'</td>'+
+      '<td><span class="pa-role-badge pa-req-denied">Denied</span></td>'+
       '<td>'+paEscHtml(row.processedBy||'—')+'</td>'+
       '<td>'+paFormatRequestDate(row.created)+'</td></tr>';
   });
   html+='</tbody></table>';
   box.innerHTML=html;
 }
-function paRefreshRequests(){
-  const pendingBox=el('paRequestsTable');
-  const histBox=el('paRequestsHistory');
-  if(pendingBox) pendingBox.innerHTML='<div class="pa-empty">Loading requests...</div>';
-  loadAccessRequests(function(err){
-    if(err){
-      if(pendingBox) pendingBox.innerHTML='<div class="pa-empty">Could not load requests. Create SharePoint list <strong>Market_Access_Requests</strong> with columns: Title, UserEmailId, Status (Pending/Approved/Denied), AssignedRole, ProcessedBy.</div>';
-      if(histBox) histBox.innerHTML='<div class="pa-empty">—</div>';
-      return;
-    }
-    paRenderRequestsTable();
-    paRenderRequestsHistory();
-    updatePortalAccessNav();
-  });
-}
 function paApproveRequest(itemId){
   if(!CAN_MANAGE_PORTAL_ACCESS){ alert('Not authorized.'); return; }
-  const req=ACCESS_REQUESTS.find(function(r){ return r.id===itemId; });
+  const req=ACCESS_REGISTRY.find(function(r){ return r.id===itemId; });
   if(!req||req.status!=='Pending') return;
   const roleEl=el('paReqRole_'+itemId);
   const role=(roleEl&&roleEl.value)||'Viewer';
   const statusEl=el('paRequestStatus');
   if(statusEl){ statusEl.className='pa-status'; statusEl.textContent='Approving '+req.email+'...'; }
-  paGrantAccessForUser(req.title,req.email,role,function(grantErr){
-    if(grantErr){
-      if(statusEl){ statusEl.className='pa-status err'; statusEl.textContent='Could not grant access: '+grantErr.message; }
+  paUpdateAccessItem(itemId,{
+    Status:'Approved',
+    Role:role,
+    ProcessedBy:USER.email||USER.name
+  },function(err){
+    if(err){
+      if(statusEl){ statusEl.className='pa-status err'; statusEl.textContent='Could not approve: '+err.message; }
       return;
     }
-    updateAccessRequest(itemId,{
-      Status:'Approved',
-      AssignedRole:role,
-      ProcessedBy:USER.email||USER.name
-    },function(updErr){
-      if(updErr){
-        if(statusEl){ statusEl.className='pa-status err'; statusEl.textContent='Access granted but request update failed: '+updErr.message; }
-        return;
-      }
-      sendAccessDecisionEmail('approved',req.email,req.title,role);
-      if(statusEl){ statusEl.className='pa-status ok'; statusEl.textContent='Approved '+req.email+' as '+role+'. Notification email sent.'; }
-      paRefreshAccessList();
-      paRefreshRequests();
-    });
+    sendAccessDecisionEmail('approved',req.email,req.title,role);
+    if(statusEl){ statusEl.className='pa-status ok'; statusEl.textContent='Approved '+req.email+' as '+role+'. Notification email sent.'; }
+    paRefreshAll();
   });
 }
 function paDenyRequest(itemId){
   if(!CAN_MANAGE_PORTAL_ACCESS){ alert('Not authorized.'); return; }
-  const req=ACCESS_REQUESTS.find(function(r){ return r.id===itemId; });
+  const req=ACCESS_REGISTRY.find(function(r){ return r.id===itemId; });
   if(!req||req.status!=='Pending') return;
   if(!confirm('Deny access request for '+req.email+'?')) return;
   const statusEl=el('paRequestStatus');
   if(statusEl){ statusEl.className='pa-status'; statusEl.textContent='Denying '+req.email+'...'; }
-  updateAccessRequest(itemId,{
+  paUpdateAccessItem(itemId,{
     Status:'Denied',
     ProcessedBy:USER.email||USER.name
   },function(err){
@@ -3714,18 +3659,19 @@ function paDenyRequest(itemId){
     }
     sendAccessDecisionEmail('denied',req.email,req.title,'');
     if(statusEl){ statusEl.className='pa-status ok'; statusEl.textContent='Denied '+req.email+'. Notification email sent.'; }
-    paRefreshRequests();
+    paRefreshAll();
   });
 }
 function paRenderAccessTable(){
   const box=el('paAccessTable');
   if(!box) return;
-  if(!ACCESS_REGISTRY.length){
-    box.innerHTML='<div class="pa-empty">No users in Market_Access yet. Add someone above.</div>';
+  const approved=ACCESS_REGISTRY.filter(function(r){ return paIsActiveAccess(r); });
+  if(!approved.length){
+    box.innerHTML='<div class="pa-empty">No approved users yet.</div>';
     return;
   }
   let html='<table class="pa-table"><thead><tr><th>Name</th><th>Email</th><th>Role</th><th></th></tr></thead><tbody>';
-  ACCESS_REGISTRY.forEach(function(row){
+  approved.forEach(function(row){
     const roleCls=row.role==='Admin'?'pa-role-admin':'pa-role-viewer';
     html+='<tr><td>'+rfEscHtml(row.title||'—')+'</td><td>'+rfEscHtml(row.email||'—')+'</td>'+
       '<td><span class="pa-role-badge '+roleCls+'">'+rfEscHtml(row.role||'Viewer')+'</span></td>'+
@@ -3733,17 +3679,6 @@ function paRenderAccessTable(){
   });
   html+='</tbody></table>';
   box.innerHTML=html;
-}
-function paRefreshAccessList(){
-  const box=el('paAccessTable');
-  if(box) box.innerHTML='<div class="pa-empty">Loading access list...</div>';
-  loadAccessRegistry(function(err){
-    paRenderAccessTable();
-    if(err&&el('paFormStatus')){
-      el('paFormStatus').className='pa-status err';
-      el('paFormStatus').textContent='Could not load Market_Access list. Check list permissions.';
-    }
-  });
 }
 function paAddAccess(){
   if(!CAN_MANAGE_PORTAL_ACCESS){ alert('Not authorized.'); return; }
@@ -3758,17 +3693,40 @@ function paAddAccess(){
     if(statusEl){ statusEl.className='pa-status err'; statusEl.textContent='Name and email are required.'; }
     return;
   }
-  if(ACCESS_REGISTRY.some(function(r){ return r.email===email; })){
-    if(statusEl){ statusEl.className='pa-status err'; statusEl.textContent='This email already has access.'; }
+  const existingApproved=ACCESS_REGISTRY.find(function(r){ return r.email===email&&paIsActiveAccess(r); });
+  if(existingApproved){
+    if(statusEl){ statusEl.className='pa-status err'; statusEl.textContent='This email already has approved access.'; }
     return;
   }
+  const existingRow=ACCESS_REGISTRY.find(function(r){ return r.email===email; });
   if(statusEl){ statusEl.className='pa-status'; statusEl.textContent='Saving...'; }
+  if(existingRow){
+    paUpdateAccessItem(existingRow.id,{
+      Title:name,
+      Role:role,
+      Status:'Approved',
+      ProcessedBy:USER.email||USER.name
+    },function(updErr){
+      if(updErr){
+        if(statusEl){ statusEl.className='pa-status err'; statusEl.textContent='Could not update user: '+updErr.message; }
+        return;
+      }
+      if(nameEl) nameEl.value='';
+      if(emailEl) emailEl.value='';
+      if(roleEl) roleEl.value='Viewer';
+      if(statusEl){ statusEl.className='pa-status ok'; statusEl.textContent='Access granted for '+email+'.'; }
+      paRefreshAll();
+    });
+    return;
+  }
   ensureAccessEntityType(function(err,entityType){
     spPost(SP_SITE+"/_api/web/lists/getbytitle('"+SP_ACCESS_LIST+"')/items",{
       __metadata:{type:entityType},
       Title:name,
       Role:role,
-      UserEmailId:email
+      UserEmailId:email,
+      Status:'Approved',
+      ProcessedBy:USER.email||USER.name
     },function(saveErr){
       if(saveErr){
         if(statusEl){ statusEl.className='pa-status err'; statusEl.textContent='Could not add user: '+saveErr.message; }
@@ -3778,7 +3736,7 @@ function paAddAccess(){
       if(emailEl) emailEl.value='';
       if(roleEl) roleEl.value='Viewer';
       if(statusEl){ statusEl.className='pa-status ok'; statusEl.textContent='Access granted for '+email+'.'; }
-      loadAccessRegistry(function(){ paRenderAccessTable(); });
+      paRefreshAll();
     });
   });
 }
@@ -3795,7 +3753,7 @@ function paRemoveAccess(itemId){
       return;
     }
     if(statusEl){ statusEl.className='pa-status ok'; statusEl.textContent='Removed access for '+row.email+'.'; }
-    loadAccessRegistry(function(){ paRenderAccessTable(); });
+    paRefreshAll();
   });
 }
 function changeTheme(event){
