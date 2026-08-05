@@ -1,0 +1,875 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DA Wi-Fi Revenue Reporting Portal</title>
+  <!-- Host these in SharePoint Site Assets in production; CDNs shown for quick testing -->
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <style>
+    :root {
+      --bg: #f4f6f9;
+      --card: #fff;
+      --text: #1a2332;
+      --muted: #5c6b7a;
+      --border: #dde3ea;
+      --accent: #0066cc;
+      --accent-hover: #0052a3;
+      --ok: #0d7a52;
+      --ok-bg: #e8f5ef;
+      --warn: #b45309;
+      --warn-bg: #fef3c7;
+      --err: #b91c1c;
+      --err-bg: #fee2e2;
+      --radius: 8px;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+    }
+    .wrap { max-width: 1200px; margin: 0 auto; padding: 24px 20px 48px; }
+    h1 { font-size: 1.6rem; margin: 0 0 6px; font-weight: 600; }
+    h2 { font-size: 1.15rem; margin: 0 0 12px; font-weight: 600; }
+    .sub { color: var(--muted); margin-bottom: 24px; font-size: 0.95rem; }
+    .nav { display: flex; gap: 8px; margin-bottom: 24px; flex-wrap: wrap; }
+    .nav button {
+      padding: 8px 16px;
+      border: 1px solid var(--border);
+      background: var(--card);
+      border-radius: var(--radius);
+      cursor: pointer;
+      font-size: 0.9rem;
+    }
+    .nav button.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+    .view { display: none; }
+    .view.active { display: block; }
+    .grid { display: grid; gap: 16px; }
+    .grid-3 { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+    .grid-2 { grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+    }
+    .card.clickable { cursor: pointer; transition: border-color 0.15s; }
+    .card.clickable:hover { border-color: var(--accent); }
+    .stat-val { font-size: 1.5rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+    .stat-lbl { font-size: 0.8rem; color: var(--muted); margin-top: 4px; }
+    label { display: block; font-size: 0.85rem; font-weight: 500; margin-bottom: 6px; }
+    input[type="file"], select, input[type="text"] {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      font-size: 0.9rem;
+      margin-bottom: 16px;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 20px;
+      border: none;
+      border-radius: var(--radius);
+      font-size: 0.95rem;
+      font-weight: 500;
+      cursor: pointer;
+    }
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-primary:hover { background: var(--accent-hover); }
+    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-secondary { background: var(--card); color: var(--text); border: 1px solid var(--border); }
+    .actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 8px; }
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+    .badge-ok { background: var(--ok-bg); color: var(--ok); }
+    .badge-warn { background: var(--warn-bg); color: var(--warn); }
+    .badge-err { background: var(--err-bg); color: var(--err); }
+    table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+    th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--border); }
+    th { background: #f8fafc; font-weight: 600; position: sticky; top: 0; }
+    td.num { text-align: right; font-variant-numeric: tabular-nums; }
+    .scroll { max-height: 420px; overflow: auto; border: 1px solid var(--border); border-radius: var(--radius); }
+    tr.row-err { background: var(--err-bg); }
+    tr.row-warn { background: var(--warn-bg); }
+    .alert {
+      padding: 14px 16px;
+      border-radius: var(--radius);
+      margin-bottom: 16px;
+      font-size: 0.9rem;
+    }
+    .alert-ok { background: var(--ok-bg); border: 1px solid #a7d4bc; color: var(--ok); }
+    .alert-warn { background: var(--warn-bg); border: 1px solid #fcd34d; color: #92400e; }
+    .alert-err { background: var(--err-bg); border: 1px solid #fca5a5; color: var(--err); }
+    .chart-box { height: 280px; position: relative; }
+    .hidden { display: none !important; }
+    .loader {
+      display: inline-block;
+      width: 18px; height: 18px;
+      border: 2px solid rgba(255,255,255,0.4);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .config-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    @media (max-width: 640px) { .config-row { grid-template-columns: 1fr; } }
+    code { background: #eef2f6; padding: 2px 6px; border-radius: 4px; font-size: 0.85em; }
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <h1>DA Wi-Fi Revenue Reporting Portal</h1>
+  <p class="sub">Generate monthly DA reports from SharePoint tenant data, validate against du finance billing, and highlight gaps before submission.</p>
+
+  <nav class="nav">
+    <button type="button" data-view="landing" class="active">Home</button>
+    <button type="button" data-view="generate">Generate Report</button>
+    <button type="button" data-view="results" id="navResults" disabled>Results</button>
+  </nav>
+
+  <!-- LANDING -->
+  <section id="view-landing" class="view active">
+    <div class="grid grid-3">
+      <div class="card clickable" id="goGenerate">
+        <div class="stat-val" style="font-size:1.2rem;color:var(--accent)">+ Generate</div>
+        <div class="stat-lbl">Upload finance file, select month, pull SharePoint &amp; validate</div>
+      </div>
+      <div class="card">
+        <div class="stat-val" id="statTenants">—</div>
+        <div class="stat-lbl">Active tenant accounts (last run)</div>
+      </div>
+      <div class="card">
+        <div class="stat-val" id="statIssues">—</div>
+        <div class="stat-lbl">Open reconciliation issues (last run)</div>
+      </div>
+    </div>
+    <div class="card" style="margin-top:16px">
+      <h2>How it works</h2>
+      <ol style="margin:0;padding-left:20px;color:var(--muted);font-size:0.9rem">
+        <li>Pulls live data from <code>Du Tenant Information (Post Migration)</code> SharePoint list</li>
+        <li>You upload <code>Data_dubai_request.xlsx</code> from finance (du billing)</li>
+        <li>Optionally upload your manually prepared DA report for side-by-side comparison</li>
+        <li>Computes revenue by service type, AP charges (AED 400/AP), VAT 5%, DA share 70%</li>
+        <li>Flags every mismatch in red/amber before you download the Excel report</li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- GENERATE -->
+  <section id="view-generate" class="view">
+    <div class="card">
+      <h2>Generate &amp; validate report</h2>
+      <div class="config-row">
+        <div>
+          <label for="reportMonth">Report month</label>
+          <select id="reportMonth">
+            <option value="1">January</option>
+            <option value="2">February</option>
+            <option value="3">March</option>
+            <option value="4">April</option>
+            <option value="5">May</option>
+            <option value="6" selected>June</option>
+            <option value="7">July</option>
+            <option value="8">August</option>
+            <option value="9">September</option>
+            <option value="10">October</option>
+            <option value="11">November</option>
+            <option value="12">December</option>
+          </select>
+        </div>
+        <div>
+          <label for="reportYear">Report year</label>
+          <input type="text" id="reportYear" value="2026" maxlength="4" />
+        </div>
+      </div>
+      <label for="listName">SharePoint list title</label>
+      <input type="text" id="listName" value="Du Tenant Information(Post Migration)" />
+
+      <label for="financeFile">Data_dubai_request.xlsx (required — du finance billing)</label>
+      <input type="file" id="financeFile" accept=".xlsx,.xls" />
+
+      <label for="manualFile">Manual DA report .xlsx (optional — for comparison)</label>
+      <input type="file" id="manualFile" accept=".xlsx,.xls" />
+
+      <div class="actions">
+        <button type="button" class="btn btn-primary" id="btnGenerate">
+          <span id="btnLabel">Generate Report</span>
+        </button>
+        <button type="button" class="btn btn-secondary" id="btnTestSp">Test SharePoint connection</button>
+      </div>
+      <div id="genStatus" style="margin-top:12px;font-size:0.9rem;color:var(--muted)"></div>
+    </div>
+  </section>
+
+  <!-- RESULTS -->
+  <section id="view-results" class="view">
+    <div id="summaryAlert"></div>
+    <div class="grid grid-3" style="margin-bottom:16px">
+      <div class="card">
+        <div class="stat-lbl">Generated total (ex-VAT)</div>
+        <div class="stat-val" id="resGenerated">—</div>
+      </div>
+      <div class="card">
+        <div class="stat-lbl">Finance file total (ex-VAT)</div>
+        <div class="stat-val" id="resFinance">—</div>
+      </div>
+      <div class="card">
+        <div class="stat-lbl">Difference</div>
+        <div class="stat-val" id="resDiff">—</div>
+      </div>
+    </div>
+    <div class="grid grid-2" style="margin-bottom:16px">
+      <div class="card">
+        <h2>Revenue by service type</h2>
+        <div class="chart-box"><canvas id="chartService"></canvas></div>
+      </div>
+      <div class="card">
+        <h2>Generated vs Finance (top tenants)</h2>
+        <div class="chart-box"><canvas id="chartCompare"></canvas></div>
+      </div>
+    </div>
+    <div class="card" style="margin-bottom:16px">
+      <h2>Reconciliation issues <span id="issueCount" class="badge badge-warn">0</span></h2>
+      <div class="scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Severity</th>
+              <th>Account</th>
+              <th>Tenant</th>
+              <th>Issue</th>
+              <th class="num">Generated</th>
+              <th class="num">Finance</th>
+              <th class="num">Manual</th>
+              <th class="num">Diff</th>
+            </tr>
+          </thead>
+          <tbody id="issuesBody"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Report preview (by account)</h2>
+      <div class="scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Account</th>
+              <th>Tenant</th>
+              <th>Airport</th>
+              <th class="num">Tenant Wifi</th>
+              <th class="num">Secure Wifi</th>
+              <th class="num">Guest Wifi</th>
+              <th class="num">Wireline</th>
+              <th class="num">AP</th>
+              <th class="num">Total</th>
+              <th class="num">DA Share 70%</th>
+            </tr>
+          </thead>
+          <tbody id="reportBody"></tbody>
+        </table>
+      </div>
+      <div class="actions" style="margin-top:16px">
+        <button type="button" class="btn btn-primary" id="btnDownload">Download Excel Report</button>
+        <button type="button" class="btn btn-secondary" id="btnDownloadIssues">Download Issues CSV</button>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var AP_RATE = 400;
+  var DA_SHARE = 0.70;
+  var VAT_RATE = 0.05;
+
+  var MONTH_KEYS = ["", "jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
+  var MONTH_LABELS = ["", "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+
+  var BUCKET_MAP = {
+    "Guest Wi-Fi": "glw",
+    "Tenant Auth WiFi": "tsw",
+    "DA Tenant Wi-Fi": "tw",
+    "Wireline Internet+ Wireless": "wl"
+  };
+
+  var SP_FIELDS = [
+    "Title", "field25", "field27", "Service_x0020_Type", "field3", "field14",
+    "Expiry", "field24", "Airport_x0020_Name", "Terminal", "Address", "field26", "field28"
+  ].join(",");
+
+  var state = {
+    spItems: [],
+    financeRows: [],
+    manualRows: {},
+    reportRows: [],
+    issues: [],
+    month: 6,
+    year: 2026,
+    charts: {}
+  };
+
+  function $(id) { return document.getElementById(id); }
+  function num(v) {
+    if (v == null || v === "") return 0;
+    if (typeof v === "number") return v;
+    var s = String(v).replace(/,/g, "").replace(/\s/g, "").trim();
+    var n = parseFloat(s);
+    return isNaN(n) ? 0 : n;
+  }
+  function acctKey(a) {
+    if (!a) return "";
+    var s = String(a).replace(/\s/g, "");
+    var p = s.split(".");
+    return p[p.length - 1];
+  }
+  function aed(n) {
+    return num(n).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+  function daysInMonth(y, m) { return new Date(y, m, 0).getDate(); }
+  function parseDate(v) {
+    if (!v) return null;
+    if (v instanceof Date) return v;
+    var d = new Date(v);
+    return isNaN(d.getTime()) ? null : d;
+  }
+  function prorate(mrc, actDate, reportY, reportM) {
+    if (!actDate) return mrc;
+    var y = actDate.getFullYear(), mo = actDate.getMonth() + 1;
+    if (y < reportY || (y === reportY && mo < reportM)) return mrc;
+    if (y > reportY || (y === reportY && mo > reportM)) return 0;
+    var dim = daysInMonth(reportY, reportM);
+    var day = actDate.getDate();
+    return Math.round((mrc * (dim - day + 1) / dim) * 100) / 100;
+  }
+  function showView(name) {
+    document.querySelectorAll(".view").forEach(function (v) { v.classList.remove("active"); });
+    document.querySelectorAll(".nav button").forEach(function (b) { b.classList.toggle("active", b.dataset.view === name); });
+    $("view-" + name).classList.add("active");
+  }
+  function setStatus(msg, isErr) {
+    var el = $("genStatus");
+    el.textContent = msg;
+    el.style.color = isErr ? "var(--err)" : "var(--muted)";
+  }
+
+  /* ---------- SharePoint REST ---------- */
+  function getSpBase() {
+    var p = window.location.pathname.split("/");
+    var idx = p.indexOf("sites");
+    if (idx >= 0) return window.location.origin + "/" + p.slice(1, idx + 2).join("/");
+    return window.location.origin + window.location.pathname.replace(/\/[^/]*$/, "");
+  }
+
+  function fetchSharePointList(listTitle) {
+    var base = getSpBase();
+    var url = base + "/_api/web/lists/getbytitle('" + listTitle.replace(/'/g, "''") + "')/items?$select=" +
+      SP_FIELDS + "&$top=5000";
+    return fetch(url, {
+      headers: { Accept: "application/json;odata=verbose" },
+      credentials: "same-origin"
+    }).then(function (r) {
+      if (!r.ok) throw new Error("SharePoint HTTP " + r.status + " — check list title and permissions");
+      return r.json();
+    }).then(function (data) {
+      var results = (data.d && data.d.results) ? data.d.results : [];
+      return results.map(function (item) {
+        return {
+          name: item.Title || "",
+          account: acctKey(item.field25),
+          accountRaw: item.field25 || "",
+          contract: (item.field27 || "").trim(),
+          serviceType: item.Service_x0020_Type || "",
+          mrc: num(item.field3),
+          aps: num(item.field14),
+          activation: parseDate(item.Expiry),
+          status: item.field24 || "Active",
+          airport: item.Airport_x0020_Name || "",
+          terminal: item.Terminal || "",
+          location: item.Address || "",
+          workOrder: item.field26 || "",
+          otc: item.field28 || ""
+        };
+      });
+    });
+  }
+
+  /* ---------- Excel parsing ---------- */
+  function readWorkbook(file) {
+    return new Promise(function (resolve, reject) {
+      var reader = new FileReader();
+      reader.onload = function (e) {
+        try {
+          var wb = XLSX.read(e.target.result, { type: "array", cellDates: true });
+          resolve(wb);
+        } catch (err) { reject(err); }
+      };
+      reader.onerror = reject;
+      reader.readAsArrayBuffer(file);
+    });
+  }
+
+  function parseFinance(wb, month, year) {
+    var sheet = wb.Sheets[wb.SheetNames[0]];
+    var rows = XLSX.utils.sheet_to_json(sheet, { defval: "" });
+    var mKey = MONTH_KEYS[month] + "_revenue";
+    var out = [];
+    rows.forEach(function (r) {
+      var acct = acctKey(r.CUST_CODE || r["CUST_CODE"]);
+      if (!acct) return;
+      var rev = num(r[mKey]);
+      if (rev === 0 && !r.CO_CODE) return;
+      out.push({
+        account: acct,
+        contract: String(r.CO_CODE || "").trim(),
+        name: String(r.CUST_FNAME || r.CUST_FNAME || "").trim(),
+        service: String(r.Service || "").trim(),
+        rp: String(r.RP_DESCRIPTION || "").trim(),
+        revenue: rev
+      });
+    });
+    return out;
+  }
+
+  function parseManualReport(wb) {
+    var map = {};
+    wb.SheetNames.forEach(function (sn) {
+      if (sn.toLowerCase().indexOf("monthly") < 0 && sn.toLowerCase().indexOf("report") < 0) return;
+      var sheet = wb.Sheets[sn];
+      var rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: "" });
+      for (var i = 0; i < rows.length; i++) {
+        var row = rows[i];
+        if (!row || row.length < 14) continue;
+        var name = String(row[2] || "").trim();
+        if (!name || name === "Customer name " || name === "Total ") continue;
+        var total = num(row[13]);
+        if (total <= 0) continue;
+        map[name.toLowerCase()] = {
+          name: name,
+          tw: num(row[6]), tsw: num(row[7]), glw: num(row[8]),
+          wl: num(row[9]), other: num(row[10]), ap: num(row[11]),
+          total: total
+        };
+      }
+    });
+    return map;
+  }
+
+  /* ---------- Report engine ---------- */
+  function computeReport(spItems, month, year) {
+    var byAccount = {};
+    spItems.forEach(function (item) {
+      if (!item.account) return;
+      if (item.status === "Ceased") return;
+      var act = item.activation;
+      if (act && act > new Date(year, month, 0)) return;
+
+      var amount = prorate(item.mrc, act, year, month);
+      if (amount <= 0) return;
+
+      if (!byAccount[item.account]) {
+        byAccount[item.account] = {
+          account: item.account,
+          accountRaw: item.accountRaw,
+          name: item.name,
+          airport: item.airport,
+          tw: 0, tsw: 0, glw: 0, wl: 0, ap: 0, other: 0,
+          contracts: []
+        };
+      }
+      var acc = byAccount[item.account];
+      if (item.name && item.name.length > acc.name.length) acc.name = item.name;
+      if (item.airport) acc.airport = item.airport;
+      acc.contracts.push(item.contract);
+
+      var bucket = BUCKET_MAP[item.serviceType];
+      if (!bucket) return;
+
+      if (bucket === "wl") {
+        var apAmt = item.aps * AP_RATE;
+        var wlAmt = amount - (item.aps * AP_RATE * (amount / item.mrc || 1));
+        if (item.mrc > 0) {
+          apAmt = prorate(item.aps * AP_RATE, act, year, month);
+          wlAmt = amount - apAmt;
+        } else {
+          apAmt = 0; wlAmt = amount;
+        }
+        acc.ap += apAmt;
+        acc.wl += wlAmt;
+      } else {
+        acc[bucket] += amount;
+      }
+    });
+
+    var rows = Object.keys(byAccount).map(function (k) {
+      var r = byAccount[k];
+      r.total = r.tw + r.tsw + r.glw + r.wl + r.ap + r.other;
+      r.vat = Math.round(r.total * VAT_RATE * 100) / 100;
+      r.daShare = Math.round(r.total * DA_SHARE * 100) / 100;
+      r.isDwc = (r.airport || "").toLowerCase().indexOf("dwc") >= 0 ||
+                (r.airport || "").toLowerCase().indexOf("maktoum") >= 0;
+      return r;
+    });
+    rows.sort(function (a, b) { return b.total - a.total; });
+    return rows;
+  }
+
+  function aggregateFinance(financeRows) {
+    var byAcct = {};
+    financeRows.forEach(function (f) {
+      if (!byAcct[f.account]) byAcct[f.account] = { account: f.account, name: f.name, total: 0, contracts: [] };
+      byAcct[f.account].total += f.revenue;
+      byAcct[f.account].contracts.push(f.contract);
+      if (f.name) byAcct[f.account].name = f.name;
+    });
+    return byAcct;
+  }
+
+  function findManualMatch(reportRow, manualMap) {
+    var n = reportRow.name.toLowerCase();
+    if (manualMap[n]) return manualMap[n];
+    var keys = Object.keys(manualMap);
+    for (var i = 0; i < keys.length; i++) {
+      if (n.indexOf(keys[i]) >= 0 || keys[i].indexOf(n) >= 0) return manualMap[keys[i]];
+    }
+    return null;
+  }
+
+  function reconcile(reportRows, financeByAcct, manualMap, spItems, financeRows) {
+    var issues = [];
+    var spContracts = {};
+    spItems.forEach(function (s) {
+      if (s.contract) {
+        var ids = s.contract.match(/CONTR\d+/g) || [s.contract];
+        ids.forEach(function (c) { spContracts[c] = s; });
+      }
+    });
+    var finContracts = {};
+    financeRows.forEach(function (f) {
+      if (f.contract) finContracts[f.contract] = f;
+    });
+
+    Object.keys(finContracts).forEach(function (c) {
+      if (!spContracts[c]) {
+        issues.push({
+          severity: "error",
+          account: finContracts[c].account,
+          tenant: finContracts[c].name,
+          issue: "Finance contract not in SharePoint: " + c,
+          generated: 0, finance: finContracts[c].revenue, manual: 0, diff: -finContracts[c].revenue
+        });
+      }
+    });
+
+    Object.keys(spContracts).forEach(function (c) {
+      if (!finContracts[c] && spContracts[c].mrc > 0) {
+        issues.push({
+          severity: "warn",
+          account: spContracts[c].account,
+          tenant: spContracts[c].name,
+          issue: "SharePoint contract not billed in finance file: " + c,
+          generated: 0, finance: 0, manual: 0, diff: 0
+        });
+      }
+    });
+
+    reportRows.forEach(function (r) {
+      var fin = financeByAcct[r.account];
+      var finTotal = fin ? fin.total : 0;
+      var manual = findManualMatch(r, manualMap);
+      var manualTotal = manual ? manual.total : 0;
+      var diffFin = Math.round((r.total - finTotal) * 100) / 100;
+      var diffManual = manual ? Math.round((r.total - manualTotal) * 100) / 100 : null;
+
+      if (Math.abs(diffFin) > 0.02) {
+        var sev = Math.abs(diffFin) > 1000 ? "error" : "warn";
+        var reason = "Generated vs finance mismatch";
+        if (finTotal > r.total + 100) reason += " — finance may include activation-month MRC not in report";
+        if (r.total > finTotal + 100) reason += " — report may exceed finance billing";
+        issues.push({
+          severity: sev,
+          account: r.account,
+          tenant: r.name,
+          issue: reason,
+          generated: r.total, finance: finTotal, manual: manualTotal, diff: diffFin
+        });
+      }
+
+      if (manual && Math.abs(diffManual) > 0.02) {
+        issues.push({
+          severity: Math.abs(diffManual) > 500 ? "error" : "warn",
+          account: r.account,
+          tenant: r.name,
+          issue: "Generated vs uploaded manual report mismatch",
+          generated: r.total, finance: finTotal, manual: manualTotal, diff: diffManual
+        });
+      }
+
+      if (!fin && r.total > 0) {
+        issues.push({
+          severity: "warn",
+          account: r.account,
+          tenant: r.name,
+          issue: "Account in SharePoint report but absent from finance file",
+          generated: r.total, finance: 0, manual: manualTotal, diff: r.total
+        });
+      }
+    });
+
+    financeByAcct && Object.keys(financeByAcct).forEach(function (acct) {
+      var found = reportRows.some(function (r) { return r.account === acct; });
+      if (!found && financeByAcct[acct].total > 0) {
+        issues.push({
+          severity: "error",
+          account: acct,
+          tenant: financeByAcct[acct].name,
+          issue: "Finance billing exists but no SharePoint revenue generated",
+          generated: 0, finance: financeByAcct[acct].total, manual: 0, diff: -financeByAcct[acct].total
+        });
+      }
+    });
+
+    return issues;
+  }
+
+  /* ---------- UI render ---------- */
+  function renderResults() {
+    var genTotal = state.reportRows.reduce(function (s, r) { return s + r.total; }, 0);
+    var finTotal = state.financeRows.reduce(function (s, f) { return s + f.revenue; }, 0);
+    var diff = genTotal - finTotal;
+    var errCount = state.issues.filter(function (i) { return i.severity === "error"; }).length;
+    var warnCount = state.issues.filter(function (i) { return i.severity === "warn"; }).length;
+
+    $("resGenerated").textContent = aed(genTotal);
+    $("resFinance").textContent = aed(finTotal);
+    $("resDiff").textContent = aed(diff);
+    $("resDiff").style.color = Math.abs(diff) < 100 ? "var(--ok)" : "var(--err)";
+
+    $("statTenants").textContent = state.reportRows.length;
+    $("statIssues").textContent = state.issues.length;
+
+    var alertEl = $("summaryAlert");
+    if (errCount === 0 && Math.abs(diff) < 100) {
+      alertEl.innerHTML = '<div class="alert alert-ok"><strong>Reconciliation passed.</strong> Generated report matches finance within tolerance. ' +
+        (warnCount ? warnCount + " warning(s) to review." : "") + '</div>';
+    } else {
+      alertEl.innerHTML = '<div class="alert alert-err"><strong>' + errCount + ' error(s), ' + warnCount +
+        ' warning(s).</strong> Review issues below before submitting the report. Total difference: AED ' + aed(diff) + '</div>';
+    }
+
+    $("issueCount").textContent = state.issues.length;
+    $("issueCount").className = "badge " + (errCount ? "badge-err" : warnCount ? "badge-warn" : "badge-ok");
+
+    var ib = $("issuesBody");
+    ib.innerHTML = "";
+    if (!state.issues.length) {
+      ib.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--muted)">No issues — full match</td></tr>';
+    } else {
+      state.issues.forEach(function (iss) {
+        var tr = document.createElement("tr");
+        tr.className = iss.severity === "error" ? "row-err" : "row-warn";
+        tr.innerHTML =
+          '<td><span class="badge badge-' + (iss.severity === "error" ? "err" : "warn") + '">' + iss.severity + '</span></td>' +
+          '<td>' + iss.account + '</td><td>' + iss.tenant + '</td><td>' + iss.issue + '</td>' +
+          '<td class="num">' + aed(iss.generated) + '</td><td class="num">' + aed(iss.finance) + '</td>' +
+          '<td class="num">' + (iss.manual ? aed(iss.manual) : "—") + '</td>' +
+          '<td class="num">' + aed(iss.diff) + '</td>';
+        ib.appendChild(tr);
+      });
+    }
+
+    var rb = $("reportBody");
+    rb.innerHTML = "";
+    state.reportRows.forEach(function (r) {
+      var tr = document.createElement("tr");
+      tr.innerHTML =
+        '<td>' + r.account + '</td><td>' + r.name + '</td><td>' + (r.isDwc ? "DWC" : "DXB") + '</td>' +
+        '<td class="num">' + aed(r.tw) + '</td><td class="num">' + aed(r.tsw) + '</td>' +
+        '<td class="num">' + aed(r.glw) + '</td><td class="num">' + aed(r.wl) + '</td>' +
+        '<td class="num">' + aed(r.ap) + '</td><td class="num">' + aed(r.total) + '</td>' +
+        '<td class="num">' + aed(r.daShare) + '</td>';
+      rb.appendChild(tr);
+    });
+
+    renderCharts(genTotal, finTotal);
+    $("navResults").disabled = false;
+    showView("results");
+  }
+
+  function renderCharts(genTotal, finTotal) {
+    var svc = { tw: 0, tsw: 0, glw: 0, wl: 0, ap: 0 };
+    state.reportRows.forEach(function (r) {
+      svc.tw += r.tw; svc.tsw += r.tsw; svc.glw += r.glw; svc.wl += r.wl; svc.ap += r.ap;
+    });
+
+    if (state.charts.service) state.charts.service.destroy();
+    if (state.charts.compare) state.charts.compare.destroy();
+
+    state.charts.service = new Chart($("chartService"), {
+      type: "doughnut",
+      data: {
+        labels: ["Tenant Wifi", "Secure Wifi", "Guest Wifi", "Wireline", "AP"],
+        datasets: [{ data: [svc.tw, svc.tsw, svc.glw, svc.wl, svc.ap], backgroundColor: ["#0066cc","#0d7a52","#b45309","#6366f1","#9333ea"] }]
+      },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: "bottom" } } }
+    });
+
+    var finByAcct = aggregateFinance(state.financeRows);
+    var pairs = state.reportRows.slice(0, 8).map(function (r) {
+      return { name: r.name.substring(0, 18), gen: r.total, fin: finByAcct[r.account] ? finByAcct[r.account].total : 0 };
+    });
+
+    state.charts.compare = new Chart($("chartCompare"), {
+      type: "bar",
+      data: {
+        labels: pairs.map(function (p) { return p.name; }),
+        datasets: [
+          { label: "Generated", data: pairs.map(function (p) { return p.gen; }), backgroundColor: "#0066cc" },
+          { label: "Finance", data: pairs.map(function (p) { return p.fin; }), backgroundColor: "#94a3b8" }
+        ]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        scales: { y: { ticks: { callback: function (v) { return "AED " + v.toLocaleString(); } } } },
+        plugins: { legend: { position: "bottom" } }
+      }
+    });
+  }
+
+  /* ---------- Export ---------- */
+  function downloadReport() {
+    var mm = String(state.month).padStart(2, "0");
+    var yy = String(state.year).slice(-2);
+    var monthLabel = MONTH_LABELS[state.month] + " " + state.year;
+
+    var header = ["S.No", "Customer name", "Location", "Month", "Service Type", "Tenant Wifi", "Tenant Secure Wifi",
+      "Guest Lounge wifi", "Wireline Internet with Ports", "Other Revenue", "AP", "Comments", "Total Revenue", "VAT", "DA Revenue Share"];
+    var data = [header];
+    state.reportRows.forEach(function (r, i) {
+      var loc = r.isDwc ? "DWC" : "DXB";
+      var svcParts = [];
+      if (r.tw) svcParts.push("Tenant Wifi");
+      if (r.tsw) svcParts.push("Tenant Secure Wifi");
+      if (r.glw) svcParts.push("Guest Lounge Wifi");
+      if (r.wl || r.ap) svcParts.push("Wireline Internet");
+      data.push([
+        i + 1, r.name, loc, monthLabel, svcParts.join("/"),
+        r.tw, r.tsw, r.glw, r.wl, r.other, r.ap, "",
+        r.total, r.vat, r.daShare
+      ]);
+    });
+    var totalRow = ["", "Total", "", "", "", 0, 0, 0, 0, 0, 0, "",
+      state.reportRows.reduce(function (s, r) { return s + r.total; }, 0), 0, 0];
+    data.push(totalRow);
+
+    var ws = XLSX.utils.aoa_to_sheet(data);
+    var wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Monthly Report " + mm + "-" + yy);
+    XLSX.writeFile(wb, "DA_Report_" + monthLabel.replace(/ /g, "_") + ".xlsx");
+  }
+
+  function downloadIssuesCsv() {
+    var lines = ["Severity,Account,Tenant,Issue,Generated,Finance,Manual,Diff"];
+    state.issues.forEach(function (i) {
+      lines.push([i.severity, i.account, '"' + i.tenant.replace(/"/g, '""') + '"', '"' + i.issue.replace(/"/g, '""') + '"',
+        i.generated, i.finance, i.manual, i.diff].join(","));
+    });
+    var blob = new Blob([lines.join("\n")], { type: "text/csv" });
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "DA_Reconciliation_Issues.csv";
+    a.click();
+  }
+
+  /* ---------- Main generate ---------- */
+  function runGenerate() {
+    var month = parseInt($("reportMonth").value, 10);
+    var year = parseInt($("reportYear").value, 10);
+    var listTitle = $("listName").value.trim();
+    var finFile = $("financeFile").files[0];
+    var manFile = $("manualFile").files[0];
+
+    if (!finFile) { setStatus("Please upload Data_dubai_request.xlsx", true); return; }
+    if (!month || !year) { setStatus("Select month and year", true); return; }
+
+    var btn = $("btnGenerate");
+    btn.disabled = true;
+    $("btnLabel").innerHTML = '<span class="loader"></span> Working…';
+    setStatus("Pulling SharePoint list and parsing files…");
+
+    var chain = fetchSharePointList(listTitle)
+      .then(function (items) {
+        state.spItems = items;
+        setStatus("SharePoint: " + items.length + " items loaded. Parsing finance file…");
+        return readWorkbook(finFile);
+      })
+      .then(function (wb) {
+        state.financeRows = parseFinance(wb, month, year);
+        if (!state.financeRows.length) {
+          throw new Error("No finance rows found for " + MONTH_KEYS[month] + "_revenue — check month matches finance file columns");
+        }
+        if (manFile) {
+          return readWorkbook(manFile).then(function (mwb) {
+            state.manualRows = parseManualReport(mwb);
+            return null;
+          });
+        }
+        state.manualRows = {};
+        return null;
+      })
+      .then(function () {
+        state.month = month;
+        state.year = year;
+        state.reportRows = computeReport(state.spItems, month, year);
+        var finByAcct = aggregateFinance(state.financeRows);
+        state.issues = reconcile(state.reportRows, finByAcct, state.manualRows, state.spItems, state.financeRows);
+        setStatus("Done — " + state.reportRows.length + " accounts, " + state.issues.length + " issues");
+        renderResults();
+      })
+      .catch(function (err) {
+        setStatus("Error: " + err.message, true);
+        console.error(err);
+      })
+      .finally(function () {
+        btn.disabled = false;
+        $("btnLabel").textContent = "Generate Report";
+      });
+    return chain;
+  }
+
+  /* ---------- Events ---------- */
+  document.querySelectorAll(".nav button").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      if (btn.disabled) return;
+      showView(btn.dataset.view);
+    });
+  });
+  $("goGenerate").addEventListener("click", function () { showView("generate"); });
+  $("btnGenerate").addEventListener("click", runGenerate);
+  $("btnDownload").addEventListener("click", downloadReport);
+  $("btnDownloadIssues").addEventListener("click", downloadIssuesCsv);
+  $("btnTestSp").addEventListener("click", function () {
+    setStatus("Testing SharePoint…");
+    fetchSharePointList($("listName").value.trim())
+      .then(function (items) { setStatus("Connected — " + items.length + " list items retrieved."); })
+      .catch(function (e) { setStatus("Failed: " + e.message, true); });
+  });
+})();
+</script>
+</body>
+</html>
