@@ -557,6 +557,7 @@ body[data-theme="dark"] .badge-warning,body[data-theme="magenta-dark"] .badge-wa
 const SP_SITE = 'http://sharedspaces:8081/sites/OCC';
 const SP_LIST = 'OCC Form1';
 const SP_LIST_PATH = '/sites/OCC/Lists/OCC Form1';
+const SP_LIST_FALLBACKS = ['OCC Form1', 'GLK OCC Form'];
 const SP_ACCESS = 'OCC_ACCESS';
 const CCO_THRESHOLD = 250000;
 
@@ -798,16 +799,50 @@ function generateMockAccess(){
   ];
 }
 
-function spOccListApi(suffix){
-  if(!suffix || suffix.charAt(0) !== '/') suffix = '/' + (suffix || '');
-  const pathArg = "@a1='" + SP_LIST_PATH.replace(/'/g, "''") + "'";
-  const base = SP_SITE + "/_api/web/GetListUsingPath(DecodedUrl=@a1)" + suffix;
-  return base + (base.indexOf('?') >= 0 ? '&' : '?') + pathArg;
-}
-
 function spListByTitleApi(listTitle, suffix){
   const safe = String(listTitle||'').replace(/'/g, "''");
   return SP_SITE + "/_api/web/lists/getbytitle('" + safe + "')" + (suffix || '');
+}
+
+function occListApi(suffix){
+  if(!suffix || suffix.charAt(0) !== '/') suffix = '/' + (suffix || '');
+  if(window._OCC_LIST_GUID){
+    return SP_SITE + "/_api/web/lists(guid'" + window._OCC_LIST_GUID + "')" + suffix;
+  }
+  const title = (window._OCC_LIST_TITLE || SP_LIST).replace(/'/g, "''");
+  return spListByTitleApi(title, suffix);
+}
+
+function resolveOccList(cb){
+  if(window._OCC_LIST_GUID) return cb(null);
+  let idx = 0;
+  function tryByTitle(){
+    if(idx >= SP_LIST_FALLBACKS.length) return tryByPath();
+    const title = SP_LIST_FALLBACKS[idx++];
+    setLoadingStep('Finding OCC list (“'+title+'”)...');
+    spGet(spListByTitleApi(title, '?$select=Id,Title'), function(err, data){
+      if(!err && data && data.d && data.d.Id){
+        window._OCC_LIST_TITLE = data.d.Title || title;
+        window._OCC_LIST_GUID = data.d.Id;
+        cb(null);
+      } else tryByTitle();
+    });
+  }
+  function tryByPath(){
+    setLoadingStep('Finding OCC list by site path...');
+    const pathArg = "@listUrl='" + SP_LIST_PATH.replace(/'/g, "''") + "'";
+    const url = SP_SITE + '/_api/web/GetList(' + pathArg + ')?' + pathArg + '&$select=Id,Title';
+    spGet(url, function(err, data){
+      if(!err && data && data.d && data.d.Id){
+        window._OCC_LIST_TITLE = data.d.Title || SP_LIST;
+        window._OCC_LIST_GUID = data.d.Id;
+        cb(null);
+      } else {
+        cb(new Error('OCC list not found — tried titles: '+SP_LIST_FALLBACKS.join(', ')+' and path '+SP_LIST_PATH));
+      }
+    });
+  }
+  tryByTitle();
 }
 
 function spGet(url, cb){
@@ -907,26 +942,38 @@ function loadAllPages(url, acc, cb){
   });
 }
 function loadData(cb){
-  const flat = Object.values(F).filter(function(f){ return SP_EXPAND.indexOf(f)<0; });
-  const select = flat.concat(SP_EXPAND_SELECT).concat(['Business_x0020_Justification','Annual_x0020_Revenue','Source','Services','ProductFamily','ProductCategory']).concat(APPROVAL_STEPS.flatMap(function(s){ return [s.statusField,s.tsField,s.personField,s.textField].filter(Boolean); })).filter(function(v,i,a){ return a.indexOf(v)===i; }).join(',');
-  const url = spOccListApi("/items?$select="+encodeURIComponent(select)+",Id&$expand="+SP_EXPAND.join(',')+"&$top=5000&$orderby=Id desc");
-  setLoadingStep('Fetching OCC records from SharePoint...');
-  loadAllPages(url, [], function(err, rows){
-    if(err){
+  resolveOccList(function(resolveErr){
+    if(resolveErr){
       usingMock = true;
       ALL_ITEMS = generateMockData().map(parseItem);
-      el('dataSourceBadge').textContent = 'Mock ('+ALL_ITEMS.length+') — SP unavailable';
+      el('dataSourceBadge').textContent = 'Mock ('+ALL_ITEMS.length+') — '+resolveErr.message;
       el('dataSourceBadge').style.color = '#d97706';
       showMockBanner(true);
-    } else {
-      usingMock = false;
-      ALL_ITEMS = (rows||[]).map(parseItem);
-      el('dataSourceBadge').textContent = 'Live · '+ALL_ITEMS.length+' records';
-      el('dataSourceBadge').style.color = '';
-      showMockBanner(false);
+      SCOPED = scopeItems(ALL_ITEMS);
+      if(cb) cb();
+      return;
     }
-    SCOPED = scopeItems(ALL_ITEMS);
-    if(cb) cb();
+    const flat = Object.values(F).filter(function(f){ return SP_EXPAND.indexOf(f)<0; });
+    const select = flat.concat(SP_EXPAND_SELECT).concat(['Business_x0020_Justification','Annual_x0020_Revenue','Source','Services','ProductFamily','ProductCategory']).concat(APPROVAL_STEPS.flatMap(function(s){ return [s.statusField,s.tsField,s.personField,s.textField].filter(Boolean); })).filter(function(v,i,a){ return a.indexOf(v)===i; }).join(',');
+    const url = occListApi("/items?$select="+encodeURIComponent(select)+",Id&$expand="+SP_EXPAND.join(',')+"&$top=5000&$orderby=Id desc");
+    setLoadingStep('Fetching OCC records from SharePoint...');
+    loadAllPages(url, [], function(err, rows){
+      if(err){
+        usingMock = true;
+        ALL_ITEMS = generateMockData().map(parseItem);
+        el('dataSourceBadge').textContent = 'Mock ('+ALL_ITEMS.length+') — '+err.message;
+        el('dataSourceBadge').style.color = '#d97706';
+        showMockBanner(true);
+      } else {
+        usingMock = false;
+        ALL_ITEMS = (rows||[]).map(parseItem);
+        el('dataSourceBadge').textContent = 'Live · '+ALL_ITEMS.length+' records';
+        el('dataSourceBadge').style.color = '';
+        showMockBanner(false);
+      }
+      SCOPED = scopeItems(ALL_ITEMS);
+      if(cb) cb();
+    });
   });
 }
 
@@ -1316,15 +1363,14 @@ function occFetchJson(url, cb){
 
 function occGetListGuid(cb){
   if(window._OCC_LIST_GUID) return cb(null, window._OCC_LIST_GUID);
-  occFetchJson(spOccListApi("?$select=Id"), function(err, data){
-    if(err||!data||!data.d) return cb(err||new Error('List not found'));
-    window._OCC_LIST_GUID = data.d.Id;
+  resolveOccList(function(err){
+    if(err) return cb(err);
     cb(null, window._OCC_LIST_GUID);
   });
 }
 
 function occFetchItemVersions(itemId, cb){
-  occFetchJson(spOccListApi('/items('+itemId+')/versions'), function(err, data){
+  occFetchJson(occListApi('/items('+itemId+')/versions'), function(err, data){
     if(err) return cb(err);
     const versions = (data.d&&data.d.results)||[];
     versions.sort(function(a,b){ return new Date(b.Created)-new Date(a.Created); });
@@ -1333,7 +1379,7 @@ function occFetchItemVersions(itemId, cb){
 }
 
 function occFetchVersionFields(itemId, versionId, cb){
-  occFetchJson(spOccListApi('/items('+itemId+')/versions('+versionId+')/FieldValuesAsText'), function(err, data){
+  occFetchJson(occListApi('/items('+itemId+')/versions('+versionId+')/FieldValuesAsText'), function(err, data){
     if(err) return cb(err);
     cb(null, (data.d)||{});
   });
