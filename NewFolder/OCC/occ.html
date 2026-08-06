@@ -346,6 +346,22 @@ body[data-theme="dark"] .badge-warning,body[data-theme="magenta-dark"] .badge-wa
 .animate-slide-up{animation:slideUp .7s ease forwards}
 @media(max-width:900px){.health-tiles{grid-template-columns:1fr 1fr}}
 @media(max-width:768px){.sidebar{width:180px;min-width:180px}.landing-page{flex-direction:column!important}}
+
+.sm-ag-set-filter{padding:8px;min-width:200px;max-width:260px;background:var(--bg-card);color:var(--t1)}
+.sm-ag-set-search{width:100%;padding:6px 8px;margin-bottom:6px;border:1px solid var(--border);border-radius:6px;background:var(--bg-input);color:var(--t1);font-size:12px}
+.sm-ag-set-list{max-height:200px;overflow-y:auto;margin-bottom:6px}
+.sm-ag-set-option{display:flex;align-items:center;gap:6px;padding:4px 2px;font-size:12px;cursor:pointer}
+.sm-ag-set-actions{display:flex;gap:6px}
+.sm-ag-set-actions button{flex:1;padding:4px;font-size:11px;border-radius:6px;border:1px solid var(--border);background:var(--bg-input);cursor:pointer;color:var(--t1)}
+.form-view-grid{display:grid;grid-template-columns:1fr 1fr;gap:.65rem 1rem}
+.form-view-field{background:var(--bg-secondary);border:1px solid var(--border);border-radius:8px;padding:.55rem .75rem}
+.form-view-field label{display:block;font-size:.62rem;font-weight:700;text-transform:uppercase;color:var(--t3);margin-bottom:.2rem}
+.form-view-field div{font-size:.82rem;font-weight:600;color:var(--t1);word-break:break-word}
+.form-view-section{grid-column:1/-1;font-size:.72rem;font-weight:800;color:var(--acc);text-transform:uppercase;letter-spacing:.06em;margin-top:.5rem;padding-bottom:.25rem;border-bottom:1px solid var(--border)}
+.account-search-row{display:flex;gap:.65rem;flex-wrap:wrap;align-items:center;margin-bottom:1rem}
+.waiver-tile-note{font-size:.68rem;color:var(--t3);margin-top:.35rem}
+.record-count-badge{font-size:.73rem;font-weight:700;color:var(--acc);background:var(--nab);border:1px solid var(--nab2);padding:.2rem .65rem;border-radius:20px}
+
 </style>
 </head>
 <body>
@@ -429,9 +445,6 @@ body[data-theme="dark"] .badge-warning,body[data-theme="magenta-dark"] .badge-wa
       <div class="nav-items">
         <div class="nav-section-label">Overview</div>
         <div class="nav-item active" id="navDashboard" onclick="showView('dashboard',this)"><div class="nav-icon"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></div><div class="nav-label">Dashboard</div></div>
-        <div class="nav-item" id="navAllOCCs" onclick="showView('all',this)"><div class="nav-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div><div class="nav-label">All OCCs</div></div>
-        <div class="nav-item" id="navAccountHistory" onclick="showView('accounts',this)"><div class="nav-icon"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></div><div class="nav-label">Account History</div></div>
-        <div class="nav-item" id="navTimeline" onclick="showView('timeline',this)"><div class="nav-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div><div class="nav-label">OCC Timeline</div></div>
         <div class="nav-section-label nav-admin-only" id="navAdminLabel">Admin</div>
         <div class="nav-item nav-admin-only" id="navBiweekly" onclick="showView('biweekly',this)"><div class="nav-icon"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/></svg></div><div class="nav-label">Biweekly Pack</div></div>
       </div>
@@ -442,55 +455,63 @@ body[data-theme="dark"] .badge-warning,body[data-theme="magenta-dark"] .badge-wa
         <div class="filter-bar" id="filterBar">
           <div class="filter-bar-header">
             <span class="filter-bar-label">Filters</span>
+            <span class="record-count-badge" id="recordCountBadge">0 records</span>
+            <button type="button" class="export-btn" onclick="openAccountHistorySearch()" style="padding:.35rem .75rem;font-size:.75rem;">Account History</button>
             <button type="button" class="reset-btn" onclick="resetAll()"><svg viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.95"/></svg>Reset All</button>
           </div>
           <div class="filter-bar-grid">
             <div class="fb-group"><div class="fb-group-label">Vertical</div><div class="ms-wrap"><div class="ms-trigger" id="mst-vertical" onclick="toggleMsFilter('vertical')"><span id="mstxt-vertical">All</span><svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></div><div class="ms-dropdown" id="msd-vertical"></div></div></div>
             <div class="fb-group"><div class="fb-group-label">Portal Status</div><div class="ms-wrap"><div class="ms-trigger" id="mst-portalStatus" onclick="toggleMsFilter('portalStatus')"><span id="mstxt-portalStatus">All</span><svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></div><div class="ms-dropdown" id="msd-portalStatus"></div></div></div>
             <div class="fb-group"><div class="fb-group-label">Reason</div><div class="ms-wrap"><div class="ms-trigger" id="mst-reason" onclick="toggleMsFilter('reason')"><span id="mstxt-reason">All</span><svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></div><div class="ms-dropdown" id="msd-reason"></div></div></div>
-            <div class="fb-group"><div class="fb-group-label">AM</div><div class="ms-wrap"><div class="ms-trigger" id="mst-am" onclick="toggleMsFilter('am')"><span id="mstxt-am">All</span><svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></div><div class="ms-dropdown" id="msd-am"></div></div></div>
+            <div class="fb-group"><div class="fb-group-label">Requestor (AM)</div><div class="ms-wrap"><div class="ms-trigger" id="mst-am" onclick="toggleMsFilter('am')"><span id="mstxt-am">All</span><svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></div><div class="ms-dropdown" id="msd-am"></div></div></div>
             <div class="fb-group"><div class="fb-group-label">Year</div><div class="ms-wrap"><div class="ms-trigger" id="mst-year" onclick="toggleMsFilter('year')"><span id="mstxt-year">All</span><svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></div><div class="ms-dropdown" id="msd-year"></div></div></div>
             <div class="fb-group"><div class="fb-group-label">Handset</div><div class="ms-wrap"><div class="ms-trigger" id="mst-handset" onclick="toggleMsFilter('handset')"><span id="mstxt-handset">All</span><svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></div><div class="ms-dropdown" id="msd-handset"></div></div></div>
           </div>
         </div>
         <div class="active-filter-chips" id="activeChips"></div>
         <div id="mgrSection">
-          <h2 class="section-title"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>AM Performance <span id="mgrBadge" style="background:var(--nab);border:1px solid var(--nab2);color:var(--acc);padding:2px 10px;border-radius:20px;font-size:.75rem;font-weight:700;">0</span></h2>
+          <h2 class="section-title"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>Waiver Volume by Account Manager <span id="mgrBadge" style="background:var(--nab);border:1px solid var(--nab2);color:var(--acc);padding:2px 10px;border-radius:20px;font-size:.75rem;font-weight:700;">0</span></h2>
           <div class="mgr-grid" id="mgrGrid"></div>
         </div>
-        <div id="chartsSection" style="margin-top:1rem;">
+        <div style="text-align:center;margin:1rem 0 .85rem;"><button type="button" class="export-btn" onclick="toggleCharts()"><svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:#fff;fill:none;stroke-width:2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/></svg><span id="chartsToggleText">Show Analytics Charts</span></button></div>
+        <div id="chartsSection" style="margin-top:1rem;display:none;">
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:.85rem;margin-bottom:.85rem;">
             <div class="chart-card"><div class="chart-title"><span>Value vs Count by Reason</span><div><button class="toggle-btn active" id="reasonBtnOpen" onclick="setReasonChartMode('open')">Open</button><button class="toggle-btn" id="reasonBtnClosed" onclick="setReasonChartMode('closed')">Closed</button></div></div><div class="chart-container"><canvas id="chartReason"></canvas></div></div>
             <div class="chart-card"><div class="chart-title"><span>By Vertical</span><div><button class="toggle-btn active" id="vertBtnValue" onclick="setVertChartMode('value')">Value</button><button class="toggle-btn" id="vertBtnCount" onclick="setVertChartMode('count')">Count</button></div></div><div class="chart-container"><canvas id="chartVertical"></canvas></div></div>
           </div>
+          
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:.85rem;margin-bottom:.85rem;">
-            <div class="chart-card"><div class="chart-title"><span>SLA Compliance (Days Raised)</span></div><div class="chart-container"><canvas id="chartSLA"></canvas></div></div>
+            <div class="chart-card"><div class="chart-title"><span>Portal Status (Value)</span></div><div class="chart-container"><canvas id="chartStatus"></canvas></div></div>
+            <div class="chart-card"><div class="chart-title"><span>Open OCCs Stuck by Stage</span></div><div class="chart-container"><canvas id="chartStuck"></canvas></div></div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:.85rem;margin-bottom:.85rem;">
+            <div class="chart-card"><div class="chart-title"><span>Approval Tier (&lt;250K vs ≥250K)</span></div><div class="chart-container"><canvas id="chartTier"></canvas></div></div>
+            <div class="chart-card"><div class="chart-title"><span>Handset Waivers by Vertical</span></div><div class="chart-container"><canvas id="chartHandset"></canvas></div></div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr;gap:.85rem;margin-bottom:.85rem;">
+            <div class="chart-card"><div class="chart-title"><span>Monthly OCC Trend (Value & Count)</span></div><div class="chart-container" style="height:300px"><canvas id="chartTrend"></canvas></div></div>
+          </div>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:.85rem;margin-bottom:.85rem;">
+            <div class="chart-card"><div class="chart-title"><span>SLA — Days Stuck (Open OCCs)</span></div><div class="chart-container"><canvas id="chartSLA"></canvas></div></div>
             <div class="chart-card"><div class="chart-title"><span>Top 10 OCCs by Value</span></div><div class="chart-container"><canvas id="chartTop10"></canvas></div></div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:.85rem;margin-bottom:.85rem;">
+            <div class="chart-card"><div class="chart-title"><span>Waiver Volume by AM (Requestor)</span></div><div class="chart-container" style="height:320px"><canvas id="chartAM"></canvas></div></div>
+            <div class="chart-card"><div class="chart-title"><span>Closed Outcomes by Vertical</span></div><div class="chart-container"><canvas id="chartOutcome"></canvas></div></div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:.85rem;margin-bottom:.85rem;">
+            <div class="chart-card"><div class="chart-title"><span>Open Value by Stuck Stage</span></div><div class="chart-container"><canvas id="chartStuckValue"></canvas></div></div>
+            <div class="chart-card"><div class="chart-title"><span>Handset vs Non-Handset (Value)</span></div><div class="chart-container"><canvas id="chartHandsetSplit"></canvas></div></div>
           </div>
         </div>
         <div class="table-section" style="margin-top:1rem;">
           <div class="table-header">
-            <h3 class="table-title"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Recent OCC Records</h3>
+            <h3 class="table-title"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>All OCC Records <span id="gridCountLabel" style="font-size:.75rem;color:var(--t3);font-weight:600;margin-left:.35rem"></span></h3>
             <div class="table-actions"><input type="text" class="search-box" id="searchInp" placeholder="Search..." oninput="gridSearch(this.value)"></div>
           </div>
-          <div id="myGrid" class="ag-theme-alpine" style="height:480px;width:100%;"></div>
+          <div id="myGrid" class="ag-theme-alpine" style="height:620px;width:100%;"></div>
         </div>
-      </div>
-      <div id="viewAll" class="dashboard-section" style="display:none;">
-        <div class="table-section">
-          <div class="table-header"><h3 class="table-title"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/></svg>All OCC Records</h3>
-            <div class="table-actions"><button class="export-btn" onclick="exportExcel()">Export CSV</button><input type="text" class="search-box" id="searchAllInp" placeholder="Search..." oninput="gridSearchAll(this.value)"></div></div>
-          <div id="allGrid" class="ag-theme-alpine" style="height:620px;width:100%;"></div>
-        </div>
-      </div>
-      <div id="viewAccounts" class="dashboard-section" style="display:none;">
-        <h2 class="section-title"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>Account History</h2>
-        <div id="accountHistoryContainer"></div>
-      </div>
-      <div id="viewTimeline" class="dashboard-section" style="display:none;">
-        <h2 class="section-title"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>OCC Timeline</h2>
-        <div class="filter-bar" style="margin-bottom:1rem;"><div class="fb-group" style="max-width:320px;"><div class="fb-group-label">Select OCC</div><select class="fb-select" id="timelineSelect" onchange="renderTimelineView()"></select></div></div>
-        <div class="chart-card" id="timelineContainer"><div id="timelineContent"></div></div>
       </div>
       <div id="viewBiweekly" class="dashboard-section" style="display:none;">
         <h2 class="section-title"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/></svg>Biweekly Pack</h2>
@@ -504,6 +525,23 @@ body[data-theme="dark"] .badge-warning,body[data-theme="magenta-dark"] .badge-wa
   <div class="modal-box">
     <div class="modal-header"><h3 id="historyModalTitle">OCC Timeline</h3><button class="modal-close" onclick="closeHistoryModal()">&times;</button></div>
     <div class="modal-body" id="historyModalBody"></div>
+  </div>
+</div>
+
+
+<div class="modal-overlay" id="formViewModal">
+  <div class="modal-box" style="max-width:920px;">
+    <div class="modal-header"><h3 id="formViewTitle">OCC Details</h3><div style="display:flex;gap:.5rem;align-items:center"><button class="export-btn" style="padding:.35rem .7rem;font-size:.75rem" onclick="openTimelineFromForm()">OCC Timeline</button><button class="modal-close" onclick="closeFormView()">&times;</button></div></div>
+    <div class="modal-body" id="formViewBody"></div>
+  </div>
+</div>
+<div class="modal-overlay" id="accountHistoryModal">
+  <div class="modal-box" style="max-width:900px;">
+    <div class="modal-header"><h3>Account History</h3><button class="modal-close" onclick="closeAccountHistoryModal()">&times;</button></div>
+    <div class="modal-body">
+      <div class="account-search-row"><input type="text" class="search-box" id="accountSearchInput" placeholder="Search account code or name..." style="flex:1;min-width:240px" oninput="renderAccountHistoryResults()"><button class="export-btn" onclick="renderAccountHistoryResults()">Search</button></div>
+      <div id="accountHistoryResults"></div>
+    </div>
   </div>
 </div>
 
@@ -549,8 +587,8 @@ const F = {
 };
 
 window.USER = { email:'', name:'', role:'', IsAdmin:false };
-let ALL_ITEMS=[], SCOPED=[], FILTERED=[], CHARTS={}, GRID_API=null, ALL_GRID_API=null;
-let selStatusTile=null, selAM=null, reasonChartMode='open', vertChartMode='value', usingMock=false;
+let ALL_ITEMS=[], SCOPED=[], FILTERED=[], CHARTS={}, GRID_API=null;
+let chartsVisible=false, selStatusTile=null, selAM=null, reasonChartMode='open', vertChartMode='value', usingMock=false;
 let currentView='dashboard';
 
 const MS_STATE = { vertical:new Set(), portalStatus:new Set(), reason:new Set(), am:new Set(), year:new Set(), handset:new Set() };
@@ -558,7 +596,7 @@ const MS_CFG = {
   vertical:{ field:'vertical', dropId:'msd-vertical' },
   portalStatus:{ field:'portalStatus', dropId:'msd-portalStatus' },
   reason:{ field:'reason', dropId:'msd-reason' },
-  am:{ field:'am', dropId:'msd-am' },
+  am:{ field:'requestor', dropId:'msd-am' },
   year:{ field:'year', dropId:'msd-year' },
   handset:{ field:'handset', dropId:'msd-handset' }
 };
@@ -660,7 +698,13 @@ function parseItem(r){
     id: r.Id,
     accountCode: r[F.ACC_CODE]||'—',
     accountName: r[F.ACC_NAME]||'—',
-    requestor: r[F.REQUESTOR]||'—',
+    requestor: (r.Requestor&&r.Requestor.Title)||r[F.REQUESTOR]||'—',
+    businessJust: r.Business_x0020_Justification||'',
+    annualRev: num(r.Annual_x0020_Revenue),
+    source: r.Source||'—',
+    services: r.Services||'—',
+    productFamily: r.ProductFamily||'—',
+    productCategory: r.ProductCategory||'—',
     vertical: r[F.VERTICAL]||'—',
     reason: r[F.REASON]||'—',
     value: num(r[F.VALUE]),
@@ -690,7 +734,7 @@ function scopeItems(items){
   if(userIsAM()){
     const me = USER.name.toLowerCase();
     const em = normEmail(USER.email);
-    return items.filter(i => (i.am&&i.am.toLowerCase().includes(me.split(' ')[0])) || normEmail(i.requestor)===em || normEmail(guessEmail(i.am))===em);
+    return items.filter(i => normEmail(i.requestor)===em || (i.requestor&&i.requestor.toLowerCase().includes(me.split(' ')[0])) || i.requestor===USER.name);
   }
   const role = normRole(USER.role);
   if(role==='approver'){
@@ -830,27 +874,38 @@ function launchDashboard(){
     initFilters();
     applyAll();
     initGrid();
-    initAllGrid();
-    renderAccountHistory();
-    populateTimelineSelect();
+    updateGridCounts();
     if(isAdmin) renderBiweekly();
     el('devConsole').style.display = 'flex';
   });
 }
 
-function loadData(cb){
-  const select = Object.values(F).concat(APPROVAL_STEPS.flatMap(s=>[s.statusField,s.tsField,s.personField,s.textField].filter(Boolean))).filter((v,i,a)=>a.indexOf(v)===i).join(',');
-  const url = SP_SITE+"/_api/web/lists/getbytitle('"+encodeURIComponent(SP_LIST)+"')/items?$select="+encodeURIComponent(select)+",Id&$top=5000&$orderby=Id desc";
-  setLoadingStep('Fetching OCC records...');
+function loadAllPages(url, acc, cb){
   spGet(url, function(err, data){
-    if(err||!data||!data.d||!data.d.results||!data.d.results.length){
+    if(err) return cb(err, acc);
+    acc = acc.concat((data.d&&data.d.results)||[]);
+    const next = data.d && data.d.__next;
+    if(next){ setLoadingStep('Loading OCC records... '+acc.length+' loaded'); return loadAllPages(next, acc, cb); }
+    cb(null, acc);
+  });
+}
+function loadData(cb){
+  const select = Object.values(F).concat(['Requestor/Title','Channel_x0020_Manager_x0020_Name/Title','Business_x0020_Justification','Annual_x0020_Revenue','Source','Services','ProductFamily','ProductCategory']).concat(APPROVAL_STEPS.flatMap(s=>[s.statusField,s.tsField,s.personField,s.textField].filter(Boolean))).filter((v,i,a)=>a.indexOf(v)===i).join(',');
+  const url = SP_SITE+"/_api/web/lists/getbytitle('"+encodeURIComponent(SP_LIST)+"')/items?$select="+encodeURIComponent(select)+",Id&$expand=Requestor,Channel_x0020_Manager_x0020_Name&$top=5000&$orderby=Id desc";
+  setLoadingStep('Fetching OCC records from SharePoint...');
+  loadAllPages(url, [], function(err, rows){
+    if(err){
       usingMock = true;
       ALL_ITEMS = generateMockData().map(parseItem);
-      el('dataSourceBadge').textContent = 'Mock Data';
+      el('dataSourceBadge').textContent = 'Mock ('+ALL_ITEMS.length+') — SP unavailable';
+      el('dataSourceBadge').style.color = '#d97706';
+      showMockBanner(true);
     } else {
       usingMock = false;
-      ALL_ITEMS = data.d.results.map(parseItem);
-      el('dataSourceBadge').textContent = 'Live';
+      ALL_ITEMS = (rows||[]).map(parseItem);
+      el('dataSourceBadge').textContent = 'Live · '+ALL_ITEMS.length+' records';
+      el('dataSourceBadge').style.color = '';
+      showMockBanner(false);
     }
     SCOPED = scopeItems(ALL_ITEMS);
     if(cb) cb();
@@ -924,21 +979,19 @@ function applyAll(){
       if(MS_STATE[key].size && !MS_STATE[key].has(item[cfg.field])) return false;
     }
     if(selStatusTile && item.portalStatus!==selStatusTile) return false;
-    if(selAM && item.am!==selAM) return false;
+    if(selAM && item.requestor!==selAM) return false;
     return true;
   });
   updateTopStats();
   renderMgrTiles();
-  renderCharts();
+  if(chartsVisible) renderCharts();
   renderGrid();
-  if(ALL_GRID_API) renderAllGrid();
+  updateGridCounts();
   renderActiveChips();
-  renderAccountHistory();
-  populateTimelineSelect();
   if(userIsAdmin()) renderBiweekly();
 }
 
-function getViewItems(){ return selAM ? FILTERED.filter(i=>i.am===selAM) : FILTERED; }
+function getViewItems(){ return selAM ? FILTERED.filter(i=>i.requestor===selAM) : FILTERED; }
 
 function renderActiveChips(){
   const c = el('activeChips'); c.innerHTML='';
@@ -974,13 +1027,25 @@ function updateTopStats(){
   });
 }
 
+function showMockBanner(show){
+  let b = el('mockDataBanner');
+  if(!show){ if(b) b.remove(); return; }
+  if(b) return;
+  b = document.createElement('div');
+  b.id = 'mockDataBanner';
+  b.style.cssText = 'background:rgba(217,119,6,.12);border:1px solid rgba(217,119,6,.35);color:#b45309;padding:.65rem 1rem;border-radius:10px;margin-bottom:1rem;font-size:.82rem;font-weight:600;line-height:1.45';
+  b.innerHTML = 'Showing <strong>15 mock records</strong> only — SharePoint did not respond. Deploy this page inside the OCC SharePoint site (Content Editor) so it loads all 1000+ live records with your credentials.';
+  const dash = el('viewDashboard');
+  if(dash && dash.firstChild) dash.insertBefore(b, dash.firstChild);
+}
+
 function renderMgrTiles(){
   const base = FILTERED;
-  const ams = [...new Set(base.map(i=>i.am).filter(v=>v&&v!=='—'))].sort();
+  const ams = [...new Set(base.map(i=>i.requestor).filter(v=>v&&v!=='—'))].sort();
   set('mgrBadge', ams.length);
   const grid = el('mgrGrid'); grid.innerHTML='';
   ams.forEach(am=>{
-    const items = base.filter(i=>i.am===am);
+    const items = base.filter(i=>i.requestor===am);
     const total = items.length;
     const open = items.filter(i=>i.portalStatus==='Open').length;
     const approved = items.filter(i=>i.portalStatus==='Closed Approved').length;
@@ -990,10 +1055,9 @@ function renderMgrTiles(){
     const isDimmed = selAM && !isSelected;
     const tile = document.createElement('div');
     tile.className = 'mgr-tile'+(isSelected?' selected':'')+(isDimmed?' dimmed':'');
-    tile.innerHTML = '<div class="mgr-header"><h3>'+am+'</h3><div class="mgr-meta">Account Manager</div></div>'+
+    tile.innerHTML = '<div class="mgr-header"><h3>'+am+'</h3><div class="mgr-meta">Account Manager · Requestor</div></div>'+
       '<div class="mgr-stats-grid"><div class="mgr-stat-box"><div class="mgr-stat-label">OCCs</div><div class="mgr-stat-value">'+total+'</div></div><div class="mgr-stat-box"><div class="mgr-stat-label">Value</div><div class="mgr-stat-value">'+fmt(value)+'</div></div></div>'+
-      '<div class="mgr-health"><div class="mgr-health-label">Open / Approved / Rejected</div><div style="font-size:1rem;font-weight:900;">'+open+' / '+approved+' / '+rejected+'</div></div>'+
-      '<div class="lm-progress-row"><span class="lm-progress-label">Approval Rate</span><span class="lm-progress-value">'+(total?Math.round(approved/total*100):0)+'%</span></div><div class="progress-bar"><div class="progress-fill" style="width:'+(total?approved/total*100:0)+'%"></div></div>';
+      '<div class="waiver-tile-note">'+open+' open · '+approved+' closed approved · '+rejected+' rejected</div>';
     tile.onclick = ()=>{ selAM = selAM===am?null:am; applyAll(); renderMgrTiles(); };
     grid.appendChild(tile);
   });
@@ -1006,6 +1070,22 @@ function badgeClass(status){
   return 'badge-neutral';
 }
 
+
+function OccSetColumnFilter(){}
+OccSetColumnFilter.prototype.init=function(params){this.params=params;this.selected=new Set();this.gui=document.createElement('div');this.gui.className='sm-ag-set-filter';this._buildGui();};
+OccSetColumnFilter.prototype._cellValue=function(data){var f=this.params.colDef.field,v=data[f],vf=this.params.colDef.valueFormatter;if(vf&&this.params.colDef.field){try{v=vf({value:v,data:data});}catch(e){}}if(v===null||v===undefined||v==='')return '—';return String(v);};
+OccSetColumnFilter.prototype._allValues=function(){var s=new Set(),self=this;this.params.api.forEachNode(function(n){if(n.data)s.add(self._cellValue(n.data));});return Array.from(s).sort(function(a,b){return a.localeCompare(b);});};
+OccSetColumnFilter.prototype._buildGui=function(){var self=this,all=this._allValues();this.gui.innerHTML='';var search=document.createElement('input');search.type='text';search.placeholder='Search...';search.className='sm-ag-set-search';this.gui.appendChild(search);var list=document.createElement('div');list.className='sm-ag-set-list';this.gui.appendChild(list);var render=function(term){list.innerHTML='';all.filter(function(v){return !term||v.toLowerCase().indexOf(term.toLowerCase())>=0;}).forEach(function(v){var row=document.createElement('label');row.className='sm-ag-set-option';var cb=document.createElement('input');cb.type='checkbox';cb.checked=self.selected.has(v);cb.onchange=function(){if(cb.checked)self.selected.add(v);else self.selected.delete(v);self.params.filterChangedCallback();};row.appendChild(cb);row.appendChild(document.createTextNode(' '+v));list.appendChild(row);});};render('');search.oninput=function(){render(search.value);};var actions=document.createElement('div');actions.className='sm-ag-set-actions';var b1=document.createElement('button');b1.textContent='Select all';b1.onclick=function(){all.forEach(function(v){self.selected.add(v);});render(search.value);self.params.filterChangedCallback();};var b2=document.createElement('button');b2.textContent='Clear';b2.onclick=function(){self.selected.clear();render(search.value);self.params.filterChangedCallback();};actions.appendChild(b1);actions.appendChild(b2);this.gui.appendChild(actions);};
+OccSetColumnFilter.prototype.getGui=function(){return this.gui;};
+OccSetColumnFilter.prototype.isFilterActive=function(){return this.selected.size>0;};
+OccSetColumnFilter.prototype.doesFilterPass=function(p){if(!this.selected.size)return true;return this.selected.has(this._cellValue(p.data));};
+OccSetColumnFilter.prototype.getModel=function(){return this.selected.size?{values:Array.from(this.selected)}:null;};
+OccSetColumnFilter.prototype.setModel=function(m){this.selected=new Set(m&&m.values?m.values:[]);this._buildGui();};
+OccSetColumnFilter.prototype.destroy=function(){};
+const OCC_SET_FIELDS=new Set(['ref','accountCode','accountName','requestor','vertical','portalStatus','stuckAt','reason','am','handset','status']);
+let _formViewItemId=null;
+
+function occEnhanceCol(col){ if(col.field&&OCC_SET_FIELDS.has(col.field)) col.filter=OccSetColumnFilter; else if(col.type==='numericColumn') col.filter='agNumberColumnFilter'; return col; }
 function gridColDefs(){
   return [
     { headerName:'Reminder', width:90, pinned:'left', cellRenderer:p=>{
@@ -1013,10 +1093,7 @@ function gridColDefs(){
       const em=d.responsible.email||'';
       return '<button class="action-btn primary" onclick="sendReminder(\''+d.id+'\')">✉ Remind</button>';
     }},
-    { headerName:'History', width:85, pinned:'left', cellRenderer:p=>{
-      const d=p.data; if(!d) return '';
-      return '<button class="action-btn" onclick="openHistoryModal(\''+d.id+'\')">📋</button>';
-    }},
+    { headerName:'View', width:80, pinned:'left', cellRenderer:p=>{ const d=p.data; if(!d)return ''; return '<button class="action-btn primary" onclick="openFormView(\''+d.id+'\')">View</button>'; }},
     { field:'ref', headerName:'OCC Ref', width:130 },
     { field:'accountCode', headerName:'Account', width:110 },
     { field:'accountName', headerName:'Account Name', width:160 },
@@ -1028,32 +1105,24 @@ function gridColDefs(){
     { field:'daysRaised', headerName:'Days Raised', width:100 },
     { field:'daysStuck', headerName:'Days Stuck', width:95 },
     { field:'reason', headerName:'Reason', width:140 },
-    { field:'am', headerName:'AM', width:130 },
+    { field:'am', headerName:'Sales Director', width:130 },
     { field:'handset', headerName:'Handset', width:100 },
     { field:'handsets', headerName:'# Handsets', width:95 },
     { field:'posted', headerName:'Posted', width:100, valueFormatter:p=>fmtDate(p.value) },
     { field:'created', headerName:'Created', width:100, valueFormatter:p=>fmtDate(p.value) },
     { field:'subject', headerName:'Subject', width:180 }
-  ];
+  ].map(occEnhanceCol);
 }
 
 function initGrid(){
-  const opts = { columnDefs:gridColDefs(), rowData:getViewItems().slice(0,50), defaultColDef:{sortable:true,filter:true,resizable:true}, animateRows:true, pagination:true, paginationPageSize:25 };
+  const opts = { columnDefs:gridColDefs(), rowData:getViewItems(), defaultColDef:{sortable:true,filter:true,resizable:true,minWidth:90,wrapHeaderText:true}, animateRows:true, pagination:true, paginationPageSize:100, paginationPageSizeSelector:[50,100,250,500] };
   const e = el('myGrid');
   if(GRID_API) GRID_API.destroy();
   GRID_API = agGrid.createGrid(e, opts);
 }
-
-function initAllGrid(){
-  const opts = { columnDefs:gridColDefs(), rowData:FILTERED, defaultColDef:{sortable:true,filter:true,resizable:true}, animateRows:true, pagination:true, paginationPageSize:50 };
-  if(ALL_GRID_API) ALL_GRID_API.destroy();
-  ALL_GRID_API = agGrid.createGrid(el('allGrid'), opts);
-}
-
-function renderGrid(){ if(GRID_API) GRID_API.setGridOption('rowData', getViewItems().slice(0,50)); }
-function renderAllGrid(){ if(ALL_GRID_API) ALL_GRID_API.setGridOption('rowData', FILTERED); }
+function renderGrid(){ if(GRID_API) GRID_API.setGridOption('rowData', getViewItems()); updateGridCounts(); }
 function gridSearch(q){ if(GRID_API) GRID_API.setGridOption('quickFilterText', q); }
-function gridSearchAll(q){ if(ALL_GRID_API) ALL_GRID_API.setGridOption('quickFilterText', q); }
+function updateGridCounts(){ const n=getViewItems().length; set('recordCountBadge', n+' of '+SCOPED.length+' records'); set('gridCountLabel', '('+n+' shown)'); }
 
 function exportExcel(){
   const rows = FILTERED.map(i=>[i.ref,i.accountCode,i.accountName,i.requestor,i.vertical,i.value,i.portalStatus,i.stuckAt,i.daysRaised,i.reason,i.am].join(','));
@@ -1079,49 +1148,260 @@ function sendWeeklyReport(){
   window.location.href = 'mailto:?subject='+encodeURIComponent(subject)+'&body='+encodeURIComponent(body);
 }
 
+function toggleCharts(){
+  chartsVisible = !chartsVisible;
+  el('chartsSection').style.display = chartsVisible ? 'block' : 'none';
+  el('chartsToggleText').textContent = chartsVisible ? 'Hide Analytics Charts' : 'Show Analytics Charts';
+  if(chartsVisible) renderCharts();
+}
+
+function fv(label, val){
+  const v = (val===null||val===undefined||val==='') ? '—' : String(val);
+  return '<div class="form-view-field"><label>'+label+'</label><div>'+v.replace(/</g,'&lt;')+'</div></div>';
+}
+
+function renderFormViewHtml(item){
+  const r = item._raw;
+  let html = '<div class="form-view-grid">';
+  html += '<div class="form-view-section">Account & Request</div>';
+  html += fv('Account Code', item.accountCode);
+  html += fv('Account Name', item.accountName);
+  html += fv('Requestor (AM)', item.requestor);
+  html += fv('OCC Reference', item.ref);
+  html += fv('Subject', item.subject);
+  html += fv('Vertical', item.vertical);
+  html += fv('Reason / Type of Issue', item.reason);
+  html += '<div class="form-view-section">Financial</div>';
+  html += fv('Total OCC Value', 'AED '+item.value.toLocaleString());
+  html += fv('Annual Revenue', item.annualRev ? 'AED '+item.annualRev.toLocaleString() : '—');
+  html += fv('CCCO Required', item.value>=CCO_THRESHOLD ? 'Yes (≥250K)' : 'No');
+  html += '<div class="form-view-section">Product & Handset</div>';
+  html += fv('Handset', item.handset);
+  html += fv('# Handsets', item.handsets);
+  html += fv('Product Family', item.productFamily);
+  html += fv('Product Category', item.productCategory);
+  html += fv('Services', item.services);
+  html += fv('Source', item.source);
+  html += '<div class="form-view-section">Status</div>';
+  html += fv('Portal Status', item.portalStatus);
+  html += fv('Stuck At', item.stuckAt);
+  html += fv('Days Raised', item.daysRaised);
+  html += fv('Days Stuck', item.daysStuck);
+  html += fv('Created', fmtDate(item.created));
+  html += fv('Posted Date', fmtDate(item.posted));
+  html += fv('Sales Director', item.am);
+  html += fv('Rejected Reason', r[F.REJECTED]||'—');
+  html += '<div class="form-view-section">Business Justification</div>';
+  html += '<div class="form-view-field" style="grid-column:1/-1"><label>Justification</label><div style="font-weight:500;white-space:pre-wrap">'+(item.businessJust||'—').replace(/</g,'&lt;')+'</div></div>';
+  html += '<div class="form-view-section">Approval Workflow (Current)</div>';
+  html += renderTimelineHtml(item);
+  html += '</div>';
+  return html;
+}
+
+function openFormView(id){
+  const item = ALL_ITEMS.find(i=>String(i.id)===String(id));
+  if(!item) return;
+  _formViewItemId = id;
+  el('formViewTitle').textContent = item.ref+' · '+item.accountCode;
+  el('formViewBody').innerHTML = renderFormViewHtml(item);
+  el('formViewModal').classList.add('open');
+}
+function closeFormView(){ el('formViewModal').classList.remove('open'); _formViewItemId=null; }
+function openTimelineFromForm(){ if(_formViewItemId) openHistoryModal(_formViewItemId); }
+
+function openAccountHistorySearch(){
+  el('accountSearchInput').value = '';
+  el('accountHistoryResults').innerHTML = '<p style="color:var(--t3);padding:.5rem 0;">Enter an account code or name to see all OCC waivers for that account.</p>';
+  el('accountHistoryModal').classList.add('open');
+  el('accountSearchInput').focus();
+}
+function closeAccountHistoryModal(){ el('accountHistoryModal').classList.remove('open'); }
+
+function renderAccountHistoryResults(){
+  const q = (el('accountSearchInput').value||'').trim().toLowerCase();
+  const box = el('accountHistoryResults');
+  if(!q){ box.innerHTML = '<p style="color:var(--t3);">Type at least one character to search.</p>'; return; }
+  const items = SCOPED.filter(i =>
+    String(i.accountCode).toLowerCase().includes(q) ||
+    String(i.accountName).toLowerCase().includes(q)
+  ).sort((a,b)=> new Date(b.created||0) - new Date(a.created||0));
+  if(!items.length){ box.innerHTML = '<p style="color:var(--t3);">No OCC records found for “'+q.replace(/</g,'')+'”.</p>'; return; }
+  const acc = items[0].accountCode;
+  const name = items[0].accountName;
+  const total = items.reduce((s,i)=>s+i.value,0);
+  let html = '<div style="margin-bottom:1rem;padding:.75rem 1rem;background:var(--bg-secondary);border-radius:10px;border:1px solid var(--border);"><strong>'+acc+'</strong> — '+name+'<div style="font-size:.78rem;color:var(--t3);margin-top:.25rem;">'+items.length+' OCC(s) · Total AED '+fmt(total)+'</div></div>';
+  html += '<table style="width:100%;font-size:.8rem;border-collapse:collapse;"><thead><tr style="color:var(--t3);text-align:left;border-bottom:2px solid var(--border);"><th style="padding:.45rem;">Ref</th><th>Value</th><th>Status</th><th>Reason</th><th>Requestor</th><th>Created</th><th></th></tr></thead><tbody>';
+  items.forEach(i=>{
+    html += '<tr style="border-bottom:1px solid var(--border);"><td style="padding:.45rem;">'+i.ref+'</td><td>AED '+fmt(i.value)+'</td><td><span class="status-badge '+badgeClass(i.portalStatus)+'">'+i.portalStatus+'</span></td><td>'+i.reason+'</td><td>'+i.requestor+'</td><td>'+fmtDate(i.created)+'</td><td><button class="action-btn primary" onclick="openFormView(\''+i.id+'\')">View</button></td></tr>';
+  });
+  html += '</tbody></table>';
+  box.innerHTML = html;
+}
+
 function openHistoryModal(id){
   const item = ALL_ITEMS.find(i=>String(i.id)===String(id));
   if(!item) return;
-  el('historyModalTitle').textContent = 'Timeline — '+item.ref;
-  el('historyModalBody').innerHTML = renderTimelineHtml(item);
+  el('historyModalTitle').textContent = 'OCC Timeline — '+item.ref;
+  el('historyModalBody').innerHTML = '<p style="color:var(--t3);padding:1rem;">Loading SharePoint version history…</p>';
   el('historyModal').classList.add('open');
+  loadOccItemHistory(item);
 }
 function closeHistoryModal(){ el('historyModal').classList.remove('open'); }
+
+function occStripHtml(html){
+  const tmp = document.createElement('div');
+  tmp.innerHTML = html||'';
+  return (tmp.textContent||tmp.innerText||'').replace(/\s+/g,' ').trim();
+}
+
+function occHistoryFieldLabel(key){
+  const map = {
+    Title:'Account Code', Account_x0020_Name:'Account Name', From:'Requestor', Vertical:'Vertical',
+    TypeOfIssue:'Reason', Total_x0020_OCC_x0020_Value:'Total OCC Value', OCC_x0020_Reference_x0020_No:'OCC Ref',
+    Sales_x0020_Director_x0020_Appro:'Sales Director Approval', Head_x0020_Director_x0020_Approv:'Head Director Approval',
+    Channel_x0020_Manager_x0020_Vali:'Channel Manager Validation', Channel_x0020_Director_x0020_App:'Head of Channel Marketing',
+    Head_x0020_of_x0020_LE_x002c__x0:'Head of Enterprise', Channel_x0020_Director_x0020_App0:'Pipeline',
+    CCO_x0020_Approval:'CCCO Approval', RejectedReason:'Rejected Reason', Posted_Date:'Posted Date',
+    Business_x0020_Justification:'Business Justification', Handset:'Handset', No_of_Handsets:'# Handsets'
+  };
+  return map[key] || key.replace(/_x0020_/g,' ').replace(/_/g,' ').trim();
+}
+
+const OCC_HISTORY_TRACK = [
+  'Title','Account_x0020_Name','From','Vertical','TypeOfIssue','Total_x0020_OCC_x0020_Value','OCC_x0020_Reference_x0020_No',
+  'Sales_x0020_Director_x0020_Appro','Head_x0020_Director_x0020_Approv','Channel_x0020_Manager_x0020_Vali',
+  'Channel_x0020_Director_x0020_App','Head_x0020_of_x0020_LE_x002c__x0','Channel_x0020_Director_x0020_App0',
+  'CCO_x0020_Approval','RejectedReason','Posted_Date','Handset','No_of_Handsets','Business_x0020_Justification','Status'
+];
+
+function occFormatHistoryVal(key, val){
+  if(val===null||val===undefined||val==='') return '—';
+  if(key==='Total_x0020_OCC_x0020_Value') return 'AED '+num(val).toLocaleString();
+  if(typeof val==='object'&&val.Title) return val.Title;
+  return occStripHtml(String(val));
+}
+
+function occCompareVersionFields(cur, prev){
+  const changes = [];
+  OCC_HISTORY_TRACK.forEach(function(key){
+    const a = occFormatHistoryVal(key, cur[key]);
+    const b = occFormatHistoryVal(key, prev[key]);
+    if(a!==b) changes.push({ label: occHistoryFieldLabel(key), oldVal: b, newVal: a });
+  });
+  return changes;
+}
+
+function occFetchJson(url, cb){
+  spGet(url, cb);
+}
+
+function occGetListGuid(cb){
+  if(window._OCC_LIST_GUID) return cb(null, window._OCC_LIST_GUID);
+  occFetchJson(SP_SITE+"/_api/web/lists/getbytitle('"+encodeURIComponent(SP_LIST)+"')?$select=Id", function(err, data){
+    if(err||!data||!data.d) return cb(err||new Error('List not found'));
+    window._OCC_LIST_GUID = data.d.Id;
+    cb(null, window._OCC_LIST_GUID);
+  });
+}
+
+function occFetchItemVersions(itemId, cb){
+  occFetchJson(SP_SITE+"/_api/web/lists/getbytitle('"+encodeURIComponent(SP_LIST)+"')/items("+itemId+")/versions", function(err, data){
+    if(err) return cb(err);
+    const versions = (data.d&&data.d.results)||[];
+    versions.sort(function(a,b){ return new Date(b.Created)-new Date(a.Created); });
+    cb(null, versions);
+  });
+}
+
+function occFetchVersionFields(itemId, versionId, cb){
+  occFetchJson(SP_SITE+"/_api/web/lists/getbytitle('"+encodeURIComponent(SP_LIST)+"')/items("+itemId+")/versions("+versionId+")/FieldValuesAsText", function(err, data){
+    if(err) return cb(err);
+    cb(null, (data.d)||{});
+  });
+}
+
+function occBuildHistoryFromVersions(itemId, cb){
+  if(usingMock) return cb(null, null);
+  occFetchItemVersions(itemId, function(err, versions){
+    if(err||!versions.length) return cb(err||new Error('No versions'));
+    let pending = versions.length;
+    const fieldSets = new Array(versions.length);
+    versions.forEach(function(v, idx){
+      occFetchVersionFields(itemId, v.ID, function(e, fields){
+        fieldSets[idx] = fields||{};
+        pending--;
+        if(!pending){
+          const entries = versions.map(function(v, idx){
+            const fields = fieldSets[idx]||{};
+            const older = idx < versions.length-1 ? (fieldSets[idx+1]||{}) : null;
+            let editor = fields.Editor || fields.Author || '';
+            if(typeof editor==='object') editor = editor.Title||'';
+            return {
+              versionLabel: v.VersionLabel || ('v'+(versions.length-idx)),
+              created: v.Created,
+              editor: editor||'—',
+              changes: older ? occCompareVersionFields(fields, older) : [],
+              isCurrent: idx===0
+            };
+          });
+          cb(null, entries);
+        }
+      });
+    });
+  });
+}
+
+function occRenderVersionHistory(entries){
+  if(!entries||!entries.length) return '';
+  let html = '<div class="occ-version-history">';
+  entries.forEach(function(entry, idx){
+    html += '<div style="border:1px solid var(--border);border-radius:10px;margin-bottom:.75rem;overflow:hidden;background:var(--bg-card);">';
+    html += '<div style="display:flex;justify-content:space-between;gap:1rem;padding:.65rem .85rem;background:var(--bg-secondary);border-bottom:1px solid var(--border);flex-wrap:wrap;">';
+    html += '<div><div style="font-weight:800;font-size:.85rem;color:var(--t1);">'+(entry.isCurrent?'Current version':'Previous version')+' · '+entry.versionLabel+'</div>';
+    html += '<div style="font-size:.75rem;color:var(--t3);margin-top:.15rem;">Modified by <strong style="color:var(--t2);">'+entry.editor+'</strong></div></div>';
+    html += '<div style="font-size:.75rem;color:var(--t3);font-weight:600;">'+fmtDate(entry.created)+'</div></div>';
+    if(entry.changes.length){
+      html += '<table style="width:100%;font-size:.78rem;border-collapse:collapse;"><thead><tr style="color:var(--t3);text-align:left;"><th style="padding:.45rem .65rem;width:30%;">Field</th><th style="padding:.45rem;width:35%;">Previous</th><th style="padding:.45rem;width:35%;">New</th></tr></thead><tbody>';
+      entry.changes.forEach(function(ch){
+        html += '<tr style="border-top:1px solid var(--border);"><td style="padding:.45rem .65rem;font-weight:700;">'+ch.label+'</td><td style="padding:.45rem;color:var(--t3);">'+ch.oldVal+'</td><td style="padding:.45rem;color:var(--t1);font-weight:600;">'+ch.newVal+'</td></tr>';
+      });
+      html += '</tbody></table>';
+    } else {
+      html += '<div style="padding:.75rem .85rem;font-size:.78rem;color:var(--t3);">'+(idx===entries.length-1?'Initial creation — no prior snapshot.':'No tracked field changes in this version.')+'</div>';
+    }
+    html += '</div>';
+  });
+  html += '</div>';
+  return html;
+}
+
+function loadOccItemHistory(item){
+  const fallback = function(msg){
+    let html = msg ? '<p style="color:#d97706;font-size:.82rem;margin-bottom:.75rem;">'+msg+'</p>' : '';
+    html += '<div style="font-size:.72rem;font-weight:800;color:var(--acc);text-transform:uppercase;margin-bottom:.5rem;">Approval workflow (derived)</div>';
+    html += renderTimelineHtml(item);
+    el('historyModalBody').innerHTML = html;
+  };
+  if(usingMock){ fallback('Mock mode — showing workflow timeline. Deploy on SharePoint for version history.'); return; }
+  occBuildHistoryFromVersions(item.id, function(err, entries){
+    if(err||!entries||!entries.length){
+      occGetListGuid(function(gErr, guid){
+        let link = '';
+        if(!gErr&&guid) link = '<p style="margin-top:.75rem;"><a href="'+SP_SITE+'/_layouts/15/Versions.aspx?list='+encodeURIComponent(guid)+'&ID='+item.id+'" target="_blank" rel="noopener" style="color:var(--acc);font-weight:700;">Open SharePoint Version History</a></p>';
+        fallback('Could not load version history'+(err?(': '+err.message):'')+'. Enable list versioning on OCC Form1.'+link);
+      });
+      return;
+    }
+    el('historyModalBody').innerHTML = occRenderVersionHistory(entries);
+  });
+}
 
 function renderTimelineHtml(item){
   return '<div class="timeline">'+item.timeline.map(step=>{
     const cls = step.status==='approved'?'done':step.status==='rejected'?'rejected':'pending';
     return '<div class="timeline-step '+cls+'"><div class="timeline-step-title">'+step.label+' — '+step.status.toUpperCase()+'</div><div class="timeline-step-meta">'+step.person+(step.timestamp?' · '+fmtDate(step.timestamp):'')+(step.note?' · '+step.note:'')+'</div></div>';
   }).join('')+'</div>';
-}
-
-function renderAccountHistory(){
-  const container = el('accountHistoryContainer');
-  if(!container) return;
-  const groups = {};
-  FILTERED.forEach(i=>{ const k=i.accountCode; if(!groups[k]) groups[k]=[]; groups[k].push(i); });
-  const keys = Object.keys(groups).sort();
-  container.innerHTML = keys.map(k=>{
-    const items = groups[k].sort((a,b)=>b.value-a.value);
-    const total = items.reduce((s,i)=>s+i.value,0);
-    return '<div class="account-group"><div class="account-group-header" onclick="this.parentElement.classList.toggle(\'open\')"><div><strong>'+k+'</strong> — '+items[0].accountName+'<div style="font-size:.75rem;color:var(--t3);margin-top:.2rem;">'+items.length+' OCCs · AED '+fmt(total)+'</div></div><span style="color:var(--acc);font-weight:700;">▼</span></div><div class="account-group-body"><table style="width:100%;font-size:.8rem;border-collapse:collapse;"><thead><tr style="color:var(--t3);text-align:left;"><th style="padding:.4rem;">Ref</th><th>Value</th><th>Status</th><th>Reason</th><th>AM</th></tr></thead><tbody>'+
-      items.map(i=>'<tr style="border-top:1px solid var(--border);"><td style="padding:.4rem;">'+i.ref+'</td><td>AED '+fmt(i.value)+'</td><td><span class="status-badge '+badgeClass(i.portalStatus)+'">'+i.portalStatus+'</span></td><td>'+i.reason+'</td><td>'+i.am+'</td></tr>').join('')+
-      '</tbody></table></div></div>';
-  }).join('') || '<p style="color:var(--t3);">No account records found.</p>';
-}
-
-function populateTimelineSelect(){
-  const sel = el('timelineSelect');
-  if(!sel) return;
-  const cur = sel.value;
-  sel.innerHTML = '<option value="">— Select OCC —</option>'+FILTERED.map(i=>'<option value="'+i.id+'">'+i.ref+' — '+i.accountCode+' (AED '+fmt(i.value)+')</option>').join('');
-  if(cur) sel.value = cur;
-}
-
-function renderTimelineView(){
-  const id = el('timelineSelect').value;
-  const item = ALL_ITEMS.find(i=>String(i.id)===String(id));
-  el('timelineContent').innerHTML = item ? renderTimelineHtml(item) : '<p style="color:var(--t3);padding:1rem;">Select an OCC to view its approval timeline.</p>';
 }
 
 function renderBiweekly(){
@@ -1133,8 +1413,8 @@ function renderBiweekly(){
     '<div class="mgr-stat-box"><div class="mgr-stat-label">Open OCCs</div><div class="mgr-stat-value">'+open.length+'</div></div>'+
     '<div class="mgr-stat-box"><div class="mgr-stat-label">Open Value</div><div class="mgr-stat-value">'+fmt(open.reduce((s,i)=>s+i.value,0))+'</div></div>'+
     '<div class="mgr-stat-box"><div class="mgr-stat-label">CCCO Required (≥250K)</div><div class="mgr-stat-value">'+high.length+'</div></div></div>'+
-    '<table style="width:100%;font-size:.8rem;border-collapse:collapse;"><thead><tr style="color:var(--t3);text-align:left;border-bottom:2px solid var(--border);"><th style="padding:.5rem;">Ref</th><th>Account</th><th>Value</th><th>Stuck At</th><th>Days</th><th>AM</th></tr></thead><tbody>'+
-    open.sort((a,b)=>b.value-a.value).map(i=>'<tr style="border-bottom:1px solid var(--border);"><td style="padding:.5rem;">'+i.ref+'</td><td>'+i.accountCode+'</td><td>AED '+fmt(i.value)+'</td><td>'+i.stuckAt+'</td><td>'+i.daysStuck+'</td><td>'+i.am+'</td></tr>').join('')+
+    '<table style="width:100%;font-size:.8rem;border-collapse:collapse;"><thead><tr style="color:var(--t3);text-align:left;border-bottom:2px solid var(--border);"><th style="padding:.5rem;">Ref</th><th>Account</th><th>Value</th><th>Stuck At</th><th>Days</th><th>Requestor</th></tr></thead><tbody>'+
+    open.sort((a,b)=>b.value-a.value).map(i=>'<tr style="border-bottom:1px solid var(--border);"><td style="padding:.5rem;">'+i.ref+'</td><td>'+i.accountCode+'</td><td>AED '+fmt(i.value)+'</td><td>'+i.stuckAt+'</td><td>'+i.daysStuck+'</td><td>'+i.requestor+'</td></tr>').join('')+
     '</tbody></table>';
 }
 
@@ -1146,11 +1426,54 @@ function chartColors(){
 
 function destroyChart(id){ if(CHARTS[id]){ CHARTS[id].destroy(); delete CHARTS[id]; } }
 
+
+function renderStatusChart(){
+  destroyChart('status');
+  const base=getViewItems(); const map={'Open':0,'Closed Approved':0,'Closed Rejected':0};
+  base.forEach(function(i){ map[i.portalStatus]=(map[i.portalStatus]||0)+i.value; });
+  const c=chartColors();
+  CHARTS.status=new Chart(el('chartStatus'),{type:'doughnut',data:{labels:Object.keys(map),datasets:[{data:Object.values(map),backgroundColor:[c.amber,c.green,c.red]}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}}}});
+}
+function renderStuckChart(){
+  destroyChart('stuck');
+  const open=getViewItems().filter(function(i){return i.portalStatus==='Open';});
+  const map={}; open.forEach(function(i){ map[i.stuckAt]=(map[i.stuckAt]||0)+1; });
+  const labels=Object.keys(map);
+  CHARTS.stuck=new Chart(el('chartStuck'),{type:'bar',data:{labels:labels,datasets:[{label:'Count',data:labels.map(function(l){return map[l];}),backgroundColor:chartColors().acc}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}}}});
+}
+function renderTierChart(){
+  destroyChart('tier');
+  const base=getViewItems(); let low={c:0,v:0}, high={c:0,v:0};
+  base.forEach(function(i){ if(i.value>=CCO_THRESHOLD){high.c++;high.v+=i.value;}else{low.c++;low.v+=i.value;} });
+  CHARTS.tier=new Chart(el('chartTier'),{type:'bar',data:{labels:['< 250K AED','≥ 250K AED (CCCO)'],datasets:[{label:'Count',data:[low.c,high.c],backgroundColor:chartColors().acc2},{label:'Value (M)',data:[low.v/1e6,high.v/1e6],backgroundColor:chartColors().acc}]},options:{responsive:true,maintainAspectRatio:false}});
+}
+function renderHandsetChart(){
+  destroyChart('handset');
+  const hs=getViewItems().filter(isHandsetItem);
+  const map={}; hs.forEach(function(i){ map[i.vertical]=(map[i.vertical]||0)+i.value; });
+  CHARTS.handset=new Chart(el('chartHandset'),{type:'bar',data:{labels:Object.keys(map),datasets:[{data:Object.values(map),backgroundColor:chartColors().acc}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}}}});
+}
+function renderTrendChart(){
+  destroyChart('trend');
+  const map={}; getViewItems().forEach(function(i){ if(!i.created) return; var d=new Date(i.created); if(isNaN(d)) return; var k=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); if(!map[k]) map[k]={c:0,v:0}; map[k].c++; map[k].v+=i.value; });
+  const labels=Object.keys(map).sort().slice(-12);
+  CHARTS.trend=new Chart(el('chartTrend'),{type:'line',data:{labels:labels,datasets:[{label:'Value (M)',data:labels.map(function(l){return map[l].v/1e6;}),borderColor:chartColors().acc,tension:.3,yAxisID:'y'},{label:'Count',data:labels.map(function(l){return map[l].c;}),borderColor:chartColors().acc2,tension:.3,yAxisID:'y1'}]},options:{responsive:true,maintainAspectRatio:false,scales:{y:{position:'left'},y1:{position:'right',grid:{drawOnChartArea:false}}}}});
+}
+
 function renderCharts(){
   renderReasonChart();
   renderVerticalChart();
   renderSLAChart();
   renderTop10Chart();
+  renderStatusChart();
+  renderStuckChart();
+  renderTierChart();
+  renderHandsetChart();
+  renderTrendChart();
+  renderAMChart();
+  renderOutcomeChart();
+  renderStuckValueChart();
+  renderHandsetSplitChart();
 }
 
 function setReasonChartMode(mode){
@@ -1192,11 +1515,67 @@ function renderVerticalChart(){
 
 function renderSLAChart(){
   destroyChart('sla');
-  const base = getViewItems();
+  const base = getViewItems().filter(i=> i.portalStatus==='Open');
   const buckets = { '0-9 days':0, '10-29 days':0, '30+ days':0 };
-  base.forEach(i=>{ const d=i.daysRaised; if(d<=9) buckets['0-9 days']++; else if(d<=29) buckets['10-29 days']++; else buckets['30+ days']++; });
+  base.forEach(i=>{ const d=i.daysStuck||i.daysRaised; if(d<=9) buckets['0-9 days']++; else if(d<=29) buckets['10-29 days']++; else buckets['30+ days']++; });
   const c = chartColors();
   CHARTS.sla = new Chart(el('chartSLA'), { type:'doughnut', data:{ labels:Object.keys(buckets), datasets:[{ data:Object.values(buckets), backgroundColor:[c.green,c.amber,c.red] }] }, options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{ position:'bottom' } } } });
+}
+
+function renderAMChart(){
+  destroyChart('am');
+  const map = {};
+  getViewItems().forEach(i=>{
+    if(!i.requestor||i.requestor==='—') return;
+    map[i.requestor] = map[i.requestor] || { c:0, v:0 };
+    map[i.requestor].c++;
+    map[i.requestor].v += i.value;
+  });
+  const sorted = Object.keys(map).sort((a,b)=> map[b].v - map[a].v).slice(0,12);
+  const c = chartColors();
+  CHARTS.am = new Chart(el('chartAM'), { type:'bar', data:{ labels:sorted, datasets:[
+    { label:'Value (AED)', data:sorted.map(l=>map[l].v), backgroundColor:c.acc, yAxisID:'y' },
+    { label:'Count', data:sorted.map(l=>map[l].c), backgroundColor:c.acc2, yAxisID:'y1' }
+  ]}, options:{ indexAxis:'y', responsive:true, maintainAspectRatio:false, scales:{ y:{position:'left'}, y1:{position:'right',grid:{drawOnChartArea:false}} } } });
+}
+
+function renderOutcomeChart(){
+  destroyChart('outcome');
+  const closed = getViewItems().filter(i=> i.portalStatus!=='Open');
+  const map = {};
+  closed.forEach(i=>{
+    if(!map[i.vertical]) map[i.vertical] = { approved:0, rejected:0 };
+    if(i.portalStatus==='Closed Rejected') map[i.vertical].rejected++;
+    else map[i.vertical].approved++;
+  });
+  const labels = Object.keys(map);
+  const c = chartColors();
+  CHARTS.outcome = new Chart(el('chartOutcome'), { type:'bar', data:{ labels, datasets:[
+    { label:'Approved', data:labels.map(l=>map[l].approved), backgroundColor:c.green, stack:'s' },
+    { label:'Rejected', data:labels.map(l=>map[l].rejected), backgroundColor:c.red, stack:'s' }
+  ]}, options:{ responsive:true, maintainAspectRatio:false, scales:{ x:{ stacked:true }, y:{ stacked:true } } } });
+}
+
+function renderStuckValueChart(){
+  destroyChart('stuckValue');
+  const open = getViewItems().filter(i=> i.portalStatus==='Open');
+  const map = {};
+  open.forEach(i=>{ map[i.stuckAt] = (map[i.stuckAt]||0) + i.value; });
+  const labels = Object.keys(map);
+  CHARTS.stuckValue = new Chart(el('chartStuckValue'), { type:'bar', data:{ labels, datasets:[{ label:'Value (AED)', data:labels.map(l=>map[l]), backgroundColor:chartColors().amber }] }, options:{ indexAxis:'y', responsive:true, maintainAspectRatio:false, plugins:{ legend:{ display:false } } } });
+}
+
+function isHandsetItem(i){
+  const h = String(i.handset||'').toLowerCase();
+  return h==='yes' || h==='true' || num(i.handsets)>0;
+}
+
+function renderHandsetSplitChart(){
+  destroyChart('handsetSplit');
+  let handset = 0, non = 0;
+  getViewItems().forEach(i=>{ if(isHandsetItem(i)) handset += i.value; else non += i.value; });
+  const c = chartColors();
+  CHARTS.handsetSplit = new Chart(el('chartHandsetSplit'), { type:'doughnut', data:{ labels:['Handset waivers','Non-handset'], datasets:[{ data:[handset, non], backgroundColor:[c.acc, c.acc2] }] }, options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{ position:'bottom' } } } });
 }
 
 function renderTop10Chart(){
@@ -1207,15 +1586,10 @@ function renderTop10Chart(){
 }
 
 function showView(view, navEl){
-  currentView = view;
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   if(navEl) navEl.classList.add('active');
-  ['viewDashboard','viewAll','viewAccounts','viewTimeline','viewBiweekly'].forEach(id=>{ const e=el(id); if(e) e.style.display='none'; });
-  const map = { dashboard:'viewDashboard', all:'viewAll', accounts:'viewAccounts', timeline:'viewTimeline', biweekly:'viewBiweekly' };
-  const target = el(map[view]); if(target) target.style.display='block';
-  if(view==='all' && ALL_GRID_API) renderAllGrid();
-  if(view==='timeline') renderTimelineView();
-  if(view==='accounts') renderAccountHistory();
+  el('viewDashboard').style.display = view==='biweekly' ? 'none' : 'block';
+  el('viewBiweekly').style.display = view==='biweekly' ? 'block' : 'none';
   if(view==='biweekly') renderBiweekly();
 }
 
@@ -1238,6 +1612,8 @@ document.addEventListener('click', function(e){
   if(!e.target.closest('.ms-wrap')) document.querySelectorAll('.ms-dropdown.open').forEach(d=>{ d.classList.remove('open'); d.previousElementSibling?.classList.remove('open'); });
 });
 el('historyModal').addEventListener('click', function(e){ if(e.target===this) closeHistoryModal(); });
+el('formViewModal').addEventListener('click', function(e){ if(e.target===this) closeFormView(); });
+el('accountHistoryModal').addEventListener('click', function(e){ if(e.target===this) closeAccountHistoryModal(); });
 
 window.sendReminder=sendReminder;
 window.openHistoryModal=openHistoryModal;
@@ -1254,9 +1630,14 @@ window.clearAM=clearAM;
 window.setReasonChartMode=setReasonChartMode;
 window.setVertChartMode=setVertChartMode;
 window.gridSearch=gridSearch;
-window.gridSearchAll=gridSearchAll;
 window.exportExcel=exportExcel;
-window.renderTimelineView=renderTimelineView;
+window.openFormView=openFormView;
+window.closeFormView=closeFormView;
+window.openTimelineFromForm=openTimelineFromForm;
+window.openAccountHistorySearch=openAccountHistorySearch;
+window.closeAccountHistoryModal=closeAccountHistoryModal;
+window.renderAccountHistoryResults=renderAccountHistoryResults;
+window.toggleCharts=toggleCharts;
 window.devLogin=devLogin;
 
 el('loadingOverlay').style.display='none';
