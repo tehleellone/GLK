@@ -1,0 +1,139 @@
+List Information
+Name:	GLK OCC Form
+Web Address:	http://sharedspaces:8081/sites/OCC/Lists/OCC Form1/AllItems.aspx
+Description:	GLK OCC Form
+
+Columns
+A column stores information about each item in the list. The following columns are currently available in this list:
+Column (click to edit)	Type	Required
+Account Code	Single line of text	
+Account Name	Single line of text	
+Requestor	Person or Group	
+Trouble Ticket	Single line of text	
+Subject	Single line of text	
+Other - Type of Issue	Single line of text	
+Business Justification	Multiple lines of text	
+Total OCC Value	Number	
+Annual Revenue	Number	
+Modified	Date and Time	
+Created	Date and Time	
+Vertical	Choice	
+Sales Director Approval	Choice	
+Channel Director Approval	Choice	
+Director Enterprise Pipeline & Control	Choice	
+Head of Enterprise Approval	Choice	
+Sales Director Approval Timestamp	Date and Time	
+Channel Director Approval Timestamp	Date and Time	
+Director Enterprise Pipeline & Control Timestamp	Date and Time	
+Head of Gov LE Approval Timestamp	Date and Time	
+CCCO Approval	Choice	
+CCOLabel	Single line of text	
+CCOTimestamp	Single line of text	
+Channel Director Text	Single line of text	
+Pipeline Director Text	Single line of text	
+Sales Enterprise Head	Single line of text	
+Head of Channel	Single line of text	
+Head Of Marketing Approval	Choice	
+HM Timestamp	Date and Time	
+Status	Single line of text	
+Sales Director Name	Single line of text	
+OCC Reference No	Calculated (calculation based on other columns)	
+Product Family	Single line of text	
+Product Category	Single line of text	
+Source	Choice	
+Services	Single line of text	
+Rejected Reason	Single line of text	
+UserID	Single line of text	
+Admin Name 1	Single line of text	
+Admin 2	Single line of text	
+Item Url	Calculated (calculation based on other columns)	
+Type Of Issue	Choice	
+MY ID	Single line of text	
+CO TL Assigned Date	Date and Time	
+Posted Date	Date and Time	
+Handset	Choice	
+No of Handsets	Number	
+Head Director Text	Single line of text	
+Head Director Name	Person or Group	
+Head Director Approval	Choice	
+Head Dir Approval Timestamp	Date and Time	
+Sales Comments	Multiple lines of text	
+Marketing Comments	Single line of text	
+Assigned to AM by CM	Single line of text	
+OCC Status	Choice	
+Mail Status SD	Single line of text	
+Mail Status HD	Single line of text	
+Mail Status CD	Single line of text	
+Mail Status AM	Single line of text	
+Mail Status PD	Single line of text	
+Mail Status CM	Choice	
+Channel Manager Name	Person or Group	
+Channel Manager Text	Single line of text	
+Channel Manager Validation	Choice	
+Channel Manager Validation Timestamp	Date and Time	
+Created By	Person or Group	
+Modified By	Person or Group
+
+
+
+Internal names below
+Account Code -> Title
+VM264:9 Account Name -> Account_x0020_Name
+VM264:9 Trouble Ticket -> Trouble_x0020_Ticket
+VM264:9 Subject -> Subject
+VM264:9 Other - Type of Issue -> other_x0020__x002d__x0020_Type_x
+VM264:9 Business Justification -> Business_x0020_Justification
+VM264:9 Total OCC Value -> Total_x0020_OCC_x0020_Value
+VM264:9 Annual Revenue -> Annual_x0020_Revenue
+VM264:9 Vertical -> Vertical
+VM264:9 Sales Director Approval -> Sales_x0020_Director_x0020_Appro
+VM264:9 Channel Director Approval -> Channel_x0020_Director_x0020_App
+VM264:9 Director Enterprise Pipeline & Control -> Channel_x0020_Director_x0020_App0
+VM264:9 Head of Enterprise Approval -> Head_x0020_of_x0020_Gov_x0020_LE
+VM264:9 Sales Director Approval Timestamp -> Sales_x0020_Director_x0020_Appro0
+VM264:9 Channel Director Approval Timestamp -> Channel_x0020_Director_x0020_App1
+VM264:9 Director Enterprise Pipeline & Control Timestamp -> Head_x0020_of_x0020_Bid_x0020__x
+VM264:9 Head of Gov LE Approval Timestamp -> Head_x0020_of_x0020_Gov_x0020_LE0
+VM264:9 CCCO Approval -> CCO_x0020_Approval
+VM264:9 CCOLabel -> CCOLabel
+VM264:9 CCOTimestamp -> CCOTimestamp
+VM264:9 Channel Director Text -> Channel_x0020_Director_x0020_Tex
+VM264:9 Pipeline Director Text -> Bid_x0020_Director_x0020_Text
+VM264:9 Sales Enterprise Head -> GOv_x0020_LE_x0020_Head_x0020_Te
+VM264:9 Head of Channel -> Head_x0020_of_x0020_LE_x002c__x0
+VM264:9 Head Of Marketing Approval -> field11
+VM264:9 HM Timestamp -> field12
+VM264:9 Status -> Status
+VM264:9 Sales Director Name -> SalesDirectorName
+VM264:9 OCC Reference No -> OCC_x0020_Reference_x0020_No
+VM264:9 Product Family -> ProductFamily
+VM264:9 Product Category -> ProductCategory
+VM264:9 Source -> Source
+VM264:9 Services -> Services
+VM264:9 Rejected Reason -> RejectedReason
+VM264:9 UserID -> UserID
+VM264:9 Admin Name 1 -> Admin_x0020_Name
+VM264:9 Admin 2 -> Admin_x0020_2
+VM264:9 Item Url -> Item_x0020_Url
+VM264:9 Type Of Issue -> TypeOfIssue
+VM264:9 MY ID -> MY_x0020_ID
+VM264:9 CO TL Assigned Date -> CO_TL_Assigned_Date
+VM264:9 Posted Date -> Posted_Date
+VM264:9 Handset -> Handset
+VM264:9 No of Handsets -> No_of_Handsets
+VM264:9 Head Director Text -> Head_x0020_Director_x0020_Text
+VM264:9 Head Director Approval -> Head_x0020_Director_x0020_Approv
+VM264:9 Head Dir Approval Timestamp -> Head_x0020_Dir_x0020_Approval_x0
+VM264:9 Sales Comments -> Sales_x0020_Comments
+VM264:9 Marketing Comments -> Marketing_x0020_Comments
+VM264:9 Assigned to AM by CM -> Assigned_x0020_to_x0020_AM_x0020
+VM264:9 OCC Status -> OCC_x0020_Status
+VM264:9 Mail Status SD -> Mail_x0020_Status_x0020_SD
+VM264:9 Mail Status HD -> Mail_x0020_Status_x0020_HD
+VM264:9 Mail Status CD -> Mail_x0020_Status_x0020_CD
+VM264:9 Mail Status AM -> Mail_x0020_Status_x0020_AM
+VM264:9 Mail Status PD -> Mail_x0020_Status_x0020_PD
+VM264:9 Mail Status CM -> Mail_x0020_Status
+VM264:9 Channel Manager Text -> Channel_x0020_Manager_x0020_Text
+VM264:9 Channel Manager Validation -> Channel_x0020_Manager_x0020_Vali
+VM264:9 Channel Manager Validation Timestamp -> Channel_x0020_Manager_x0020_Vali0
