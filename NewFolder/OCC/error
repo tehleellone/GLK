@@ -1,9 +1,9 @@
-{
+
     "error": {
-        "code": "-1, Microsoft.SharePoint.SPException",
+        "code": "-1, Microsoft.SharePoint.Client.ResourceNotFoundException",
         "message": {
             "lang": "en-US",
-            "value": "The query to field 'From' is not valid. The $select query string must specify the target fields and the $expand query string must contains From."
+            "value": "Cannot find resource for the request GetListUsingPath."
         }
     }
 }
