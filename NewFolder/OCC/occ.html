@@ -555,7 +555,8 @@ body[data-theme="dark"] .badge-warning,body[data-theme="magenta-dark"] .badge-wa
 <script>
 
 const SP_SITE = 'http://sharedspaces:8081/sites/OCC';
-const SP_LIST = 'GLK OCC Form'; // List Title (URL folder is /Lists/OCC Form1/)
+const SP_LIST = 'OCC Form1';
+const SP_LIST_PATH = '/sites/OCC/Lists/OCC Form1';
 const SP_ACCESS = 'OCC_ACCESS';
 const CCO_THRESHOLD = 250000;
 
@@ -585,6 +586,9 @@ const F = {
   HANDSET:'Handset', HANDSETS:'No_of_Handsets', AM:'SalesDirectorName', SUBJECT:'Subject',
   REJECTED:'RejectedReason', URL:'Item_x0020_Url'
 };
+// Person/Group fields — must $expand, never flat $select
+const SP_EXPAND = ['From','Channel_x0020_Manager_x0020_Name'];
+const SP_EXPAND_SELECT = ['From/Title','From/EMail','Channel_x0020_Manager_x0020_Name/Title'];
 
 window.USER = { email:'', name:'', role:'', IsAdmin:false };
 let ALL_ITEMS=[], SCOPED=[], FILTERED=[], CHARTS={}, GRID_API=null;
@@ -698,7 +702,8 @@ function parseItem(r){
     id: r.Id,
     accountCode: r[F.ACC_CODE]||'—',
     accountName: r[F.ACC_NAME]||'—',
-    requestor: (r.Requestor&&r.Requestor.Title)||r[F.REQUESTOR]||'—',
+    requestor: (r.From&&r.From.Title)||(typeof r.From==='string'?r.From:'')||'—',
+    requestorEmail: (r.From&&r.From.EMail)||'',
     businessJust: r.Business_x0020_Justification||'',
     annualRev: num(r.Annual_x0020_Revenue),
     source: r.Source||'—',
@@ -734,7 +739,7 @@ function scopeItems(items){
   if(userIsAM()){
     const me = USER.name.toLowerCase();
     const em = normEmail(USER.email);
-    return items.filter(i => normEmail(i.requestor)===em || (i.requestor&&i.requestor.toLowerCase().includes(me.split(' ')[0])) || i.requestor===USER.name);
+    return items.filter(i => normEmail(i.requestorEmail||guessEmail(i.requestor))===em || (i.requestor&&i.requestor.toLowerCase().includes(me.split(' ')[0])) || i.requestor===USER.name);
   }
   const role = normRole(USER.role);
   if(role==='approver'){
@@ -793,7 +798,14 @@ function generateMockAccess(){
   ];
 }
 
-function spListApi(listTitle, suffix){
+function spOccListApi(suffix){
+  if(!suffix || suffix.charAt(0) !== '/') suffix = '/' + (suffix || '');
+  const pathArg = "@a1='" + SP_LIST_PATH.replace(/'/g, "''") + "'";
+  const base = SP_SITE + "/_api/web/GetListUsingPath(DecodedUrl=@a1)" + suffix;
+  return base + (base.indexOf('?') >= 0 ? '&' : '?') + pathArg;
+}
+
+function spListByTitleApi(listTitle, suffix){
   const safe = String(listTitle||'').replace(/'/g, "''");
   return SP_SITE + "/_api/web/lists/getbytitle('" + safe + "')" + (suffix || '');
 }
@@ -815,7 +827,7 @@ function initAccess(){
   spGet(SP_SITE+'/_api/web/currentuser?$select=Title,Email', function(err, data){
     if(err){ initAccessDevFallback(); return; }
     USER.email = data.d.Email; USER.name = data.d.Title;
-    spGet(spListApi(SP_ACCESS, "/items?$select=UserEmailID,Role,Status&$top=5000"), function(err2, data2){
+    spGet(spListByTitleApi(SP_ACCESS, "/items?$select=UserEmailID,Role,Status&$top=5000"), function(err2, data2){
       if(err2||!data2||!data2.d.results.length){ initAccessDevFallback(); return; }
       const want = normEmail(USER.email);
       const rec = data2.d.results.find(r => normEmail(r.UserEmailID)===want && String(r.Status||'Active').toLowerCase()!=='inactive');
@@ -895,8 +907,9 @@ function loadAllPages(url, acc, cb){
   });
 }
 function loadData(cb){
-  const select = Object.values(F).concat(['Requestor/Title','Channel_x0020_Manager_x0020_Name/Title','Business_x0020_Justification','Annual_x0020_Revenue','Source','Services','ProductFamily','ProductCategory']).concat(APPROVAL_STEPS.flatMap(s=>[s.statusField,s.tsField,s.personField,s.textField].filter(Boolean))).filter((v,i,a)=>a.indexOf(v)===i).join(',');
-  const url = spListApi(SP_LIST, "/items?$select="+encodeURIComponent(select)+",Id&$expand=Requestor,Channel_x0020_Manager_x0020_Name&$top=5000&$orderby=Id desc");
+  const flat = Object.values(F).filter(function(f){ return SP_EXPAND.indexOf(f)<0; });
+  const select = flat.concat(SP_EXPAND_SELECT).concat(['Business_x0020_Justification','Annual_x0020_Revenue','Source','Services','ProductFamily','ProductCategory']).concat(APPROVAL_STEPS.flatMap(function(s){ return [s.statusField,s.tsField,s.personField,s.textField].filter(Boolean); })).filter(function(v,i,a){ return a.indexOf(v)===i; }).join(',');
+  const url = spOccListApi("/items?$select="+encodeURIComponent(select)+",Id&$expand="+SP_EXPAND.join(',')+"&$top=5000&$orderby=Id desc");
   setLoadingStep('Fetching OCC records from SharePoint...');
   loadAllPages(url, [], function(err, rows){
     if(err){
@@ -1303,7 +1316,7 @@ function occFetchJson(url, cb){
 
 function occGetListGuid(cb){
   if(window._OCC_LIST_GUID) return cb(null, window._OCC_LIST_GUID);
-  occFetchJson(spListApi(SP_LIST, '?$select=Id'), function(err, data){
+  occFetchJson(spOccListApi("?$select=Id"), function(err, data){
     if(err||!data||!data.d) return cb(err||new Error('List not found'));
     window._OCC_LIST_GUID = data.d.Id;
     cb(null, window._OCC_LIST_GUID);
@@ -1311,7 +1324,7 @@ function occGetListGuid(cb){
 }
 
 function occFetchItemVersions(itemId, cb){
-  occFetchJson(spListApi(SP_LIST, '/items('+itemId+')/versions'), function(err, data){
+  occFetchJson(spOccListApi('/items('+itemId+')/versions'), function(err, data){
     if(err) return cb(err);
     const versions = (data.d&&data.d.results)||[];
     versions.sort(function(a,b){ return new Date(b.Created)-new Date(a.Created); });
@@ -1320,7 +1333,7 @@ function occFetchItemVersions(itemId, cb){
 }
 
 function occFetchVersionFields(itemId, versionId, cb){
-  occFetchJson(spListApi(SP_LIST, '/items('+itemId+')/versions('+versionId+')/FieldValuesAsText'), function(err, data){
+  occFetchJson(spOccListApi('/items('+itemId+')/versions('+versionId+')/FieldValuesAsText'), function(err, data){
     if(err) return cb(err);
     cb(null, (data.d)||{});
   });
@@ -1394,7 +1407,7 @@ function loadOccItemHistory(item){
       occGetListGuid(function(gErr, guid){
         let link = '';
         if(!gErr&&guid) link = '<p style="margin-top:.75rem;"><a href="'+SP_SITE+'/_layouts/15/Versions.aspx?list='+encodeURIComponent(guid)+'&ID='+item.id+'" target="_blank" rel="noopener" style="color:var(--acc);font-weight:700;">Open SharePoint Version History</a></p>';
-        fallback('Could not load version history'+(err?(': '+err.message):'')+'. Enable list versioning on GLK OCC Form.'+link);
+        fallback('Could not load version history'+(err?(': '+err.message):'')+'. Enable list versioning on OCC Form1.'+link);
       });
       return;
     }
