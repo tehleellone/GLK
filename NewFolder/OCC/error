@@ -1,9 +1,9 @@
-
+{
     "error": {
-        "code": "-1, Microsoft.SharePoint.Client.ResourceNotFoundException",
+        "code": "-1, System.ArgumentException",
         "message": {
             "lang": "en-US",
-            "value": "Cannot find resource for the request GetListUsingPath."
+            "value": "List 'OCC Form1' does not exist at site with URL 'http://sharedspaces:8081/sites/OCC'."
         }
     }
 }
