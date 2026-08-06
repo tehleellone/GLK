@@ -555,9 +555,9 @@ body[data-theme="dark"] .badge-warning,body[data-theme="magenta-dark"] .badge-wa
 <script>
 
 const SP_SITE = 'http://sharedspaces:8081/sites/OCC';
-const SP_LIST = 'OCC Form1';
+const SP_LIST = 'GLK OCC Form';
 const SP_LIST_PATH = '/sites/OCC/Lists/OCC Form1';
-const SP_LIST_FALLBACKS = ['OCC Form1', 'GLK OCC Form'];
+const SP_LIST_FALLBACKS = ['GLK OCC Form'];
 const SP_ACCESS = 'OCC_ACCESS';
 const CCO_THRESHOLD = 250000;
 
@@ -571,12 +571,12 @@ const APPROVERS = {
 const APPROVAL_STEPS = [
   { key:'sd', label:'Sales Director', statusField:'Sales_x0020_Director_x0020_Appro', tsField:'Sales_x0020_Director_x0020_Appro0', personField:'SalesDirectorName' },
   { key:'hd', label:'Head Director', statusField:'Head_x0020_Director_x0020_Approv', tsField:'Head_x0020_Dir_x0020_Approval_x0', textField:'Head_x0020_Director_x0020_Text' },
-  { key:'cm', label:'Channel Manager Validation', statusField:'Channel_x0020_Manager_x0020_Vali', tsField:'Channel_x0020_Manager_x0020_Vali0' },
-  { key:'cd', label:'Head of Channel Marketing', statusField:'Channel_x0020_Director_x0020_App', tsField:'Channel_x0020_Director_x0020_App1', textField:'Channel_x0020_Director_x0020_Tex', defaultPerson: APPROVERS.channelMarketing.name, defaultEmail: APPROVERS.channelMarketing.email },
-  { key:'bid', label:'Head of Bid', statusField:'Head_x0020_of_x0020_Bid_x0020__', tsField:'field11' },
-  { key:'gov', label:'Head of Gov LE', statusField:'Head_x0020_of_x0020_Gov_x0020_LE', tsField:'Head_x0020_of_x0020_Gov_x0020_LE0' },
-  { key:'le', label:'Head of Enterprise', statusField:'Head_x0020_of_x0020_LE_x002c__x0', tsField:'field12', defaultPerson: APPROVERS.enterprise.name, defaultEmail: APPROVERS.enterprise.email, autoOnHm: true },
-  { key:'pipeline', label:'Pipeline', statusField:'Channel_x0020_Director_x0020_App0', textField:'Bid_x0020_Director_x0020_Text', defaultPerson: APPROVERS.pipeline.name, defaultEmail: APPROVERS.pipeline.email },
+  { key:'cm', label:'Channel Manager Validation', statusField:'Channel_x0020_Manager_x0020_Vali', tsField:'Channel_x0020_Manager_x0020_Vali0', textField:'Channel_x0020_Manager_x0020_Text' },
+  { key:'cd', label:'Channel Director', statusField:'Channel_x0020_Director_x0020_App', tsField:'Channel_x0020_Director_x0020_App1', textField:'Channel_x0020_Director_x0020_Tex', defaultPerson: APPROVERS.channelMarketing.name, defaultEmail: APPROVERS.channelMarketing.email },
+  { key:'pipeline', label:'Director Enterprise Pipeline & Control', statusField:'Channel_x0020_Director_x0020_App0', tsField:'Head_x0020_of_x0020_Bid_x0020__x', textField:'Bid_x0020_Director_x0020_Text', defaultPerson: APPROVERS.pipeline.name, defaultEmail: APPROVERS.pipeline.email },
+  { key:'hm', label:'Head Of Marketing', statusField:'field11', tsField:'field12' },
+  { key:'he', label:'Head of Enterprise Approval', statusField:'Head_x0020_of_x0020_Gov_x0020_LE', tsField:'Head_x0020_of_x0020_Gov_x0020_LE0' },
+  { key:'le', label:'Head of Enterprise', statusField:'Head_x0020_of_x0020_LE_x002c__x0', defaultPerson: APPROVERS.enterprise.name, defaultEmail: APPROVERS.enterprise.email, autoOnHm: true },
   { key:'cco', label:'CCCO', statusField:'CCO_x0020_Approval', tsField:'CCOTimestamp', defaultPerson: APPROVERS.ccco.name, defaultEmail: APPROVERS.ccco.email, minValue: CCO_THRESHOLD }
 ];
 
@@ -585,8 +585,23 @@ const F = {
   REASON:'TypeOfIssue', VALUE:'Total_x0020_OCC_x0020_Value', REF:'OCC_x0020_Reference_x0020_No',
   STATUS:'Status', PORTAL_STATUS:'OCC_x0020_Status', CREATED:'Created', POSTED:'Posted_Date',
   HANDSET:'Handset', HANDSETS:'No_of_Handsets', AM:'SalesDirectorName', SUBJECT:'Subject',
-  REJECTED:'RejectedReason', URL:'Item_x0020_Url'
+  REJECTED:'RejectedReason', URL:'Item_x0020_Url', TROUBLE:'Trouble_x0020_Ticket'
 };
+// Exact internal names from GLK OCC Form list — only these go in $select
+const SP_SELECT_FIELDS = [
+  'Id','Title','Account_x0020_Name','Vertical','TypeOfIssue','Total_x0020_OCC_x0020_Value',
+  'OCC_x0020_Reference_x0020_No','Status','OCC_x0020_Status','Created','Posted_Date',
+  'Handset','No_of_Handsets','SalesDirectorName','Subject','RejectedReason',
+  'Business_x0020_Justification','Annual_x0020_Revenue','Source','Services','ProductFamily','ProductCategory',
+  'Trouble_x0020_Ticket','Sales_x0020_Comments','Marketing_x0020_Comments',
+  'Sales_x0020_Director_x0020_Appro','Sales_x0020_Director_x0020_Appro0',
+  'Head_x0020_Director_x0020_Approv','Head_x0020_Dir_x0020_Approval_x0','Head_x0020_Director_x0020_Text',
+  'Channel_x0020_Manager_x0020_Vali','Channel_x0020_Manager_x0020_Vali0','Channel_x0020_Manager_x0020_Text',
+  'Channel_x0020_Director_x0020_App','Channel_x0020_Director_x0020_App1','Channel_x0020_Director_x0020_Tex',
+  'Channel_x0020_Director_x0020_App0','Head_x0020_of_x0020_Bid_x0020__x','Bid_x0020_Director_x0020_Text',
+  'field11','field12','Head_x0020_of_x0020_Gov_x0020_LE','Head_x0020_of_x0020_Gov_x0020_LE0',
+  'Head_x0020_of_x0020_LE_x002c__x0','CCO_x0020_Approval','CCOTimestamp','CCOLabel'
+];
 // Person/Group fields — must $expand, never flat $select
 const SP_EXPAND = ['From','Channel_x0020_Manager_x0020_Name'];
 const SP_EXPAND_SELECT = ['From/Title','From/EMail','Channel_x0020_Manager_x0020_Name/Title'];
@@ -633,7 +648,7 @@ function getRequiredSteps(item){
 function getStepStatus(item, step, allSteps){
   let status = normStatus(item._raw[step.statusField]);
   if(step.autoOnHm){
-    const hm = allSteps.find(s=>s.key==='hd');
+    const hm = allSteps.find(s=>s.key==='hm');
     if(hm && normStatus(item._raw[hm.statusField])==='approved') status='approved';
   }
   return status;
@@ -775,11 +790,12 @@ function generateMockData(){
       Channel_x0020_Director_x0020_App: id%8===0?'Pending':'Approved',
       Channel_x0020_Director_x0020_App1: new Date(now-id*86400000*2).toISOString(),
       Channel_x0020_Director_x0020_Tex:'Abou Moustafa',
-      Head_x0020_of_x0020_Bid_x0020__: id%9===0?'Pending':'Approved', field11: new Date(now-id*86400000).toISOString(),
-      Head_x0020_of_x0020_Gov_x0020_LE:'Approved', Head_x0020_of_x0020_Gov_x0020_LE0: new Date(now).toISOString(),
-      Head_x0020_of_x0020_LE_x002c__x0: id%7===0?'Pending':'Approved', field12: new Date(now).toISOString(),
       Channel_x0020_Director_x0020_App0: id%10===0?'Pending':'Approved',
+      Head_x0020_of_x0020_Bid_x0020__x: new Date(now-id*86400000).toISOString(),
       Bid_x0020_Director_x0020_Text:'Abdulrahman Alserkal',
+      field11: id%9===0?'Pending':'Approved', field12: new Date(now-id*86400000).toISOString(),
+      Head_x0020_of_x0020_Gov_x0020_LE:'Approved', Head_x0020_of_x0020_Gov_x0020_LE0: new Date(now).toISOString(),
+      Head_x0020_of_x0020_LE_x002c__x0: id%7===0?'Pending':'Approved',
       CCO_x0020_Approval: id%5===0?(id%10===0?'Pending':'Approved'):'Not Required',
       CCOTimestamp: new Date(now).toISOString(),
       RejectedReason: id%11===0?'Insufficient documentation':'',
@@ -953,9 +969,8 @@ function loadData(cb){
       if(cb) cb();
       return;
     }
-    const flat = Object.values(F).filter(function(f){ return SP_EXPAND.indexOf(f)<0; });
-    const select = flat.concat(SP_EXPAND_SELECT).concat(['Business_x0020_Justification','Annual_x0020_Revenue','Source','Services','ProductFamily','ProductCategory']).concat(APPROVAL_STEPS.flatMap(function(s){ return [s.statusField,s.tsField,s.personField,s.textField].filter(Boolean); })).filter(function(v,i,a){ return a.indexOf(v)===i; }).join(',');
-    const url = occListApi("/items?$select="+encodeURIComponent(select)+",Id&$expand="+SP_EXPAND.join(',')+"&$top=5000&$orderby=Id desc");
+    const select = SP_SELECT_FIELDS.concat(SP_EXPAND_SELECT).join(',');
+    const url = occListApi("/items?$select="+encodeURIComponent(select)+"&$expand="+SP_EXPAND.join(',')+"&$top=5000&$orderby=Id desc");
     setLoadingStep('Fetching OCC records from SharePoint...');
     loadAllPages(url, [], function(err, rows){
       if(err){
@@ -1323,12 +1338,14 @@ function occStripHtml(html){
 function occHistoryFieldLabel(key){
   const map = {
     Title:'Account Code', Account_x0020_Name:'Account Name', From:'Requestor', Vertical:'Vertical',
-    TypeOfIssue:'Reason', Total_x0020_OCC_x0020_Value:'Total OCC Value', OCC_x0020_Reference_x0020_No:'OCC Ref',
+    TypeOfIssue:'Type Of Issue', Total_x0020_OCC_x0020_Value:'Total OCC Value', OCC_x0020_Reference_x0020_No:'OCC Ref',
     Sales_x0020_Director_x0020_Appro:'Sales Director Approval', Head_x0020_Director_x0020_Approv:'Head Director Approval',
-    Channel_x0020_Manager_x0020_Vali:'Channel Manager Validation', Channel_x0020_Director_x0020_App:'Head of Channel Marketing',
-    Head_x0020_of_x0020_LE_x002c__x0:'Head of Enterprise', Channel_x0020_Director_x0020_App0:'Pipeline',
+    Channel_x0020_Manager_x0020_Vali:'Channel Manager Validation', Channel_x0020_Director_x0020_App:'Channel Director Approval',
+    Channel_x0020_Director_x0020_App0:'Director Enterprise Pipeline & Control',
+    field11:'Head Of Marketing Approval', field12:'HM Timestamp',
+    Head_x0020_of_x0020_Gov_x0020_LE:'Head of Enterprise Approval', Head_x0020_of_x0020_LE_x002c__x0:'Head of Enterprise',
     CCO_x0020_Approval:'CCCO Approval', RejectedReason:'Rejected Reason', Posted_Date:'Posted Date',
-    Business_x0020_Justification:'Business Justification', Handset:'Handset', No_of_Handsets:'# Handsets'
+    Business_x0020_Justification:'Business Justification', Handset:'Handset', No_of_Handsets:'No of Handsets', Status:'Status'
   };
   return map[key] || key.replace(/_x0020_/g,' ').replace(/_/g,' ').trim();
 }
@@ -1336,8 +1353,9 @@ function occHistoryFieldLabel(key){
 const OCC_HISTORY_TRACK = [
   'Title','Account_x0020_Name','From','Vertical','TypeOfIssue','Total_x0020_OCC_x0020_Value','OCC_x0020_Reference_x0020_No',
   'Sales_x0020_Director_x0020_Appro','Head_x0020_Director_x0020_Approv','Channel_x0020_Manager_x0020_Vali',
-  'Channel_x0020_Director_x0020_App','Head_x0020_of_x0020_LE_x002c__x0','Channel_x0020_Director_x0020_App0',
-  'CCO_x0020_Approval','RejectedReason','Posted_Date','Handset','No_of_Handsets','Business_x0020_Justification','Status'
+  'Channel_x0020_Director_x0020_App','Channel_x0020_Director_x0020_App0','field11',
+  'Head_x0020_of_x0020_Gov_x0020_LE','Head_x0020_of_x0020_LE_x002c__x0','CCO_x0020_Approval',
+  'RejectedReason','Posted_Date','Handset','No_of_Handsets','Business_x0020_Justification','Status','OCC_x0020_Status'
 ];
 
 function occFormatHistoryVal(key, val){
@@ -1453,7 +1471,7 @@ function loadOccItemHistory(item){
       occGetListGuid(function(gErr, guid){
         let link = '';
         if(!gErr&&guid) link = '<p style="margin-top:.75rem;"><a href="'+SP_SITE+'/_layouts/15/Versions.aspx?list='+encodeURIComponent(guid)+'&ID='+item.id+'" target="_blank" rel="noopener" style="color:var(--acc);font-weight:700;">Open SharePoint Version History</a></p>';
-        fallback('Could not load version history'+(err?(': '+err.message):'')+'. Enable list versioning on OCC Form1.'+link);
+        fallback('Could not load version history'+(err?(': '+err.message):'')+'. Enable list versioning on GLK OCC Form.'+link);
       });
       return;
     }
