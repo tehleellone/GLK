@@ -168,9 +168,12 @@ body[data-theme="dark"] .status-dot,body[data-theme="magenta-dark"] .status-dot{
 .stat-card.tile-active{box-shadow:0 0 0 2px var(--acc),var(--ch)!important;transform:translateY(-2px)}
 .stat-card.tile-dimmed{opacity:.38;transform:none!important;box-shadow:var(--cs)!important}
 .stat-card.tile-active::after{content:'✓';position:absolute;top:6px;right:8px;font-size:.7rem;font-weight:900;color:var(--acc);}
-.filter-bar{background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:.85rem 1rem;margin-bottom:1rem;box-shadow:var(--cs);}
-.filter-bar-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:.7rem;}
+.filter-bar{background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:.9rem 1rem;margin-bottom:1rem;box-shadow:var(--cs);}
+.filter-bar-header{display:flex;align-items:center;gap:.75rem;flex-wrap:wrap;margin-bottom:.7rem;}
 .filter-bar-label{font-size:.68rem;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;white-space:nowrap;}
+.record-count-badge{font-size:.73rem;font-weight:700;color:var(--t2);padding:.2rem .55rem;border-radius:20px;background:var(--bg-secondary);border:1px solid var(--border);}
+#selectionBadge{font-size:.73rem;font-weight:700;color:var(--acc);}
+.filter-actions{display:flex;gap:.5rem;justify-content:flex-end;flex-wrap:wrap;margin-top:.75rem;padding-top:.75rem;border-top:1px solid var(--border);}
 .filter-bar-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:.55rem .65rem;align-items:end;}
 .fb-group{display:flex;flex-direction:column;gap:.2rem;min-width:0;}
 .fb-group-label{font-size:.63rem;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.05em;}
@@ -194,19 +197,38 @@ body[data-theme="dark"] .status-dot,body[data-theme="magenta-dark"] .status-dot{
 .export-btn{padding:.5rem 1rem;border-radius:8px;font-size:.82rem;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:.35rem;transition:all .2s;border:none;background:var(--grad);color:#fff;box-shadow:0 2px 10px var(--glow);white-space:nowrap;}
 .export-btn:hover{box-shadow:0 4px 16px var(--glow);transform:translateY(-1px)}
 .export-btn svg{width:14px;height:14px;stroke:#fff;fill:none;stroke-width:2}
-.mgr-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:.85rem}
-.mgr-tile{background:var(--bg-card);border:1px solid var(--border);border-radius:13px;padding:.9rem 1rem;cursor:pointer;transition:all .2s;box-shadow:var(--cs);position:relative;overflow:hidden;}
-.mgr-tile::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--grad)}
-.mgr-tile:hover{transform:translateY(-2px);box-shadow:var(--ch);border-color:var(--border-s)}
-.mgr-tile.selected{border-color:var(--nab2);background:var(--nab);box-shadow:0 0 0 2px var(--acc),var(--ch);}
-.mgr-tile.dimmed{opacity:.3;pointer-events:none;}
-.mgr-header{display:flex;flex-direction:column;gap:.15rem;margin-bottom:.6rem}
-.mgr-header h3{font-size:.88rem;font-weight:700;color:var(--t1);line-height:1.2}
-.mgr-meta{font-size:.68rem;color:var(--t3)}
-.mgr-stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-bottom:.6rem}
-.mgr-stat-box{background:var(--bg-secondary);border-radius:7px;padding:.5rem .6rem;border:1px solid var(--border)}
-.mgr-stat-label{font-size:.65rem;text-transform:uppercase;color:var(--t3);margin-bottom:.12rem;font-weight:600}
-.mgr-stat-value{font-size:1.05rem;font-weight:800;color:var(--sc)}
+.mgr-grid,.hd-grid,.ad-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:.85rem}
+.lm-tile,.mgr-tile{background:var(--bg-card);border:1px solid var(--border);border-radius:13px;padding:.9rem 1rem;cursor:pointer;transition:all .2s;box-shadow:var(--cs);position:relative;overflow:hidden;}
+.lm-tile::before,.mgr-tile::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--grad)}
+.lm-tile:hover,.mgr-tile:hover{transform:translateY(-2px);box-shadow:var(--ch);border-color:var(--border-s)}
+.lm-tile.selected,.mgr-tile.selected{border-color:var(--nab2);background:var(--nab);box-shadow:0 0 0 2px var(--acc),var(--ch);}
+.lm-header h3,.mgr-header h3{font-size:.88rem;font-weight:700;color:var(--t1);line-height:1.2}
+.lm-meta,.mgr-meta{font-size:.68rem;color:var(--t3)}
+.lm-stats-grid,.mgr-stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-bottom:.6rem}
+.lm-stat-box,.mgr-stat-box{background:var(--bg-secondary);border-radius:7px;padding:.5rem .6rem;border:1px solid var(--border)}
+.lm-stat-label,.mgr-stat-label{font-size:.65rem;text-transform:uppercase;color:var(--t3);margin-bottom:.12rem;font-weight:600}
+.lm-stat-value,.mgr-stat-value{font-size:1.05rem;font-weight:800;color:var(--sc)}
+.manager-row{display:flex;align-items:center;gap:.75rem;padding:.75rem 1rem;background:var(--bg-card);border:1px solid var(--border);border-radius:11px;margin-bottom:.55rem;cursor:pointer;transition:all .18s;box-shadow:var(--cs)}
+.manager-row:hover{border-color:var(--border-s);transform:translateY(-1px)}
+.manager-row.selected{border-color:var(--acc);background:var(--nab);box-shadow:0 0 0 2px var(--acc),var(--cs)}
+.manager-row-main{flex:1;min-width:0}
+.manager-row-name{font-size:.86rem;font-weight:800;color:var(--t1)}
+.manager-row-meta{font-size:.72rem;color:var(--t3);margin-top:.12rem}
+.manager-row-stats{display:flex;gap:1rem;flex-shrink:0}
+.manager-row-stat{text-align:right}
+.manager-row-stat-val{font-size:.95rem;font-weight:800;color:var(--sc)}
+.manager-row-stat-lbl{font-size:.62rem;color:var(--t3);text-transform:uppercase}
+.cascade-context{font-size:.76rem;color:var(--t3);font-weight:600;margin:-.35rem 0 .65rem}
+.account-combobox-wrap{position:relative;margin-bottom:1rem}
+.account-combobox-list{position:absolute;left:0;right:0;top:calc(100% + 4px);max-height:280px;overflow-y:auto;background:var(--bg-card);border:1px solid var(--border-s);border-radius:10px;box-shadow:0 8px 32px rgba(0,0,0,.22);z-index:100001;display:none}
+.account-combobox-list.open{display:block}
+.account-combo-option{padding:.65rem .85rem;cursor:pointer;border-bottom:1px solid var(--border);font-size:.82rem}
+.account-combo-option:hover,.account-combo-option.active{background:var(--bg-hover)}
+.account-combo-code{font-weight:800;color:var(--t1)}
+.account-combo-name{font-size:.74rem;color:var(--t3);margin-top:.12rem}
+.toggle-btn{padding:.25rem .7rem;border-radius:6px;font-size:.72rem;font-weight:700;border:1px solid var(--border);cursor:pointer;background:var(--bg-secondary);color:var(--t3);transition:all .15s}
+.toggle-btn.active{background:var(--grad);color:#fff;border-color:transparent}
+.modal-close,.filter-chip button{border:none;background:transparent;cursor:pointer}
 .mgr-health{border-radius:8px;padding:.55rem .7rem;background:var(--grad);color:#fff;margin-bottom:.55rem}
 .mgr-health-label{font-size:.65rem;text-transform:uppercase;opacity:.82;font-weight:700;margin-bottom:.15rem}
 .progress-bar{background:var(--bg-secondary);border-radius:20px;height:5px;overflow:hidden;margin-bottom:.4rem}
@@ -236,8 +258,9 @@ body[data-theme="dark"] .badge-success,body[data-theme="magenta-dark"] .badge-su
 body[data-theme="dark"] .badge-warning,body[data-theme="magenta-dark"] .badge-warning{background:rgba(251,191,36,.12);color:#fbbf24;border-color:rgba(251,191,36,.25)}
 .ag-theme-alpine .ag-root-wrapper{background:var(--bg-card)!important;border-color:var(--border)!important;border-radius:10px!important;overflow:hidden!important}
 .ag-theme-alpine .ag-header,.ag-theme-alpine .ag-header-row,.ag-theme-alpine .ag-header-viewport{background:var(--bg-secondary)!important;border-bottom:2px solid var(--border-s)!important}
-.ag-theme-alpine .ag-header-cell{background:var(--bg-secondary)!important;color:var(--t1)!important;font-weight:700!important;font-size:.71rem!important;text-transform:uppercase!important;letter-spacing:.04em!important}
-.ag-theme-alpine .ag-header-cell-text,.ag-theme-alpine .ag-header-cell-label{color:var(--t1)!important;font-weight:700!important}
+.ag-theme-alpine .ag-header-cell{background:var(--bg-secondary)!important;color:var(--t1)!important;font-weight:700!important;font-size:.71rem!important;text-transform:uppercase!important;letter-spacing:.04em!important;padding:8px 10px!important}
+.ag-theme-alpine .ag-header-cell-text,.ag-theme-alpine .ag-header-cell-label{color:var(--t1)!important;font-weight:700!important;white-space:normal!important;line-height:1.25!important}
+.ag-theme-alpine .ag-header-cell-label{overflow:visible!important;text-overflow:clip!important}
 .ag-theme-alpine .ag-icon{color:var(--t3)!important}
 .ag-theme-alpine .ag-body-viewport,.ag-theme-alpine .ag-center-cols-viewport{background:var(--bg-card)!important}
 .ag-theme-alpine .ag-row{background:var(--bg-card)!important;color:var(--t1)!important;border-bottom-color:var(--border)!important}
@@ -445,8 +468,6 @@ body[data-theme="dark"] .badge-warning,body[data-theme="magenta-dark"] .badge-wa
       <div class="nav-items">
         <div class="nav-section-label">Overview</div>
         <div class="nav-item active" id="navDashboard" onclick="showView('dashboard',this)"><div class="nav-icon"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></div><div class="nav-label">Dashboard</div></div>
-        <div class="nav-section-label nav-admin-only" id="navAdminLabel">Admin</div>
-        <div class="nav-item nav-admin-only" id="navBiweekly" onclick="showView('biweekly',this)"><div class="nav-icon"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/></svg></div><div class="nav-label">Biweekly Pack</div></div>
       </div>
     </div>
     <div class="content">
@@ -456,28 +477,40 @@ body[data-theme="dark"] .badge-warning,body[data-theme="magenta-dark"] .badge-wa
           <div class="filter-bar-header">
             <span class="filter-bar-label">Filters</span>
             <span class="record-count-badge" id="recordCountBadge">0 records</span>
-            <button type="button" class="export-btn" onclick="openAccountHistorySearch()" style="padding:.35rem .75rem;font-size:.75rem;">Account History</button>
-            <button type="button" class="reset-btn" onclick="resetAll()"><svg viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.95"/></svg>Reset All</button>
+            <span id="selectionBadge"></span>
           </div>
           <div class="filter-bar-grid">
             <div class="fb-group"><div class="fb-group-label">Vertical</div><div class="ms-wrap"><div class="ms-trigger" id="mst-vertical" onclick="toggleMsFilter('vertical')"><span id="mstxt-vertical">All</span><svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></div><div class="ms-dropdown" id="msd-vertical"></div></div></div>
             <div class="fb-group"><div class="fb-group-label">Portal Status</div><div class="ms-wrap"><div class="ms-trigger" id="mst-portalStatus" onclick="toggleMsFilter('portalStatus')"><span id="mstxt-portalStatus">All</span><svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></div><div class="ms-dropdown" id="msd-portalStatus"></div></div></div>
             <div class="fb-group"><div class="fb-group-label">Reason</div><div class="ms-wrap"><div class="ms-trigger" id="mst-reason" onclick="toggleMsFilter('reason')"><span id="mstxt-reason">All</span><svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></div><div class="ms-dropdown" id="msd-reason"></div></div></div>
-            <div class="fb-group"><div class="fb-group-label">Requestor (AM)</div><div class="ms-wrap"><div class="ms-trigger" id="mst-am" onclick="toggleMsFilter('am')"><span id="mstxt-am">All</span><svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></div><div class="ms-dropdown" id="msd-am"></div></div></div>
             <div class="fb-group"><div class="fb-group-label">Year</div><div class="ms-wrap"><div class="ms-trigger" id="mst-year" onclick="toggleMsFilter('year')"><span id="mstxt-year">All</span><svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></div><div class="ms-dropdown" id="msd-year"></div></div></div>
             <div class="fb-group"><div class="fb-group-label">Handset</div><div class="ms-wrap"><div class="ms-trigger" id="mst-handset" onclick="toggleMsFilter('handset')"><span id="mstxt-handset">All</span><svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></div><div class="ms-dropdown" id="msd-handset"></div></div></div>
           </div>
+          <div class="filter-actions">
+            <button type="button" class="export-btn" onclick="openAccountHistorySearch()" style="padding:.4rem .85rem;font-size:.78rem;">Account History</button>
+            <button type="button" class="reset-btn" onclick="resetAll()"><svg viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.95"/></svg>Reset All Filters</button>
+          </div>
         </div>
         <div class="active-filter-chips" id="activeChips"></div>
-        <div id="mgrSection">
-          <h2 class="section-title"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>Waiver Volume by Account Manager <span id="mgrBadge" style="background:var(--nab);border:1px solid var(--nab2);color:var(--acc);padding:2px 10px;border-radius:20px;font-size:.75rem;font-weight:700;">0</span></h2>
-          <div class="mgr-grid" id="mgrGrid"></div>
+        <div id="hdSection">
+          <h2 class="section-title"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>Head Directors <span id="hdBadge" style="background:var(--nab);border:1px solid var(--nab2);color:var(--acc);padding:2px 10px;border-radius:20px;font-size:.75rem;font-weight:700;">0</span></h2>
+          <div class="hd-grid" id="hdGrid"></div>
+        </div>
+        <div id="directorSection" style="display:none;">
+          <h2 class="section-title"><svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/></svg>Sales Directors <span id="directorBadge" style="background:var(--nab);border:1px solid var(--nab2);color:var(--acc);padding:2px 10px;border-radius:20px;font-size:.75rem;font-weight:700;">0</span></h2>
+          <div class="cascade-context" id="directorContext"></div>
+          <div class="ad-grid" id="directorGrid"></div>
+        </div>
+        <div id="amSection" style="display:none;">
+          <h2 class="section-title"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Account Managers <span id="amBadge" style="background:var(--nab);border:1px solid var(--nab2);color:var(--acc);padding:2px 10px;border-radius:20px;font-size:.75rem;font-weight:700;">0</span></h2>
+          <div class="cascade-context" id="amContext"></div>
+          <div id="amGrid"></div>
         </div>
         <div style="text-align:center;margin:1rem 0 .85rem;"><button type="button" class="export-btn" onclick="toggleCharts()"><svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:#fff;fill:none;stroke-width:2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/></svg><span id="chartsToggleText">Show Analytics Charts</span></button></div>
         <div id="chartsSection" style="margin-top:1rem;display:none;">
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:.85rem;margin-bottom:.85rem;">
-            <div class="chart-card"><div class="chart-title"><span>Value vs Count by Reason</span><div><button class="toggle-btn active" id="reasonBtnOpen" onclick="setReasonChartMode('open')">Open</button><button class="toggle-btn" id="reasonBtnClosed" onclick="setReasonChartMode('closed')">Closed</button></div></div><div class="chart-container"><canvas id="chartReason"></canvas></div></div>
-            <div class="chart-card"><div class="chart-title"><span>By Vertical</span><div><button class="toggle-btn active" id="vertBtnValue" onclick="setVertChartMode('value')">Value</button><button class="toggle-btn" id="vertBtnCount" onclick="setVertChartMode('count')">Count</button></div></div><div class="chart-container"><canvas id="chartVertical"></canvas></div></div>
+            <div class="chart-card"><div class="chart-title"><span>Value vs Count by Reason</span><div><button type="button" class="toggle-btn active" id="reasonBtnOpen" onclick="setReasonChartMode('open')">Open</button><button type="button" class="toggle-btn" id="reasonBtnClosed" onclick="setReasonChartMode('closed')">Closed</button></div></div><div class="chart-container"><canvas id="chartReason"></canvas></div></div>
+            <div class="chart-card"><div class="chart-title"><span>By Vertical</span><div><button type="button" class="toggle-btn active" id="vertBtnValue" onclick="setVertChartMode('value')">Value</button><button type="button" class="toggle-btn" id="vertBtnCount" onclick="setVertChartMode('count')">Count</button></div></div><div class="chart-container"><canvas id="chartVertical"></canvas></div></div>
           </div>
           
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:.85rem;margin-bottom:.85rem;">
@@ -497,11 +530,10 @@ body[data-theme="dark"] .badge-warning,body[data-theme="magenta-dark"] .badge-wa
             <div class="chart-card"><div class="chart-title"><span>Top 10 OCCs by Value</span></div><div class="chart-container"><canvas id="chartTop10"></canvas></div></div>
           </div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:.85rem;margin-bottom:.85rem;">
-            <div class="chart-card"><div class="chart-title"><span>Waiver Volume by AM (Requestor)</span></div><div class="chart-container" style="height:320px"><canvas id="chartAM"></canvas></div></div>
             <div class="chart-card"><div class="chart-title"><span>Closed Outcomes by Vertical</span></div><div class="chart-container"><canvas id="chartOutcome"></canvas></div></div>
+            <div class="chart-card"><div class="chart-title"><span>Open Value by Stuck Stage</span></div><div class="chart-container"><canvas id="chartStuckValue"></canvas></div></div>
           </div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:.85rem;margin-bottom:.85rem;">
-            <div class="chart-card"><div class="chart-title"><span>Open Value by Stuck Stage</span></div><div class="chart-container"><canvas id="chartStuckValue"></canvas></div></div>
             <div class="chart-card"><div class="chart-title"><span>Handset vs Non-Handset (Value)</span></div><div class="chart-container"><canvas id="chartHandsetSplit"></canvas></div></div>
           </div>
         </div>
@@ -513,17 +545,13 @@ body[data-theme="dark"] .badge-warning,body[data-theme="magenta-dark"] .badge-wa
           <div id="myGrid" class="ag-theme-alpine" style="height:620px;width:100%;"></div>
         </div>
       </div>
-      <div id="viewBiweekly" class="dashboard-section" style="display:none;">
-        <h2 class="section-title"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/></svg>Biweekly Pack</h2>
-        <div class="chart-card" id="biweeklyContent"></div>
-      </div>
     </div>
   </div>
 </div>
 
 <div class="modal-overlay" id="historyModal">
   <div class="modal-box">
-    <div class="modal-header"><h3 id="historyModalTitle">OCC Timeline</h3><button class="modal-close" onclick="closeHistoryModal()">&times;</button></div>
+    <div class="modal-header"><h3 id="historyModalTitle">OCC Timeline</h3><button type="button" class="modal-close" onclick="closeHistoryModal()">&times;</button></div>
     <div class="modal-body" id="historyModalBody"></div>
   </div>
 </div>
@@ -531,16 +559,19 @@ body[data-theme="dark"] .badge-warning,body[data-theme="magenta-dark"] .badge-wa
 
 <div class="modal-overlay" id="formViewModal">
   <div class="modal-box" style="max-width:920px;">
-    <div class="modal-header"><h3 id="formViewTitle">OCC Details</h3><div style="display:flex;gap:.5rem;align-items:center"><button class="export-btn" style="padding:.35rem .7rem;font-size:.75rem" onclick="openTimelineFromForm()">OCC Timeline</button><button class="modal-close" onclick="closeFormView()">&times;</button></div></div>
+    <div class="modal-header"><h3 id="formViewTitle">OCC Details</h3><div style="display:flex;gap:.5rem;align-items:center"><button type="button" class="export-btn" style="padding:.35rem .7rem;font-size:.75rem" onclick="openTimelineFromForm()">OCC Timeline</button><button type="button" class="modal-close" onclick="closeFormView()">&times;</button></div></div>
     <div class="modal-body" id="formViewBody"></div>
   </div>
 </div>
 <div class="modal-overlay" id="accountHistoryModal">
   <div class="modal-box" style="max-width:900px;">
-    <div class="modal-header"><h3>Account History</h3><button class="modal-close" onclick="closeAccountHistoryModal()">&times;</button></div>
+    <div class="modal-header"><h3>Account History</h3><button type="button" class="modal-close" onclick="closeAccountHistoryModal()">&times;</button></div>
     <div class="modal-body">
-      <div class="account-search-row"><input type="text" class="search-box" id="accountSearchInput" placeholder="Search account code or name..." style="flex:1;min-width:240px" oninput="renderAccountHistoryResults()"><button class="export-btn" onclick="renderAccountHistoryResults()">Search</button></div>
-      <div id="accountHistoryResults"></div>
+      <div class="account-combobox-wrap">
+        <input type="text" class="search-box account-combobox-input" id="accountSearchInput" placeholder="Search and select account code or name..." autocomplete="off" onfocus="openAccountCombo()" oninput="filterAccountCombo()">
+        <div class="account-combobox-list" id="accountComboList"></div>
+      </div>
+      <div id="accountHistoryResults"><p style="color:var(--t3);">Select an account to view all OCC waivers for that customer.</p></div>
     </div>
   </div>
 </div>
@@ -548,7 +579,7 @@ body[data-theme="dark"] .badge-warning,body[data-theme="magenta-dark"] .badge-wa
 <div class="dev-console" id="devConsole" style="display:none;">
   <span class="dev-console-label">Dev Login</span>
   <input type="text" id="devEmailInput" placeholder="email@example.com" onkeydown="if(event.key==='Enter')devLogin()">
-  <select id="devRoleInput"><option value="Admin">Admin</option><option value="AM">AM</option><option value="Approver">Approver</option><option value="Viewer">Viewer</option></select>
+  <select id="devRoleInput"><option value="Admin">Admin</option><option value="Head Director">Head Director</option><option value="Account Director">Account Director</option><option value="AM">Account Manager</option><option value="Approver">Approver</option><option value="Viewer">Viewer</option></select>
   <button type="button" onclick="devLogin()">Login As</button>
 </div>
 
@@ -608,15 +639,15 @@ const SP_EXPAND_SELECT = ['From/Title','From/EMail','Channel_x0020_Manager_x0020
 
 window.USER = { email:'', name:'', role:'', IsAdmin:false };
 let ALL_ITEMS=[], SCOPED=[], FILTERED=[], CHARTS={}, GRID_API=null;
-let chartsVisible=false, selStatusTile=null, selAM=null, reasonChartMode='open', vertChartMode='value', usingMock=false;
+let chartsVisible=false, selStatusTile=null, selHD=null, selDirector=null, selAMTile=null;
+let reasonChartMode='open', vertChartMode='value', usingMock=false;
 let currentView='dashboard';
 
-const MS_STATE = { vertical:new Set(), portalStatus:new Set(), reason:new Set(), am:new Set(), year:new Set(), handset:new Set() };
+const MS_STATE = { vertical:new Set(), portalStatus:new Set(), reason:new Set(), year:new Set(), handset:new Set() };
 const MS_CFG = {
   vertical:{ field:'vertical', dropId:'msd-vertical' },
   portalStatus:{ field:'portalStatus', dropId:'msd-portalStatus' },
   reason:{ field:'reason', dropId:'msd-reason' },
-  am:{ field:'requestor', dropId:'msd-am' },
   year:{ field:'year', dropId:'msd-year' },
   handset:{ field:'handset', dropId:'msd-handset' }
 };
@@ -630,8 +661,32 @@ function set(id,val){ const e=el(id); if(e) e.textContent=val; }
 function setLoadingStep(msg){ set('loadingStep',msg); }
 function normEmail(e){ return String(e||'').trim().toLowerCase(); }
 function normRole(r){ return String(r||'').trim().toLowerCase(); }
-function userIsAdmin(){ const r=normRole(USER.role); return USER.IsAdmin||r==='admin'||r==='administrator'; }
-function userIsAM(){ return normRole(USER.role)==='am'||normRole(USER.role)==='account manager'; }
+function normOccRole(r){
+  const x = normRole(r);
+  if(x==='admin'||x==='administrator') return 'Admin';
+  if(x==='head director'||x==='hd') return 'Head Director';
+  if(x==='account director'||x==='director'||x==='sales director') return 'Account Director';
+  if(x==='am'||x==='account manager') return 'Account Manager';
+  if(x==='approver') return 'Approver';
+  if(x==='viewer') return 'Viewer';
+  return String(r||'Viewer').trim();
+}
+function matchPersonName(field, userName){
+  if(!field||!userName||field==='—') return false;
+  const a=String(field).toLowerCase(), b=String(userName).toLowerCase();
+  return a===b || a.includes(b.split(' ')[0]) || b.includes(a.split(' ')[0]);
+}
+function findMyHD(){
+  const names=[...new Set(SCOPED.map(i=>i.headDirector).filter(v=>v&&v!=='—'))];
+  return names.find(n=>matchPersonName(n, USER.name))||null;
+}
+function findMyDirector(){
+  const names=[...new Set(SCOPED.map(i=>i.director).filter(v=>v&&v!=='—'))];
+  return names.find(n=>matchPersonName(n, USER.name))||null;
+}
+function userRole(){ return normOccRole(USER.role); }
+function userIsAdmin(){ return userRole()==='Admin' || USER.IsAdmin; }
+function userIsAM(){ return userRole()==='Account Manager'; }
 
 function normStatus(s){
   const v=String(s||'').trim().toLowerCase();
@@ -735,6 +790,8 @@ function parseItem(r){
     handset: r[F.HANDSET]||'—',
     handsets: r[F.HANDSETS]||'—',
     am: r[F.AM]||'—',
+    headDirector: r.Head_x0020_Director_x0020_Text||'—',
+    director: r[F.AM]||'—',
     subject: r[F.SUBJECT]||'—',
     created, posted,
     year: created ? String(new Date(created).getFullYear()) : '—',
@@ -751,15 +808,24 @@ function parseItem(r){
 }
 
 function scopeItems(items){
-  if(userIsAdmin()) return items;
-  if(userIsAM()){
-    const me = USER.name.toLowerCase();
-    const em = normEmail(USER.email);
-    return items.filter(i => normEmail(i.requestorEmail||guessEmail(i.requestor))===em || (i.requestor&&i.requestor.toLowerCase().includes(me.split(' ')[0])) || i.requestor===USER.name);
+  const role = userRole();
+  if(role==='Admin') return items;
+  if(role==='Head Director'){
+    const my = findMyHD();
+    return my ? items.filter(i=>i.headDirector===my) : items.filter(i=>matchPersonName(i.headDirector, USER.name));
   }
-  const role = normRole(USER.role);
-  if(role==='approver'){
-    return items.filter(i => i.responsible && (i.responsible.name.toLowerCase().includes(USER.name.split(' ')[0].toLowerCase()) || i.timeline.some(t=>t.person&&t.person.toLowerCase().includes(USER.name.split(' ')[0].toLowerCase()))));
+  if(role==='Account Director'){
+    const my = findMyDirector();
+    return my ? items.filter(i=>i.director===my) : items.filter(i=>matchPersonName(i.director, USER.name));
+  }
+  if(role==='Account Manager'){
+    const em = normEmail(USER.email);
+    const byEmail = items.filter(i=>normEmail(i.requestorEmail||'')===em);
+    if(byEmail.length) return byEmail;
+    return items.filter(i=>matchPersonName(i.requestor, USER.name) || i.requestor===USER.name);
+  }
+  if(role==='Approver'){
+    return items.filter(i=> i.responsible && (matchPersonName(i.responsible.name, USER.name) || i.timeline.some(t=>matchPersonName(t.person, USER.name))));
   }
   return items;
 }
@@ -780,6 +846,7 @@ function generateMockData(){
       Handset:['iPhone 15','Samsung S24','—','Pixel 8'][id%4],
       No_of_Handsets: id%3,
       SalesDirectorName:['Ahmed Hassan','Sara Al Maktoum','Khalid Omar','Fatima Noor'][id%4],
+      Head_x0020_Director_x0020_Text:['Omar Khalil','Layla Hassan','Omar Khalil','Layla Hassan'][id%4],
       Created: new Date(now - (id*5+3)*86400000).toISOString(),
       Posted_Date: new Date(now - (id*3+1)*86400000).toISOString(),
       Sales_x0020_Director_x0020_Appro:'Approved', Sales_x0020_Director_x0020_Appro0: new Date(now-id*86400000*5).toISOString(),
@@ -926,9 +993,6 @@ function launchDashboard(){
   setLoadingStep('Connecting to SharePoint...');
   set('dbUserBadge', USER.name+' · '+USER.role);
   el('currentDate').textContent = new Date().toLocaleDateString('en-US',{weekday:'short',year:'numeric',month:'short',day:'numeric'});
-  const isAdmin = userIsAdmin();
-  el('navAdminLabel').style.display = isAdmin ? 'block' : 'none';
-  document.querySelectorAll('.nav-admin-only.nav-item').forEach(n => n.style.display = isAdmin ? 'flex' : 'none');
   try{
     const bt = localStorage.getItem('occ_base_theme')||'blue';
     const dm = localStorage.getItem('occ_dark_mode')==='true';
@@ -943,7 +1007,6 @@ function launchDashboard(){
     applyAll();
     initGrid();
     updateGridCounts();
-    if(isAdmin) renderBiweekly();
     el('devConsole').style.display = 'flex';
   });
 }
@@ -1050,7 +1113,23 @@ function updateMsTriggerLabel(key){
 
 function resetAll(){
   Object.keys(MS_STATE).forEach(k=>{ MS_STATE[k].clear(); updateMsTriggerLabel(k); document.querySelectorAll('#msd-'+k+' input').forEach(cb=>cb.checked=false); });
-  selStatusTile=null; selAM=null; applyAll();
+  selStatusTile=null; selHD=null; selDirector=null; selAMTile=null; hideDirectorSection(); hideAMSection(); applyAll();
+}
+
+function applyRoleHardScope(){
+  const role = userRole();
+  if(role==='Head Director'){
+    const my = findMyHD();
+    if(my) FILTERED = FILTERED.filter(i=>i.headDirector===my);
+  } else if(role==='Account Director'){
+    const my = findMyDirector();
+    if(my) FILTERED = FILTERED.filter(i=>i.director===my);
+    else FILTERED = FILTERED.filter(i=>matchPersonName(i.director, USER.name));
+  } else if(role==='Account Manager'){
+    const em = normEmail(USER.email);
+    const byEmail = FILTERED.filter(i=>normEmail(i.requestorEmail||'')===em);
+    FILTERED = byEmail.length ? byEmail : FILTERED.filter(i=>matchPersonName(i.requestor, USER.name));
+  }
 }
 
 function applyAll(){
@@ -1059,27 +1138,197 @@ function applyAll(){
       if(MS_STATE[key].size && !MS_STATE[key].has(item[cfg.field])) return false;
     }
     if(selStatusTile && item.portalStatus!==selStatusTile) return false;
-    if(selAM && item.requestor!==selAM) return false;
     return true;
   });
+  applyRoleHardScope();
+  renderCascade();
   updateTopStats();
-  renderMgrTiles();
   if(chartsVisible) renderCharts();
   renderGrid();
   updateGridCounts();
   renderActiveChips();
-  if(userIsAdmin()) renderBiweekly();
+  updateSelectionBadge();
 }
 
-function getViewItems(){ return selAM ? FILTERED.filter(i=>i.requestor===selAM) : FILTERED; }
+function getViewItems(){
+  let items = FILTERED;
+  if(selAMTile) items = items.filter(i=>i.headDirector===selHD && i.director===selDirector && i.requestor===selAMTile);
+  else if(selDirector) items = items.filter(i=>i.headDirector===selHD && i.director===selDirector);
+  else if(selHD) items = items.filter(i=>i.headDirector===selHD);
+  return items;
+}
+
+function updateSelectionBadge(){
+  const b = el('selectionBadge');
+  if(!b) return;
+  const parts = [];
+  if(selHD) parts.push(selHD);
+  if(selDirector) parts.push(selDirector);
+  if(selAMTile) parts.push(selAMTile);
+  b.textContent = parts.length ? parts.join(' › ') : '';
+}
 
 function renderActiveChips(){
   const c = el('activeChips'); c.innerHTML='';
-  if(selAM){ const chip=document.createElement('div'); chip.className='filter-chip'; chip.innerHTML='AM: <strong>'+selAM+'</strong><button onclick="clearAM()">×</button>'; c.appendChild(chip); }
-  if(selStatusTile){ const chip=document.createElement('div'); chip.className='filter-chip'; chip.innerHTML='Status: <strong>'+selStatusTile+'</strong><button onclick="selStatusTile=null;applyAll()">×</button>'; c.appendChild(chip); }
+  if(selHD){ const chip=document.createElement('div'); chip.className='filter-chip'; chip.innerHTML='HD: <strong>'+selHD+'</strong><button type="button" onclick="selectHD(\''+String(selHD).replace(/'/g,"\\'")+'\')">×</button>'; c.appendChild(chip); }
+  if(selDirector){ const chip=document.createElement('div'); chip.className='filter-chip'; chip.innerHTML='Director: <strong>'+selDirector+'</strong><button type="button" onclick="selectDirector(\''+String(selDirector).replace(/'/g,"\\'")+'\')">×</button>'; c.appendChild(chip); }
+  if(selAMTile){ const chip=document.createElement('div'); chip.className='filter-chip'; chip.innerHTML='AM: <strong>'+selAMTile+'</strong><button type="button" onclick="selectAMTile(\''+String(selAMTile).replace(/'/g,"\\'")+'\')">×</button>'; c.appendChild(chip); }
+  if(selStatusTile){ const chip=document.createElement('div'); chip.className='filter-chip'; chip.innerHTML='Status: <strong>'+selStatusTile+'</strong><button type="button" onclick="selStatusTile=null;applyAll()">×</button>'; c.appendChild(chip); }
 }
 
-function clearAM(){ selAM=null; renderMgrTiles(); applyAll(); }
+function buildOccTileStats(items, pool){
+  const total = items.length;
+  const value = items.reduce((s,i)=>s+i.value,0);
+  const open = items.filter(i=>i.portalStatus==='Open').length;
+  const approved = items.filter(i=>i.portalStatus==='Closed Approved').length;
+  const rejected = items.filter(i=>i.portalStatus==='Closed Rejected').length;
+  const poolN = pool ? pool.length : FILTERED.length;
+  return { total, value, open, approved, rejected, contribPct: poolN ? (total/poolN*100).toFixed(1) : 0 };
+}
+
+function occTileHtml(name, meta, stats){
+  return '<div class="lm-header"><h3>'+name+'</h3><div class="lm-meta">'+meta+'</div></div>'+
+    '<div class="lm-stats-grid"><div class="lm-stat-box"><div class="lm-stat-label">OCCs</div><div class="lm-stat-value">'+stats.total+'</div></div><div class="lm-stat-box"><div class="lm-stat-label">Value</div><div class="lm-stat-value">'+fmt(stats.value)+'</div></div></div>'+
+    '<div class="waiver-tile-note">'+stats.open+' open · '+stats.approved+' approved · '+stats.rejected+' rejected · '+stats.contribPct+'% of view</div>';
+}
+
+function renderCascade(){
+  const role = userRole();
+  if(role==='Account Manager'){
+    el('hdSection').style.display='none';
+    hideDirectorSection(); hideAMSection();
+    renderSingleAMRow();
+    return;
+  }
+  if(role==='Account Director'){
+    el('hdSection').style.display='none';
+    hideAMSection();
+    const my = findMyDirector();
+    if(my && !selDirector){ selDirector=my; const hd=[...new Set(FILTERED.filter(i=>i.director===my).map(i=>i.headDirector))][0]; if(hd) selHD=hd; }
+    if(selDirector) renderDirectorTiles(selHD||findMyHD()||'—');
+    else renderDirectorTilesAll();
+    return;
+  }
+  el('hdSection').style.display='block';
+  renderHDTiles();
+  if(selHD) renderDirectorTiles(selHD); else hideDirectorSection();
+  if(selDirector) renderAMRows(selDirector); else hideAMSection();
+}
+
+function renderSingleAMRow(){
+  const items = FILTERED;
+  const name = items[0] ? items[0].requestor : USER.name;
+  const stats = buildOccTileStats(items);
+  el('hdSection').style.display='block';
+  set('hdBadge','1');
+  const tile = document.createElement('div');
+  tile.className = 'lm-tile selected';
+  tile.innerHTML = occTileHtml(name, 'Account Manager · Requestor', stats);
+  el('hdGrid').innerHTML='';
+  el('hdGrid').appendChild(tile);
+}
+
+function renderHDTiles(){
+  let hds = [...new Set(FILTERED.map(i=>i.headDirector).filter(v=>v&&v!=='—'))].sort();
+  if(userRole()==='Head Director'){
+    const my = findMyHD();
+    hds = my ? hds.filter(h=>h===my) : hds.filter(h=>matchPersonName(h, USER.name));
+  }
+  set('hdBadge', hds.length);
+  const grid = el('hdGrid'); grid.innerHTML='';
+  if(!hds.length){ grid.innerHTML='<p style="color:var(--t3);font-size:.84rem;">No head directors in your scope.</p>'; return; }
+  hds.forEach(hd=>{
+    const hdItems = FILTERED.filter(i=>i.headDirector===hd);
+    const stats = buildOccTileStats(hdItems, FILTERED);
+    const tile = document.createElement('div');
+    tile.className = 'lm-tile'+(selHD===hd?' selected':'');
+    tile.innerHTML = occTileHtml(hd, 'Head Director', stats);
+    tile.onclick = function(){ selectHD(hd); };
+    grid.appendChild(tile);
+  });
+}
+
+function selectHD(hd){
+  if(selHD===hd){ selHD=null; selDirector=null; selAMTile=null; hideDirectorSection(); hideAMSection(); }
+  else { selHD=hd; selDirector=null; selAMTile=null; renderDirectorTiles(hd); hideAMSection(); }
+  renderHDTiles(); updateTopStats(); if(chartsVisible) renderCharts(); renderGrid(); updateGridCounts(); updateSelectionBadge(); renderActiveChips();
+}
+
+function hideDirectorSection(){ el('directorSection').style.display='none'; }
+function hideAMSection(){ el('amSection').style.display='none'; }
+
+function renderDirectorTilesAll(){
+  el('directorSection').style.display='block';
+  set('directorContext','Your sales directors');
+  let dirs = [...new Set(FILTERED.map(i=>i.director).filter(v=>v&&v!=='—'))].sort();
+  const my = findMyDirector();
+  if(my) dirs = dirs.filter(d=>d===my);
+  renderDirectorGrid(dirs, FILTERED);
+}
+
+function renderDirectorTiles(hd){
+  el('directorSection').style.display='block';
+  set('directorContext','← '+hd);
+  const hdItems = FILTERED.filter(i=>i.headDirector===hd);
+  let dirs = [...new Set(hdItems.map(i=>i.director).filter(v=>v&&v!=='—'))].sort();
+  if(userRole()==='Account Director'){
+    const my = findMyDirector();
+    if(my) dirs = dirs.filter(d=>d===my);
+  }
+  renderDirectorGrid(dirs, hdItems);
+}
+
+function renderDirectorGrid(dirs, pool){
+  set('directorBadge', dirs.length);
+  const grid = el('directorGrid'); grid.innerHTML='';
+  if(!dirs.length){ grid.innerHTML='<p style="color:var(--t3);font-size:.84rem;">No sales directors found.</p>'; return; }
+  dirs.forEach(dir=>{
+    const dirItems = pool.filter(i=>i.director===dir);
+    const stats = buildOccTileStats(dirItems, pool);
+    const tile = document.createElement('div');
+    tile.className = 'lm-tile'+(selDirector===dir?' selected':'');
+    tile.innerHTML = occTileHtml(dir, 'Sales Director', stats);
+    tile.onclick = function(){ selectDirector(dir); };
+    grid.appendChild(tile);
+  });
+}
+
+function selectDirector(dir){
+  if(selDirector===dir){ selDirector=null; selAMTile=null; hideAMSection(); }
+  else { selDirector=dir; selAMTile=null; renderAMRows(dir); }
+  if(selHD) renderDirectorTiles(selHD); else renderDirectorTilesAll();
+  updateTopStats(); if(chartsVisible) renderCharts(); renderGrid(); updateGridCounts(); updateSelectionBadge(); renderActiveChips();
+}
+
+function renderAMRows(dir){
+  el('amSection').style.display='block';
+  set('amContext','← '+dir);
+  const dirItems = FILTERED.filter(i=>i.headDirector===selHD && i.director===dir);
+  const amMap = {};
+  dirItems.forEach(i=>{
+    const key = i.requestor||'Unknown';
+    if(!amMap[key]) amMap[key]={name:key, items:[]};
+    amMap[key].items.push(i);
+  });
+  const ams = Object.values(amMap).sort((a,b)=> b.items.reduce((s,x)=>s+x.value,0)-a.items.reduce((s,x)=>s+x.value,0));
+  set('amBadge', ams.length);
+  const grid = el('amGrid'); grid.innerHTML='';
+  ams.forEach(am=>{
+    const stats = buildOccTileStats(am.items, dirItems);
+    const row = document.createElement('div');
+    row.className = 'manager-row'+(selAMTile===am.name?' selected':'');
+    row.innerHTML = '<div class="manager-row-main"><div class="manager-row-name">'+am.name+'</div><div class="manager-row-meta">Account Manager · Requestor</div></div>'+
+      '<div class="manager-row-stats"><div class="manager-row-stat"><div class="manager-row-stat-val">'+stats.total+'</div><div class="manager-row-stat-lbl">OCCs</div></div><div class="manager-row-stat"><div class="manager-row-stat-val">'+fmt(stats.value)+'</div><div class="manager-row-stat-lbl">Value</div></div></div>';
+    row.onclick = function(){ selectAMTile(am.name); };
+    grid.appendChild(row);
+  });
+}
+
+function selectAMTile(name){
+  selAMTile = selAMTile===name ? null : name;
+  if(selDirector) renderAMRows(selDirector);
+  updateTopStats(); if(chartsVisible) renderCharts(); renderGrid(); updateGridCounts(); updateSelectionBadge(); renderActiveChips();
+}
 
 function updateTopStats(){
   const base = getViewItems();
@@ -1119,29 +1368,7 @@ function showMockBanner(show){
   if(dash && dash.firstChild) dash.insertBefore(b, dash.firstChild);
 }
 
-function renderMgrTiles(){
-  const base = FILTERED;
-  const ams = [...new Set(base.map(i=>i.requestor).filter(v=>v&&v!=='—'))].sort();
-  set('mgrBadge', ams.length);
-  const grid = el('mgrGrid'); grid.innerHTML='';
-  ams.forEach(am=>{
-    const items = base.filter(i=>i.requestor===am);
-    const total = items.length;
-    const open = items.filter(i=>i.portalStatus==='Open').length;
-    const approved = items.filter(i=>i.portalStatus==='Closed Approved').length;
-    const rejected = items.filter(i=>i.portalStatus==='Closed Rejected').length;
-    const value = items.reduce((s,i)=>s+i.value,0);
-    const isSelected = selAM===am;
-    const isDimmed = selAM && !isSelected;
-    const tile = document.createElement('div');
-    tile.className = 'mgr-tile'+(isSelected?' selected':'')+(isDimmed?' dimmed':'');
-    tile.innerHTML = '<div class="mgr-header"><h3>'+am+'</h3><div class="mgr-meta">Account Manager · Requestor</div></div>'+
-      '<div class="mgr-stats-grid"><div class="mgr-stat-box"><div class="mgr-stat-label">OCCs</div><div class="mgr-stat-value">'+total+'</div></div><div class="mgr-stat-box"><div class="mgr-stat-label">Value</div><div class="mgr-stat-value">'+fmt(value)+'</div></div></div>'+
-      '<div class="waiver-tile-note">'+open+' open · '+approved+' closed approved · '+rejected+' rejected</div>';
-    tile.onclick = ()=>{ selAM = selAM===am?null:am; applyAll(); renderMgrTiles(); };
-    grid.appendChild(tile);
-  });
-}
+function renderMgrTiles(){ renderCascade(); }
 
 function badgeClass(status){
   if(status==='Closed Approved') return 'badge-success';
@@ -1171,9 +1398,9 @@ function gridColDefs(){
     { headerName:'Reminder', width:90, pinned:'left', cellRenderer:p=>{
       const d=p.data; if(!d||d.portalStatus!=='Open') return '';
       const em=d.responsible.email||'';
-      return '<button class="action-btn primary" onclick="sendReminder(\''+d.id+'\')">✉ Remind</button>';
+      return '<button type="button" class="action-btn primary" onclick="sendReminder(\''+d.id+'\')">✉ Remind</button>';
     }},
-    { headerName:'View', width:80, pinned:'left', cellRenderer:p=>{ const d=p.data; if(!d)return ''; return '<button class="action-btn primary" onclick="openFormView(\''+d.id+'\')">View</button>'; }},
+    { headerName:'View', width:80, pinned:'left', cellRenderer:p=>{ const d=p.data; if(!d)return ''; return '<button type="button" class="action-btn primary" onclick="openFormView(\''+d.id+'\')">View</button>'; }},
     { field:'ref', headerName:'OCC Ref', width:130 },
     { field:'accountCode', headerName:'Account', width:110 },
     { field:'accountName', headerName:'Account Name', width:160 },
@@ -1195,7 +1422,7 @@ function gridColDefs(){
 }
 
 function initGrid(){
-  const opts = { columnDefs:gridColDefs(), rowData:getViewItems(), defaultColDef:{sortable:true,filter:true,resizable:true,minWidth:90,wrapHeaderText:true}, animateRows:true, pagination:true, paginationPageSize:100, paginationPageSizeSelector:[50,100,250,500] };
+  const opts = { columnDefs:gridColDefs(), rowData:getViewItems(), defaultColDef:{sortable:true,filter:true,resizable:true,minWidth:90,wrapHeaderText:true,autoHeaderHeight:true}, animateRows:true, pagination:true, paginationPageSize:100, paginationPageSizeSelector:[50,100,250,500], rowHeight:44, headerHeight:52 };
   const e = el('myGrid');
   if(GRID_API) GRID_API.destroy();
   GRID_API = agGrid.createGrid(e, opts);
@@ -1292,28 +1519,57 @@ function openTimelineFromForm(){ if(_formViewItemId) openHistoryModal(_formViewI
 
 function openAccountHistorySearch(){
   el('accountSearchInput').value = '';
-  el('accountHistoryResults').innerHTML = '<p style="color:var(--t3);padding:.5rem 0;">Enter an account code or name to see all OCC waivers for that account.</p>';
+  el('accountHistoryResults').innerHTML = '<p style="color:var(--t3);">Select an account to view all OCC waivers for that customer.</p>';
+  buildAccountComboList('');
   el('accountHistoryModal').classList.add('open');
   el('accountSearchInput').focus();
 }
-function closeAccountHistoryModal(){ el('accountHistoryModal').classList.remove('open'); }
+function closeAccountHistoryModal(){ el('accountHistoryModal').classList.remove('open'); closeAccountCombo(); }
 
-function renderAccountHistoryResults(){
-  const q = (el('accountSearchInput').value||'').trim().toLowerCase();
+function getAccountOptions(){
+  const map = {};
+  SCOPED.forEach(i=>{
+    if(!i.accountCode || i.accountCode==='—') return;
+    if(!map[i.accountCode]) map[i.accountCode] = { code:i.accountCode, name:i.accountName, count:0, value:0 };
+    map[i.accountCode].count++;
+    map[i.accountCode].value += i.value;
+  });
+  return Object.values(map).sort((a,b)=> a.code.localeCompare(b.code));
+}
+
+function buildAccountComboList(term){
+  const list = el('accountComboList');
+  const q = (term||'').trim().toLowerCase();
+  const opts = getAccountOptions().filter(a => !q || a.code.toLowerCase().includes(q) || String(a.name).toLowerCase().includes(q));
+  list.innerHTML = opts.slice(0,200).map(a =>
+    '<div class="account-combo-option" onclick="selectAccountHistory(\''+a.code.replace(/'/g,"\\'")+'\')"><div class="account-combo-code">'+a.code+'</div><div class="account-combo-name">'+a.name+' · '+a.count+' OCC(s) · AED '+fmt(a.value)+'</div></div>'
+  ).join('') || '<div class="account-combo-option" style="cursor:default;color:var(--t3)">No accounts found</div>';
+}
+function openAccountCombo(){ buildAccountComboList(el('accountSearchInput').value); el('accountComboList').classList.add('open'); }
+function closeAccountCombo(){ el('accountComboList').classList.remove('open'); }
+function filterAccountCombo(){ buildAccountComboList(el('accountSearchInput').value); el('accountComboList').classList.add('open'); }
+
+function selectAccountHistory(code){
+  const acc = getAccountOptions().find(a=>a.code===code);
+  if(acc) el('accountSearchInput').value = acc.code+' — '+acc.name;
+  closeAccountCombo();
+  renderAccountHistoryResults(code);
+}
+
+function renderAccountHistoryResults(code){
+  const q = code || (el('accountSearchInput').value||'').trim();
   const box = el('accountHistoryResults');
-  if(!q){ box.innerHTML = '<p style="color:var(--t3);">Type at least one character to search.</p>'; return; }
-  const items = SCOPED.filter(i =>
-    String(i.accountCode).toLowerCase().includes(q) ||
-    String(i.accountName).toLowerCase().includes(q)
-  ).sort((a,b)=> new Date(b.created||0) - new Date(a.created||0));
-  if(!items.length){ box.innerHTML = '<p style="color:var(--t3);">No OCC records found for “'+q.replace(/</g,'')+'”.</p>'; return; }
+  if(!q){ box.innerHTML = '<p style="color:var(--t3);">Select an account from the list.</p>'; return; }
+  const codeOnly = q.split('—')[0].trim();
+  const items = SCOPED.filter(i => String(i.accountCode)===codeOnly || String(i.accountCode).toLowerCase()===codeOnly.toLowerCase()).sort((a,b)=> new Date(b.created||0)-new Date(a.created||0));
+  if(!items.length){ box.innerHTML = '<p style="color:var(--t3);">No OCC records found for this account.</p>'; return; }
   const acc = items[0].accountCode;
   const name = items[0].accountName;
   const total = items.reduce((s,i)=>s+i.value,0);
   let html = '<div style="margin-bottom:1rem;padding:.75rem 1rem;background:var(--bg-secondary);border-radius:10px;border:1px solid var(--border);"><strong>'+acc+'</strong> — '+name+'<div style="font-size:.78rem;color:var(--t3);margin-top:.25rem;">'+items.length+' OCC(s) · Total AED '+fmt(total)+'</div></div>';
   html += '<table style="width:100%;font-size:.8rem;border-collapse:collapse;"><thead><tr style="color:var(--t3);text-align:left;border-bottom:2px solid var(--border);"><th style="padding:.45rem;">Ref</th><th>Value</th><th>Status</th><th>Reason</th><th>Requestor</th><th>Created</th><th></th></tr></thead><tbody>';
   items.forEach(i=>{
-    html += '<tr style="border-bottom:1px solid var(--border);"><td style="padding:.45rem;">'+i.ref+'</td><td>AED '+fmt(i.value)+'</td><td><span class="status-badge '+badgeClass(i.portalStatus)+'">'+i.portalStatus+'</span></td><td>'+i.reason+'</td><td>'+i.requestor+'</td><td>'+fmtDate(i.created)+'</td><td><button class="action-btn primary" onclick="openFormView(\''+i.id+'\')">View</button></td></tr>';
+    html += '<tr style="border-bottom:1px solid var(--border);"><td style="padding:.45rem;">'+i.ref+'</td><td>AED '+fmt(i.value)+'</td><td><span class="status-badge '+badgeClass(i.portalStatus)+'">'+i.portalStatus+'</span></td><td>'+i.reason+'</td><td>'+i.requestor+'</td><td>'+fmtDate(i.created)+'</td><td><button type="button" class="action-btn primary" onclick="openFormView(\''+i.id+'\')">View</button></td></tr>';
   });
   html += '</tbody></table>';
   box.innerHTML = html;
@@ -1486,60 +1742,85 @@ function renderTimelineHtml(item){
   }).join('')+'</div>';
 }
 
-function renderBiweekly(){
-  const open = SCOPED.filter(i=>i.portalStatus==='Open');
-  const high = open.filter(i=>i.value>=CCO_THRESHOLD);
-  const el2 = el('biweeklyContent');
-  el2.innerHTML = '<h3 style="font-size:.95rem;font-weight:800;margin-bottom:.75rem;">Biweekly OCC Pack — '+new Date().toLocaleDateString('en-GB')+'</h3>'+
-    '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:.75rem;margin-bottom:1rem;">'+
-    '<div class="mgr-stat-box"><div class="mgr-stat-label">Open OCCs</div><div class="mgr-stat-value">'+open.length+'</div></div>'+
-    '<div class="mgr-stat-box"><div class="mgr-stat-label">Open Value</div><div class="mgr-stat-value">'+fmt(open.reduce((s,i)=>s+i.value,0))+'</div></div>'+
-    '<div class="mgr-stat-box"><div class="mgr-stat-label">CCCO Required (≥250K)</div><div class="mgr-stat-value">'+high.length+'</div></div></div>'+
-    '<table style="width:100%;font-size:.8rem;border-collapse:collapse;"><thead><tr style="color:var(--t3);text-align:left;border-bottom:2px solid var(--border);"><th style="padding:.5rem;">Ref</th><th>Account</th><th>Value</th><th>Stuck At</th><th>Days</th><th>Requestor</th></tr></thead><tbody>'+
-    open.sort((a,b)=>b.value-a.value).map(i=>'<tr style="border-bottom:1px solid var(--border);"><td style="padding:.5rem;">'+i.ref+'</td><td>'+i.accountCode+'</td><td>AED '+fmt(i.value)+'</td><td>'+i.stuckAt+'</td><td>'+i.daysStuck+'</td><td>'+i.requestor+'</td></tr>').join('')+
-    '</tbody></table>';
+function renderTimelineHtml(item){
+  return '<div class="timeline">'+item.timeline.map(step=>{
+    const cls = step.status==='approved'?'done':step.status==='rejected'?'rejected':'pending';
+    return '<div class="timeline-step '+cls+'"><div class="timeline-step-title">'+step.label+' — '+step.status.toUpperCase()+'</div><div class="timeline-step-meta">'+step.person+(step.timestamp?' · '+fmtDate(step.timestamp):'')+(step.note?' · '+step.note:'')+'</div></div>';
+  }).join('')+'</div>';
 }
 
-function chartColors(){
+function getChartColors(){
+  const dark = (document.body.getAttribute('data-theme')||'').includes('dark');
   const acc = getComputedStyle(document.body).getPropertyValue('--acc').trim() || '#2563eb';
   const acc2 = getComputedStyle(document.body).getPropertyValue('--acc2').trim() || '#0ea5e9';
-  return { acc, acc2, green:'#16a34a', amber:'#d97706', red:'#dc2626' };
+  return { acc, acc2, green:'#10b981', amber:'#f59e0b', red:'#ef4444', purple:'#8b5cf6', text: dark?'#e2eaff':'#2d4070', grid: dark?'rgba(255,255,255,.08)':'rgba(37,99,235,.08)', center: dark?'rgba(255,255,255,.92)':'rgba(15,30,62,.92)' };
+}
+function chartColors(){ return getChartColors(); }
+
+function occCenterPlugin(mainText, subText){
+  return { id:'occCenter'+Math.random(), beforeDraw:function(chart){
+    const c=getChartColors();
+    const ca=chart.chartArea; if(!ca) return;
+    const ctx=chart.ctx; ctx.save();
+    ctx.font='bold 22px Inter'; ctx.fillStyle=c.center; ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText(mainText, (ca.left+ca.right)/2, (ca.top+ca.bottom)/2-10);
+    ctx.font='600 11px Inter'; ctx.fillStyle=c.text;
+    ctx.fillText(subText||'', (ca.left+ca.right)/2, (ca.top+ca.bottom)/2+12);
+    ctx.restore();
+  }};
+}
+
+function occBarValuePlugin(){
+  return { id:'occBarVals', afterDatasetsDraw:function(chart){
+    const ctx=chart.ctx; ctx.save(); ctx.font='bold 11px Inter'; ctx.fillStyle=getChartColors().text;
+    chart.data.datasets.forEach(function(ds, di){
+      const meta=chart.getDatasetMeta(di); if(meta.hidden) return;
+      meta.data.forEach(function(bar, i){
+        const val=ds.data[i]; if(val===null||val===undefined) return;
+        const label = typeof val==='number' && val>=1000 ? fmt(val) : String(val);
+        ctx.textAlign='center'; ctx.fillText(label, bar.x, bar.y-6);
+      });
+    });
+    ctx.restore();
+  }};
 }
 
 function destroyChart(id){ if(CHARTS[id]){ CHARTS[id].destroy(); delete CHARTS[id]; } }
-
 
 function renderStatusChart(){
   destroyChart('status');
   const base=getViewItems(); const map={'Open':0,'Closed Approved':0,'Closed Rejected':0};
   base.forEach(function(i){ map[i.portalStatus]=(map[i.portalStatus]||0)+i.value; });
-  const c=chartColors();
-  CHARTS.status=new Chart(el('chartStatus'),{type:'doughnut',data:{labels:Object.keys(map),datasets:[{data:Object.values(map),backgroundColor:[c.amber,c.green,c.red]}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}}}});
+  const c=getChartColors(); const total=Object.values(map).reduce((a,b)=>a+b,0);
+  CHARTS.status=new Chart(el('chartStatus'),{type:'doughnut',plugins:[occCenterPlugin('AED '+fmt(total),'Total Value')],data:{labels:Object.keys(map),datasets:[{data:Object.values(map),backgroundColor:[c.amber,c.green,c.red],borderWidth:4,borderColor:'var(--bg-card)',hoverOffset:12}]},options:{responsive:true,maintainAspectRatio:false,cutout:'58%',plugins:{legend:{position:'right',labels:{color:c.text,usePointStyle:true,font:{size:11,weight:'600'}}}}}});
 }
 function renderStuckChart(){
   destroyChart('stuck');
   const open=getViewItems().filter(function(i){return i.portalStatus==='Open';});
   const map={}; open.forEach(function(i){ map[i.stuckAt]=(map[i.stuckAt]||0)+1; });
-  const labels=Object.keys(map);
-  CHARTS.stuck=new Chart(el('chartStuck'),{type:'bar',data:{labels:labels,datasets:[{label:'Count',data:labels.map(function(l){return map[l];}),backgroundColor:chartColors().acc}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}}}});
+  const labels=Object.keys(map); const c=getChartColors(); const total=labels.reduce((s,l)=>s+map[l],0);
+  CHARTS.stuck=new Chart(el('chartStuck'),{type:'bar',plugins:[occBarValuePlugin()],data:{labels:labels,datasets:[{label:'Count',data:labels.map(function(l){return map[l];}),backgroundColor:c.acc,borderRadius:8}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},title:{display:true,text:total+' open OCCs',color:c.text,font:{size:12,weight:'700'}}},scales:{x:{grid:{color:c.grid},ticks:{color:c.text}},y:{grid:{display:false},ticks:{color:c.text}}}}});
 }
 function renderTierChart(){
   destroyChart('tier');
   const base=getViewItems(); let low={c:0,v:0}, high={c:0,v:0};
   base.forEach(function(i){ if(i.value>=CCO_THRESHOLD){high.c++;high.v+=i.value;}else{low.c++;low.v+=i.value;} });
-  CHARTS.tier=new Chart(el('chartTier'),{type:'bar',data:{labels:['< 250K AED','≥ 250K AED (CCCO)'],datasets:[{label:'Count',data:[low.c,high.c],backgroundColor:chartColors().acc2},{label:'Value (M)',data:[low.v/1e6,high.v/1e6],backgroundColor:chartColors().acc}]},options:{responsive:true,maintainAspectRatio:false}});
+  const c=getChartColors();
+  CHARTS.tier=new Chart(el('chartTier'),{type:'bar',plugins:[occBarValuePlugin()],data:{labels:['< 250K AED','≥ 250K AED (CCCO)'],datasets:[{label:'Count',data:[low.c,high.c],backgroundColor:c.acc2,borderRadius:8,yAxisID:'y'},{label:'Value (M)',data:[low.v/1e6,high.v/1e6],backgroundColor:c.acc,borderRadius:8,yAxisID:'y1'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:c.text,usePointStyle:true}}},scales:{y:{position:'left',ticks:{color:c.text},grid:{color:c.grid}},y1:{position:'right',grid:{drawOnChartArea:false},ticks:{color:c.text,callback:v=>v+'M'}}}}});
 }
 function renderHandsetChart(){
   destroyChart('handset');
   const hs=getViewItems().filter(isHandsetItem);
   const map={}; hs.forEach(function(i){ map[i.vertical]=(map[i.vertical]||0)+i.value; });
-  CHARTS.handset=new Chart(el('chartHandset'),{type:'bar',data:{labels:Object.keys(map),datasets:[{data:Object.values(map),backgroundColor:chartColors().acc}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}}}});
+  const c=getChartColors();
+  CHARTS.handset=new Chart(el('chartHandset'),{type:'bar',plugins:[occBarValuePlugin()],data:{labels:Object.keys(map),datasets:[{data:Object.values(map),backgroundColor:c.purple,borderRadius:8}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:c.text},grid:{display:false}},y:{ticks:{color:c.text},grid:{color:c.grid}}}}});
 }
 function renderTrendChart(){
   destroyChart('trend');
   const map={}; getViewItems().forEach(function(i){ if(!i.created) return; var d=new Date(i.created); if(isNaN(d)) return; var k=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); if(!map[k]) map[k]={c:0,v:0}; map[k].c++; map[k].v+=i.value; });
   const labels=Object.keys(map).sort().slice(-12);
-  CHARTS.trend=new Chart(el('chartTrend'),{type:'line',data:{labels:labels,datasets:[{label:'Value (M)',data:labels.map(function(l){return map[l].v/1e6;}),borderColor:chartColors().acc,tension:.3,yAxisID:'y'},{label:'Count',data:labels.map(function(l){return map[l].c;}),borderColor:chartColors().acc2,tension:.3,yAxisID:'y1'}]},options:{responsive:true,maintainAspectRatio:false,scales:{y:{position:'left'},y1:{position:'right',grid:{drawOnChartArea:false}}}}});
+  const c=getChartColors();
+  CHARTS.trend=new Chart(el('chartTrend'),{type:'line',data:{labels:labels,datasets:[{label:'Value (M)',data:labels.map(function(l){return +(map[l].v/1e6).toFixed(2);}),borderColor:c.acc,backgroundColor:'rgba(37,99,235,.15)',fill:true,tension:.35,pointRadius:4,pointBackgroundColor:c.acc,pointBorderColor:'#fff',pointBorderWidth:2,borderWidth:2.5,yAxisID:'y'},{label:'Count',data:labels.map(function(l){return map[l].c;}),borderColor:c.acc2,backgroundColor:'rgba(14,165,233,.12)',fill:true,tension:.35,pointRadius:4,pointBackgroundColor:c.acc2,pointBorderWidth:2,borderWidth:2.5,yAxisID:'y1'}]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{labels:{color:c.text,usePointStyle:true}}},scales:{x:{ticks:{color:c.text},grid:{color:c.grid}},y:{position:'left',ticks:{color:c.text,callback:v=>v+'M'},grid:{color:c.grid}},y1:{position:'right',grid:{drawOnChartArea:false},ticks:{color:c.text}}}}});
 }
 
 function renderCharts(){
@@ -1552,7 +1833,6 @@ function renderCharts(){
   renderTierChart();
   renderHandsetChart();
   renderTrendChart();
-  renderAMChart();
   renderOutcomeChart();
   renderStuckValueChart();
   renderHandsetSplitChart();
@@ -1576,23 +1856,21 @@ function renderReasonChart(){
   const base = getViewItems().filter(i=> reasonChartMode==='open' ? i.portalStatus==='Open' : i.portalStatus!=='Open');
   const map = {};
   base.forEach(i=>{ map[i.reason]=(map[i.reason]||{count:0,value:0}); map[i.reason].count++; map[i.reason].value+=i.value; });
-  const labels = Object.keys(map);
-  const c = chartColors();
-  CHARTS.reason = new Chart(el('chartReason'), { type:'bar', data:{ labels, datasets:[
-    { label:'Value (AED)', data:labels.map(l=>map[l].value), backgroundColor:c.acc, yAxisID:'y' },
-    { label:'Count', data:labels.map(l=>map[l].count), backgroundColor:c.acc2, yAxisID:'y1' }
-  ]}, options:{ responsive:true, maintainAspectRatio:false, scales:{ y:{position:'left'}, y1:{position:'right',grid:{drawOnChartArea:false}} } } });
+  const labels = Object.keys(map); const c = getChartColors();
+  CHARTS.reason = new Chart(el('chartReason'), { type:'bar', plugins:[occBarValuePlugin()], data:{ labels, datasets:[
+    { label:'Value (AED)', data:labels.map(l=>map[l].value), backgroundColor:c.acc, borderRadius:8, yAxisID:'y' },
+    { label:'Count', data:labels.map(l=>map[l].count), backgroundColor:c.acc2, borderRadius:8, yAxisID:'y1' }
+  ]}, options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{labels:{color:c.text,usePointStyle:true}}}, scales:{ x:{ticks:{color:c.text},grid:{display:false}}, y:{position:'left',ticks:{color:c.text}}, y1:{position:'right',grid:{drawOnChartArea:false},ticks:{color:c.text}} } } });
 }
 
 function renderVerticalChart(){
   destroyChart('vertical');
-  const base = getViewItems();
-  const map = {};
+  const base = getViewItems(); const map = {};
   base.forEach(i=>{ map[i.vertical]=(map[i.vertical]||{count:0,value:0}); map[i.vertical].count++; map[i.vertical].value+=i.value; });
-  const labels = Object.keys(map);
-  const c = chartColors();
+  const labels = Object.keys(map); const c = getChartColors();
   const data = vertChartMode==='value' ? labels.map(l=>map[l].value) : labels.map(l=>map[l].count);
-  CHARTS.vertical = new Chart(el('chartVertical'), { type:'doughnut', data:{ labels, datasets:[{ data, backgroundColor:[c.acc,c.acc2,c.green,c.amber,c.red,'#8b5cf6','#ec4899'] }] }, options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{ position:'right' } } } });
+  const total = data.reduce((a,b)=>a+b,0);
+  CHARTS.vertical = new Chart(el('chartVertical'), { type:'doughnut', plugins:[occCenterPlugin(String(total), vertChartMode==='value'?'Total Value':'Total Count')], data:{ labels, datasets:[{ data, backgroundColor:[c.acc,c.acc2,c.green,c.amber,c.red,c.purple,'#ec4899'], borderWidth:4, borderColor:'var(--bg-card)', hoverOffset:12 }] }, options:{ responsive:true, maintainAspectRatio:false, cutout:'58%', plugins:{ legend:{ position:'right', labels:{color:c.text,usePointStyle:true,font:{size:11,weight:'600'}} } } } });
 }
 
 function renderSLAChart(){
@@ -1600,51 +1878,28 @@ function renderSLAChart(){
   const base = getViewItems().filter(i=> i.portalStatus==='Open');
   const buckets = { '0-9 days':0, '10-29 days':0, '30+ days':0 };
   base.forEach(i=>{ const d=i.daysStuck||i.daysRaised; if(d<=9) buckets['0-9 days']++; else if(d<=29) buckets['10-29 days']++; else buckets['30+ days']++; });
-  const c = chartColors();
-  CHARTS.sla = new Chart(el('chartSLA'), { type:'doughnut', data:{ labels:Object.keys(buckets), datasets:[{ data:Object.values(buckets), backgroundColor:[c.green,c.amber,c.red] }] }, options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{ position:'bottom' } } } });
-}
-
-function renderAMChart(){
-  destroyChart('am');
-  const map = {};
-  getViewItems().forEach(i=>{
-    if(!i.requestor||i.requestor==='—') return;
-    map[i.requestor] = map[i.requestor] || { c:0, v:0 };
-    map[i.requestor].c++;
-    map[i.requestor].v += i.value;
-  });
-  const sorted = Object.keys(map).sort((a,b)=> map[b].v - map[a].v).slice(0,12);
-  const c = chartColors();
-  CHARTS.am = new Chart(el('chartAM'), { type:'bar', data:{ labels:sorted, datasets:[
-    { label:'Value (AED)', data:sorted.map(l=>map[l].v), backgroundColor:c.acc, yAxisID:'y' },
-    { label:'Count', data:sorted.map(l=>map[l].c), backgroundColor:c.acc2, yAxisID:'y1' }
-  ]}, options:{ indexAxis:'y', responsive:true, maintainAspectRatio:false, scales:{ y:{position:'left'}, y1:{position:'right',grid:{drawOnChartArea:false}} } } });
+  const c = getChartColors(); const total = Object.values(buckets).reduce((a,b)=>a+b,0);
+  CHARTS.sla = new Chart(el('chartSLA'), { type:'doughnut', plugins:[occCenterPlugin(String(total),'Open OCCs')], data:{ labels:Object.keys(buckets), datasets:[{ data:Object.values(buckets), backgroundColor:[c.green,c.amber,c.red], borderWidth:4, borderColor:'var(--bg-card)', hoverOffset:12 }] }, options:{ responsive:true, maintainAspectRatio:false, cutout:'58%', plugins:{ legend:{ position:'bottom', labels:{color:c.text,usePointStyle:true} } } } });
 }
 
 function renderOutcomeChart(){
   destroyChart('outcome');
   const closed = getViewItems().filter(i=> i.portalStatus!=='Open');
   const map = {};
-  closed.forEach(i=>{
-    if(!map[i.vertical]) map[i.vertical] = { approved:0, rejected:0 };
-    if(i.portalStatus==='Closed Rejected') map[i.vertical].rejected++;
-    else map[i.vertical].approved++;
-  });
-  const labels = Object.keys(map);
-  const c = chartColors();
-  CHARTS.outcome = new Chart(el('chartOutcome'), { type:'bar', data:{ labels, datasets:[
-    { label:'Approved', data:labels.map(l=>map[l].approved), backgroundColor:c.green, stack:'s' },
-    { label:'Rejected', data:labels.map(l=>map[l].rejected), backgroundColor:c.red, stack:'s' }
-  ]}, options:{ responsive:true, maintainAspectRatio:false, scales:{ x:{ stacked:true }, y:{ stacked:true } } } });
+  closed.forEach(i=>{ if(!map[i.vertical]) map[i.vertical]={approved:0,rejected:0}; if(i.portalStatus==='Closed Rejected') map[i.vertical].rejected++; else map[i.vertical].approved++; });
+  const labels = Object.keys(map); const c = getChartColors();
+  CHARTS.outcome = new Chart(el('chartOutcome'), { type:'bar', plugins:[occBarValuePlugin()], data:{ labels, datasets:[
+    { label:'Approved', data:labels.map(l=>map[l].approved), backgroundColor:c.green, borderRadius:8, stack:'s' },
+    { label:'Rejected', data:labels.map(l=>map[l].rejected), backgroundColor:c.red, borderRadius:8, stack:'s' }
+  ]}, options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{labels:{color:c.text}}}, scales:{ x:{stacked:true,ticks:{color:c.text}}, y:{stacked:true,ticks:{color:c.text},grid:{color:c.grid}} } } });
 }
 
 function renderStuckValueChart(){
   destroyChart('stuckValue');
   const open = getViewItems().filter(i=> i.portalStatus==='Open');
-  const map = {};
-  open.forEach(i=>{ map[i.stuckAt] = (map[i.stuckAt]||0) + i.value; });
-  const labels = Object.keys(map);
-  CHARTS.stuckValue = new Chart(el('chartStuckValue'), { type:'bar', data:{ labels, datasets:[{ label:'Value (AED)', data:labels.map(l=>map[l]), backgroundColor:chartColors().amber }] }, options:{ indexAxis:'y', responsive:true, maintainAspectRatio:false, plugins:{ legend:{ display:false } } } });
+  const map = {}; open.forEach(i=>{ map[i.stuckAt]=(map[i.stuckAt]||0)+i.value; });
+  const labels = Object.keys(map); const c = getChartColors();
+  CHARTS.stuckValue = new Chart(el('chartStuckValue'), { type:'bar', plugins:[occBarValuePlugin()], data:{ labels, datasets:[{ label:'Value (AED)', data:labels.map(l=>map[l]), backgroundColor:c.amber, borderRadius:8 }] }, options:{ indexAxis:'y', responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{x:{ticks:{color:c.text},grid:{color:c.grid}},y:{ticks:{color:c.text},grid:{display:false}} } } });
 }
 
 function isHandsetItem(i){
@@ -1656,23 +1911,21 @@ function renderHandsetSplitChart(){
   destroyChart('handsetSplit');
   let handset = 0, non = 0;
   getViewItems().forEach(i=>{ if(isHandsetItem(i)) handset += i.value; else non += i.value; });
-  const c = chartColors();
-  CHARTS.handsetSplit = new Chart(el('chartHandsetSplit'), { type:'doughnut', data:{ labels:['Handset waivers','Non-handset'], datasets:[{ data:[handset, non], backgroundColor:[c.acc, c.acc2] }] }, options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{ position:'bottom' } } } });
+  const c = getChartColors(); const total = handset + non;
+  CHARTS.handsetSplit = new Chart(el('chartHandsetSplit'), { type:'doughnut', plugins:[occCenterPlugin('AED '+fmt(total),'Total Value')], data:{ labels:['Handset waivers','Non-handset'], datasets:[{ data:[handset, non], backgroundColor:[c.acc, c.acc2], borderWidth:4, borderColor:'var(--bg-card)', hoverOffset:12 }] }, options:{ responsive:true, maintainAspectRatio:false, cutout:'58%', plugins:{ legend:{ position:'bottom', labels:{color:c.text,usePointStyle:true} } } } });
 }
 
 function renderTop10Chart(){
   destroyChart('top10');
   const top = [...getViewItems()].sort((a,b)=>b.value-a.value).slice(0,10);
-  const c = chartColors();
-  CHARTS.top10 = new Chart(el('chartTop10'), { type:'bar', data:{ labels:top.map(i=>i.ref), datasets:[{ label:'Value (AED)', data:top.map(i=>i.value), backgroundColor:c.acc }] }, options:{ indexAxis:'y', responsive:true, maintainAspectRatio:false, plugins:{ legend:{ display:false } } } });
+  const c = getChartColors();
+  CHARTS.top10 = new Chart(el('chartTop10'), { type:'bar', plugins:[occBarValuePlugin()], data:{ labels:top.map(i=>i.ref), datasets:[{ label:'Value (AED)', data:top.map(i=>i.value), backgroundColor:c.acc, borderRadius:8 }] }, options:{ indexAxis:'y', responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{x:{ticks:{color:c.text},grid:{color:c.grid}},y:{ticks:{color:c.text},grid:{display:false}} } } });
 }
 
 function showView(view, navEl){
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   if(navEl) navEl.classList.add('active');
-  el('viewDashboard').style.display = view==='biweekly' ? 'none' : 'block';
-  el('viewBiweekly').style.display = view==='biweekly' ? 'block' : 'none';
-  if(view==='biweekly') renderBiweekly();
+  el('viewDashboard').style.display = 'block';
 }
 
 function toggleSidebar(){
@@ -1692,6 +1945,7 @@ function toggleTheme(){ const cur=document.body.getAttribute('data-theme')||''; 
 
 document.addEventListener('click', function(e){
   if(!e.target.closest('.ms-wrap')) document.querySelectorAll('.ms-dropdown.open').forEach(d=>{ d.classList.remove('open'); d.previousElementSibling?.classList.remove('open'); });
+  if(!e.target.closest('.account-combobox-wrap')) closeAccountCombo();
 });
 el('historyModal').addEventListener('click', function(e){ if(e.target===this) closeHistoryModal(); });
 el('formViewModal').addEventListener('click', function(e){ if(e.target===this) closeFormView(); });
@@ -1708,7 +1962,9 @@ window.changeTheme=changeTheme;
 window.resetAll=resetAll;
 window.toggleMsFilter=toggleMsFilter;
 window.onMsChange=onMsChange;
-window.clearAM=clearAM;
+window.selectHD=selectHD;
+window.selectDirector=selectDirector;
+window.selectAMTile=selectAMTile;
 window.setReasonChartMode=setReasonChartMode;
 window.setVertChartMode=setVertChartMode;
 window.gridSearch=gridSearch;
@@ -1719,6 +1975,9 @@ window.openTimelineFromForm=openTimelineFromForm;
 window.openAccountHistorySearch=openAccountHistorySearch;
 window.closeAccountHistoryModal=closeAccountHistoryModal;
 window.renderAccountHistoryResults=renderAccountHistoryResults;
+window.selectAccountHistory=selectAccountHistory;
+window.openAccountCombo=openAccountCombo;
+window.filterAccountCombo=filterAccountCombo;
 window.toggleCharts=toggleCharts;
 window.devLogin=devLogin;
 
