@@ -7756,16 +7756,22 @@ function glkMobileQtdLabelPlugin(bars){
       if(b.type==='decrease') lbl='-'+lbl;
       else if(b.type==='increase'||b.type==='base') lbl='+'+lbl.replace(/^\+/,'');
       else if(b.type==='total'||b.type==='target'||b.type==='gap'||b.type==='growth') lbl=fmtLines(val);
-      var onBar=h>=16&&(b.type!=='empty');
-      if(onBar){
+      ctx.textAlign='center';
+      if(b.type==='decrease'){
+        ctx.fillStyle=b.color||MQ_CLR_CHURN[0];
+        ctx.font='bold 10px Inter';
+        ctx.textBaseline='bottom';
+        ctx.fillText(lbl,bar.x,top-4);
+      }else if(h>=16&&b.type!=='empty'){
         ctx.fillStyle='#fff';
-        ctx.font='bold 10px Inter'; ctx.textAlign='center'; ctx.textBaseline='middle';
+        ctx.font='bold 10px Inter';
+        ctx.textBaseline='middle';
         ctx.fillText(lbl,bar.x,top+h/2);
-      }else{
+      }else if(b.type!=='empty'){
         ctx.fillStyle=b.color||MQ_CLR_INFLIGHT[0];
-        ctx.font='bold 9px Inter'; ctx.textAlign='center';
-        ctx.textBaseline=b.type==='decrease'?'top':'bottom';
-        ctx.fillText(lbl,bar.x,b.type==='decrease'?bot+4:top-4);
+        ctx.font='bold 9px Inter';
+        ctx.textBaseline='bottom';
+        ctx.fillText(lbl,bar.x,top-4);
       }
       if(GLK_MQ_DETAIL_IDX===i){
         ctx.strokeStyle='rgba(99,102,241,.9)'; ctx.lineWidth=2.5;
@@ -7831,10 +7837,9 @@ function renderMobileQtdBridge(){
   var bars=[],barMeta=[],churnSepIdx=-1;
   var trueCum=0,dispTop=0;
   var scaleMax=Math.max(calc.target,calc.actualsQtd,calc.forecast,1);
-  function dispH(v,isPlaceholder,asTile){
+  function dispH(v,isPlaceholder){
     var a=Math.abs(num(v));
-    if(isPlaceholder) return Math.max(scaleMax*0.05, 28);
-    if(asTile) return Math.max(a, scaleMax*0.07);
+    if(isPlaceholder) return Math.max(scaleMax*0.012,24);
     return a;
   }
   function pushBar(b,meta){
@@ -7876,7 +7881,7 @@ function renderMobileQtdBridge(){
   calc.grossPool.top.forEach(function(p,i){
     if(!p.value) return;
     trueCum+=p.value;
-    var ds=dispTop,de=dispTop+dispH(p.value,false,true); dispTop=de;
+    var ds=dispTop,de=dispTop+dispH(p.value); dispTop=de;
     var vHint=mqBridgeShowsVertical(calc)?mqVerticalDisplayHint(p.bids):'';
     var top5Lbl=mqInflightTop5Label();
     pushBar({
@@ -7906,7 +7911,7 @@ function renderMobileQtdBridge(){
     calc.churnPool.top.forEach(function(p,i){
       if(!p.value) return;
       trueCum+=p.value;
-      var cs=dispTop,ce=dispTop-dispH(Math.abs(p.value),false,true); dispTop=ce;
+      var cs=dispTop,ce=dispTop-dispH(Math.abs(p.value)); dispTop=ce;
       var vHintC=mqBridgeShowsVertical(calc)?mqVerticalDisplayHint(p.bids):'';
       pushBar({
         value:p.value,trueCum:trueCum,displayStart:cs,displayEnd:ce,color:mqPoolBarColor(p.bids),type:'decrease',
@@ -7916,7 +7921,7 @@ function renderMobileQtdBridge(){
     });
     if(calc.churnPool.others!==0){
       trueCum+=calc.churnPool.others;
-      var os=dispTop,oe=dispTop-dispH(Math.abs(calc.churnPool.others),false,true); dispTop=oe;
+      var os=dispTop,oe=dispTop-dispH(Math.abs(calc.churnPool.others)); dispTop=oe;
       pushBar({
         value:calc.churnPool.others,trueCum:trueCum,displayStart:os,displayEnd:oe,color:MQ_CLR_CHURN_OTHERS,type:'decrease',
         custName:'Others Churn',section:'churn',bids:calc.churnPool.othersBids||[],groupLabel:'Others Churn'
@@ -7941,13 +7946,10 @@ function renderMobileQtdBridge(){
     }
   }
   var yMax=Math.max(calc.forecast,isForward?0:calc.target,isForward?0:calc.actualsQtd,1);
-  var yMin=0;
   bars.forEach(function(b){
     yMax=Math.max(yMax,b.displayStart,b.displayEnd,Math.abs(b.trueCum||0),Math.abs(b.value));
-    yMin=Math.min(yMin,b.displayStart,b.displayEnd);
   });
   yMax*=1.08;
-  if(yMin<0) yMin=Math.floor(yMin*1.06);
   var maxNameLen=0;
   bars.forEach(function(b){ maxNameLen=Math.max(maxNameLen,String(b.custName||'').length); });
   var scrollWrap=el('mqBridgeScroll');
@@ -7986,7 +7988,7 @@ function renderMobileQtdBridge(){
         }),
         borderWidth:bars.map(function(b){return (b.type==='total'||b.type==='target'||b.type==='growth'||b.type==='gap')?2:0;}),
         borderRadius:6,borderSkipped:false,
-        barPercentage:.82,categoryPercentage:.88,minBarLength:36,maxBarThickness:56
+        barPercentage:.82,categoryPercentage:.88,minBarLength:0,maxBarThickness:56
       }]},
       options:{responsive:true,maintainAspectRatio:false,
         layout:{padding:{bottom:axisPad,top:16,left:4,right:8}},
@@ -8009,7 +8011,7 @@ function renderMobileQtdBridge(){
         scales:{
           x:{ticks:{display:false,color:c.text,font:{size:9,weight:'600'}},grid:{display:false},
             border:{display:true,color:c.grid}},
-          y:{min:yMin,max:yMax,ticks:{color:c.text,font:{size:10},callback:function(v){return fmtLines(v);}},grid:{color:c.grid},
+          y:{min:0,max:yMax,ticks:{color:c.text,font:{size:10},callback:function(v){return fmtLines(v);}},grid:{color:c.grid},
             title:{display:true,text:(isForward?('Aggregated Revenue (MRC + OTC)'):mqMetricUnit())+' · '+mqCaseDisplayName(calc.isBest?'best':'worst'),color:c.text,font:{size:9,weight:'600'}}}
         }
       }
