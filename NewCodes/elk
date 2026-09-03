@@ -2201,28 +2201,10 @@ document.getElementById('landingPage').style.cssText='display:none!important';
 el('dashboardContent').style.display='flex';
 el('dashboardContent').style.flexDirection='column';
   set('dbUserBadge',USER.name+' · '+USER.role);
-  // Role-based UI visibility
-  const role=USER.role;
-  
-  // Portal Intelligence — Admin, HD, AD only
-  if(role==='Admin'||role==='CEO'||role==='Head Director'||role==='Account Director'){
-    el('navAnalytics').style.display='flex';
-    el('navMobileQtd').style.display='flex';
-  }
-  
-  // HD section — hide completely for AD and AM
-  if(role==='Account Director'||role==='Account Manager'||role==='Viewer'){
-    el('hd-section-nav').style.display='none';
-  }
-  
+  glkApplyRoleUI();
 
   el('currentDate').textContent=new Date().toLocaleDateString('en-US',{weekday:'short',year:'numeric',month:'short',day:'numeric'});
   loadData();
-setTimeout(function(){
-    if(USER.role==='Admin'||USER.role==='CEO'||USER.role.toLowerCase().includes('admin')){
-        el('navMobileQtd').style.display='flex';
-    }
-}, 500);
   glkMobileQtdInit();
   // restore saved theme
   try{
@@ -2403,8 +2385,9 @@ function glkLaunchSpoofed(){
 }
 function glkApplyRoleUI(){
   const role=USER.role;
-  const na=el('navAnalytics');
-  if(na) na.style.display=(role==='Admin'||role==='CEO'||role==='Head Director'||role==='Account Director')?'flex':'none';
+  const canBridge=role==='Admin'||role==='CEO'||role==='Head Director'||role==='Account Director'||role.toLowerCase().includes('admin');
+  const mq=el('navMobileQtd');
+  if(mq) mq.style.display=canBridge?'flex':'none';
   const hds=el('hd-section-nav');
   if(hds) hds.style.display=(role==='Account Director'||role==='Account Manager'||role==='Viewer')?'none':'block';
   const pft=el('pfTabs');
@@ -4553,11 +4536,12 @@ function toggleSidebar(){
     '<polyline points="9 18 15 12 9 6"/><polyline points="15 18 21 12 15 6"/>':
     '<polyline points="15 18 9 12 15 6"/><polyline points="9 18 3 12 9 6"/>';
 }
-function switchSection(id){
+function switchSection(id,navEl){
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   const target=document.getElementById(id);
   if(target) target.scrollIntoView({behavior:'smooth',block:'start'});
-  event.currentTarget.classList.add('active');
+  const active=navEl||(typeof event!=='undefined'&&event?event.currentTarget:null);
+  if(active) active.classList.add('active');
 }
 function applyTheme(base,dark){
   if(base==='duralux') document.body.setAttribute('data-theme',dark?'duralux-dark':'duralux');
