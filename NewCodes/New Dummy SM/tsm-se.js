@@ -3,7 +3,7 @@
 (function () {
     'use strict';
 
-    var TSM_SE_MODULE_VERSION = '5.0.2';
+    var TSM_SE_MODULE_VERSION = '5.0.3';
     var TSM_SE_PRIMARY_LIST = 'TSM_SE_Accounts';
     var TSM_SE_UPLOAD_EMAILS = ['tehleel.lone@du.ae', 'ubaid.mir@du.ae'];
     var TSM_SE_CANDIDATE_LISTS = [
@@ -76,11 +76,12 @@
         var idSuffix = prefix === 'dash' ? 'Dash' : 'Bar';
         return '<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">' +
             '<div><div style="font-size:.92rem;font-weight:800;color:var(--t1);">TSM SE Upload</div>' +
-            '<div style="font-size:.76rem;color:var(--t3);">Upload / replace TSM SE accounts in SharePoint · Tehleel &amp; Ubaid only</div></div>' +
+            '<div style="font-size:.76rem;color:var(--t3);">TSM_SE_Accounts list · Tehleel &amp; Ubaid only</div></div>' +
             '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">' +
                 '<label class="export-btn" style="cursor:pointer;margin:0;">' +
                     '<input type="file" accept=".xlsx,.xls,.csv" style="display:none;" onchange="tsmSeParseFile(event, \'' + prefix + '\')">Choose Excel</label>' +
                 '<button type="button" class="export-btn" onclick="tsmSeSmartUpload()" style="background:linear-gradient(135deg,#2563eb,#1d4ed8);color:#fff;border:none;">Smart Upload (Replace All)</button>' +
+                '<button type="button" class="export-btn" onclick="tsmSeDeleteAll()" style="background:linear-gradient(135deg,#ef4444,#dc2626);color:#fff;border:none;">Delete All</button>' +
             '</div></div>' +
             '<div id="tsmSeUploadPreview' + idSuffix + '" style="margin-top:.75rem;"></div>' +
             '<div id="tsmSeUploadProgress' + idSuffix + '" style="margin-top:.5rem;font-size:.78rem;color:var(--t2);font-weight:600;"></div>';
@@ -88,15 +89,14 @@
 
     window.tsmSeMountDashboardUpload = function () {
         if (!tsmSeCanUpload()) return;
-        var host = document.querySelector('#dashboardContent .filters-section .filter-actions') ||
-            document.querySelector('#dashboardContent .filters-section');
-        if (!host) return;
+        var section = document.querySelector('#dashboardContent .filters-section');
+        if (!section) return;
         var panel = document.getElementById('tsmSeDashboardUpload');
         if (!panel) {
             panel = document.createElement('div');
             panel.id = 'tsmSeDashboardUpload';
             panel.style.cssText = 'margin:0 0 14px;padding:14px;border:1px solid var(--border);border-radius:12px;background:var(--bg-card);';
-            host.parentElement.insertBefore(panel, host);
+            section.insertBefore(panel, section.firstChild);
         }
         panel.style.display = 'block';
         panel.innerHTML = tsmSeUploadControlsHTML('dash');
@@ -230,13 +230,13 @@
 
         var TSM_SE_HEADER_MAP = {
             Title: ['account code', 'account', 'title', 'code', 'account no', 'account number', 'acct code'],
-            ParentCode: ['parent code', 'parent', 'parent account', 'parent account code'],
-            CustomerName: ['customer name', 'customer', 'company', 'company name'],
+            ParentCode: ['parent code', 'parent', 'parent account', 'parent account code', 'parentcode'],
+            CustomerName: ['customer name', 'customer', 'company', 'company name', 'customername'],
             Team: ['team'],
-            LineManager: ['line manager', 'lm', 'line mgr'],
-            ServiceManager: ['service manager', 'sm', 'service mgr', 'service manager name'],
-            AccountManager: ['account manager', 'am', 'account mgr'],
-            AccountDirector: ['account director', 'ad', 'account dir'],
+            LineManager: ['line manager', 'lm', 'line mgr', 'linemanager'],
+            ServiceManager: ['service manager', 'sm', 'service mgr', 'service manager name', 'servicemanager'],
+            AccountManager: ['account manager', 'am', 'account mgr', 'accountmanager'],
+            AccountDirector: ['account director', 'ad', 'account dir', 'accountdirector'],
             Segment: ['segment']
         };
 
@@ -255,6 +255,19 @@
             Nov26: '_x004e_ov26',
             Dec26: '_x0044_ec26'
         };
+
+        function tsmSeFieldKey(s) {
+            return String(s || '').replace(/\u00a0/g, ' ').trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+        }
+
+        function tsmSeKnownWritableFields() {
+            var fields = ['Title', 'ParentCode', 'CustomerName', 'AccountManager', 'AccountDirector',
+                'ServiceManager', 'LineManager', 'Team', 'Segment'];
+            Object.keys(TSM_SE_MONTH_INTERNAL).forEach(function (k) {
+                fields.push(TSM_SE_MONTH_INTERNAL[k]);
+            });
+            return fields;
+        }
 
         function tsmSeMonthFieldFromHeader(h) {
             var compact = String(h || '').trim().replace(/[\s\-\/_.]+/g, '');
@@ -290,15 +303,35 @@
         function tsmSeBuildColumnIndex(headers) {
             var index = {};
             headers.forEach(function (h, i) {
-                var norm = tsmSeNormHeader(h);
-                if (!norm) return;
+                var raw = String(h == null ? '' : h).trim();
+                if (!raw) return;
+                var key = tsmSeFieldKey(raw);
+
                 Object.keys(TSM_SE_HEADER_MAP).forEach(function (field) {
                     if (index[field] != null) return;
-                    if (TSM_SE_HEADER_MAP[field].indexOf(norm) >= 0) index[field] = i;
+                    if (raw === field || key === tsmSeFieldKey(field)) {
+                        index[field] = i;
+                        return;
+                    }
+                    var aliases = TSM_SE_HEADER_MAP[field];
+                    for (var a = 0; a < aliases.length; a++) {
+                        if (key === tsmSeFieldKey(aliases[a])) {
+                            index[field] = i;
+                            break;
+                        }
+                    }
                 });
-                if (index.Title == null && (norm === 'title' || norm.indexOf('account') >= 0)) index.Title = i;
-                var monthField = tsmSeMonthFieldFromHeader(h);
-                if (monthField) index[monthField] = i;
+
+                Object.keys(TSM_SE_MONTH_INTERNAL).forEach(function (displayKey) {
+                    var internal = TSM_SE_MONTH_INTERNAL[displayKey];
+                    if (index[internal] != null) return;
+                    if (raw === displayKey || key === tsmSeFieldKey(displayKey)) {
+                        index[internal] = i;
+                    }
+                });
+
+                var monthField = tsmSeMonthFieldFromHeader(raw);
+                if (monthField && index[monthField] == null) index[monthField] = i;
             });
             return index;
         }
@@ -350,11 +383,11 @@
         function tsmSeFilterPayload(fields) {
             var out = {};
             var allowed = tsmSeState.listFields || {};
+            var known = tsmSeKnownWritableFields();
             Object.keys(fields).forEach(function (k) {
                 if (k === 'Title') return;
                 if (fields[k] == null || fields[k] === '') return;
-                if (!allowed[k]) return;
-                out[k] = fields[k];
+                if (allowed[k] || known.indexOf(k) >= 0) out[k] = fields[k];
             });
             return out;
         }
@@ -512,6 +545,59 @@
             window.tsmSeConfirmUpload(true);
         };
 
+        window.tsmSeDeleteAll = async function () {
+            if (!tsmSeCanUpload()) {
+                tsmSeToast('Only Tehleel and Ubaid can delete TSM SE accounts', 'warn');
+                return;
+            }
+            if (!confirm('Delete ALL accounts from TSM_SE_Accounts?\n\nThis cannot be undone.')) return;
+
+            try {
+                await tsmSeDiscoverListName();
+                await tsmSeLoadListFields(tsmSeState.listName);
+                var digest = await tsmSeGetDigest();
+                tsmSeSetProgress('Loading list items to delete...');
+                tsmSeState.loaded = false;
+                await tsmSeFetchAllRows();
+                var ids = (tsmSeState.allRows || []).map(function (r) { return r.spItemId; }).filter(Boolean);
+                if (!ids.length) {
+                    tsmSeToast('List is already empty', 'info');
+                    tsmSeSetProgress('');
+                    return;
+                }
+                if (!confirm('Delete ' + ids.length + ' accounts from TSM_SE_Accounts?')) return;
+                tsmSeSetProgress('Deleting 0 / ' + ids.length);
+                var delResult = await tsmSeRunPool(ids, function (id) {
+                    return tsmSeDeleteItem(id, digest);
+                }, {
+                    concurrency: TSM_SE_SP_CONCURRENCY,
+                    setDigest: function (d) { digest = d; },
+                    onProgress: function (done, total) {
+                        tsmSeSetProgress('Deleting: ' + done + ' / ' + total);
+                    }
+                });
+                tsmSeState.loaded = false;
+                tsmSeState.allRows = [];
+                window.tsmSeAllData = [];
+                tsmSeSetProgress('');
+                tsmSeToast('Deleted ' + delResult.ok + ' accounts' + (delResult.fail ? ' (' + delResult.fail + ' failed)' : ''), delResult.fail ? 'warn' : 'success');
+                if (window.TSM_SE_ACTIVE && typeof window.tsmSeRenderTable === 'function') {
+                    window.tsmSeRenderTable();
+                }
+            } catch (e) {
+                tsmSeSetProgress('');
+                tsmSeToast('Delete failed: ' + e.message, 'error');
+            }
+        };
+
+        function tsmSePreviewSampleRow(row) {
+            if (!row) return '';
+            var keys = ['Title', 'ParentCode', 'CustomerName', 'ServiceManager', 'LineManager', 'Team', 'Segment'];
+            return keys.filter(function (k) { return row[k]; }).map(function (k) {
+                return k + '=' + row[k];
+            }).join(' · ');
+        }
+
     window.tsmSeParseFile = function (ev, uiPrefix) {
         tsmSeState.uploadUiPrefix = uiPrefix || 'dash';
         var file = ev.target.files && ev.target.files[0];
@@ -529,11 +615,15 @@
                     var wb = XLSX.read(e.target.result, { type: 'array' });
                     var rows = tsmSeParseExcelRows(wb);
                     tsmSeState.uploadRows = rows;
+                    var mappedCols = rows.length ? Object.keys(rows[0]).length : 0;
+                    console.log('[TSM SE] Parsed', rows.length, 'rows,', mappedCols, 'fields on first row:', rows[0]);
                     if (preview) {
                         preview.innerHTML = '<div style="font-size:.82rem;color:var(--t1);font-weight:700;">Parsed ' + rows.length + ' account rows from <b>' + tsmSeEsc(file.name) + '</b></div>' +
-                            (rows.length ? '<div style="margin-top:.65rem;display:flex;gap:.5rem;flex-wrap:wrap;">' +
+                            (rows.length ? '<div style="font-size:.74rem;color:var(--t3);margin-top:.35rem;">Mapped ' + mappedCols + ' columns · sample: ' + tsmSeEsc(tsmSePreviewSampleRow(rows[0])) + '</div>' +
+                            '<div style="margin-top:.65rem;display:flex;gap:.5rem;flex-wrap:wrap;">' +
                                 '<button type="button" class="export-btn" onclick="tsmSeConfirmUpload(false)">Upload ' + rows.length + ' Accounts</button>' +
                                 '<button type="button" class="export-btn" onclick="tsmSeSmartUpload()" style="background:linear-gradient(135deg,#2563eb,#1d4ed8);color:#fff;border:none;">Smart Upload (Replace All)</button>' +
+                                '<button type="button" class="export-btn" onclick="tsmSeDeleteAll()" style="background:linear-gradient(135deg,#ef4444,#dc2626);color:#fff;border:none;">Delete All</button>' +
                             '</div>' : '<div style="color:#ef4444;margin-top:.5rem;">No valid account rows found — check Excel headers.</div>');
                     }
                     if (!rows.length) tsmSeToast('0 accounts parsed — check Excel column headers', 'warn');
@@ -584,12 +674,7 @@
                 bar.style.cssText = 'margin:0 0 12px;padding:14px;border:1px solid var(--border);border-radius:12px;background:var(--bg-card);';
                 host.insertBefore(bar, gridDiv);
             }
-            bar.innerHTML = '<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">' +
-                '<div><div style="font-size:.92rem;font-weight:800;color:var(--t1);">TSM SE Accounts</div>' +
-                '<div style="font-size:.76rem;color:var(--t3);">SP List mode · v' + TSM_SE_MODULE_VERSION + (tsmSeState.listName ? ' · ' + tsmSeEsc(tsmSeState.listName) : '') + '</div></div>' +
-                (tsmSeCanUpload() ?
-                    '<div style="font-size:.76rem;color:var(--t3);">Use <b>TSM SE Upload</b> on the dashboard above to upload Excel.</div>' : '') +
-                '</div>';
+            bar.innerHTML = tsmSeUploadControlsHTML('bar');
             return bar;
         }
 
@@ -613,7 +698,8 @@
                 { field: 'sm', headerName: 'Service Manager', width: 150 },
                 { field: 'secondarySm', headerName: 'Secondary SM', width: 140 },
                 { field: 'am', headerName: 'Account Manager', width: 150 },
-                { field: 'ad', headerName: 'Account Director', width: 150 }
+                { field: 'ad', headerName: 'Account Director', width: 150 },
+                { field: 'segment', headerName: 'Segment', width: 110 }
             ];
         }
 
