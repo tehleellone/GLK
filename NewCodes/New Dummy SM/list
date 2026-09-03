@@ -1,0 +1,117 @@
+
+List Information
+Name:	TSM_SE_Accounts
+Web Address:	http://sharedspaces:8086/sites/SM/Lists/TSM_SE_Accounts/AllItems.aspx
+
+Columns
+A column stores information about each item in the list. The following columns are currently available in this list:
+Column (click to edit)	Type	Required
+Title	Single line of text	
+ParentCode	Single line of text	
+CustomerName	Single line of text	
+AccountManager	Single line of text	
+AccountDirector	Single line of text	
+ServiceManager	Single line of text	
+LineManager	Single line of text	
+Team	Single line of text	
+Segment	Single line of text	
+Jan26	Number	
+Feb26	Number	
+Apr26	Number	
+Mar26	Number	
+May26	Number	
+Jun26	Number	
+Jul26	Number	
+Aug26	Number	
+Sep26	Number	
+Oct26	Number	
+Nov26	Number	
+Dec26	Number	
+Modified	Date and Time	
+Created	Date and Time	
+Created By	Person or Group	
+Modified By	Person or Group
+
+
+
+Internal name below
+index)
+DisplayName
+InternalName
+0	'Content Type ID'	'ContentTypeId'
+1	'Title'	'Title'
+2	'Approver Comments'	'_ModerationComments'
+3	'File Type'	'File_x0020_Type'
+4	'ParentCode'	'ParentCode'
+5	'CustomerName'	'CustomerName'
+6	'AccountManager'	'AccountManager'
+7	'AccountDirector'	'AccountDirector'
+8	'ServiceManager'	'ServiceManager'
+9	'LineManager'	'LineManager'
+10	'Team'	'Team'
+11	'Segment'	'Segment'
+12	'Jan26'	'_x004a_an26'
+13	'Feb26'	'_x0046_eb26'
+14	'Apr26'	'_x0041_pr26'
+15	'Mar26'	'_x004d_ar26'
+16	'May26'	'_x004d_ay26'
+17	'Jun26'	'_x004a_un26'
+18	'Jul26'	'_x004a_ul26'
+19	'Aug26'	'_x0041_ug26'
+20	'Sep26'	'_x0053_ep26'
+21	'Oct26'	'_x004f_ct26'
+22	'Nov26'	'_x004e_ov26'
+23	'Dec26'	'_x0044_ec26'
+24	'ID'	'ID'
+25	'Content Type'	'ContentType'
+26	'Modified'	'Modified'
+27	'Created'	'Created'
+28	'Created By'	'Author'
+29	'Modified By'	'Editor'
+30	'Has Copy Destinations'	'_HasCopyDestinations'
+31	'Copy Source'	'_CopySource'
+32	'owshiddenversion'	'owshiddenversion'
+33	'Workflow Version'	'WorkflowVersion'
+34	'UI Version'	'_UIVersion'
+35	'Version'	'_UIVersionString'
+36	'Attachments'	'Attachments'
+37	'Approval Status'	'_ModerationStatus'
+38	'Edit'	'Edit'
+39	'Title'	'LinkTitleNoMenu'
+40	'Title'	'LinkTitle'
+41	'Title'	'LinkTitle2'
+42	'Select'	'SelectTitle'
+43	'Instance ID'	'InstanceID'
+44	'Order'	'Order'
+45	'GUID'	'GUID'
+46	'Workflow Instance ID'	'WorkflowInstanceID'
+47	'URL Path'	'FileRef'
+48	'Path'	'FileDirRef'
+49	'Modified'	'Last_x0020_Modified'
+50	'Created'	'Created_x0020_Date'
+51	'Item Type'	'FSObjType'
+52	'Sort Type'	'SortBehavior'
+53	'Effective Permissions Mask'	'PermMask'
+54	'Name'	'FileLeafRef'
+55	'Unique Id'	'UniqueId'
+56	'Client Id'	'SyncClientId'
+57	'ProgId'	'ProgId'
+58	'ScopeId'	'ScopeId'
+59	'HTML File Type'	'HTML_x0020_File_x0020_Type'
+60	'Edit Menu Table Start'	'_EditMenuTableStart'
+61	'Edit Menu Table Start'	'_EditMenuTableStart2'
+62	'Edit Menu Table End'	'_EditMenuTableEnd'
+63	'Name'	'LinkFilenameNoMenu'
+64	'Name'	'LinkFilename'
+65	'Name'	'LinkFilename2'
+66	'Type'	'DocIcon'
+67	'Server Relative URL'	'ServerUrl'
+68	'Encoded Absolute URL'	'EncodedAbsUrl'
+69	'File Name'	'BaseName'
+70	'Property Bag'	'MetaInfo'
+71	'Level'	'_Level'
+72	'Is Current Version'	'_IsCurrentVersion'
+73	'Item Child Count'	'ItemChildCount'
+74	'Folder Child Count'	'FolderChildCount'
+75	'App Created By'	'AppAuthor'
+76	'App Modified By'	'AppEditor'
