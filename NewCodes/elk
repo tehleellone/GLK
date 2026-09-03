@@ -416,9 +416,10 @@ body[data-theme="dark"] .status-dot,body[data-theme="duralux-dark"] .status-dot{
 #mqChartOuter{display:flex;flex-direction:column;min-width:100%}
 #mqChartWrap{position:relative;height:340px;min-width:100%;flex-shrink:0}
 #mqChartWrap canvas{display:block;width:100%!important;height:100%!important}
-#mqVertOnChart{display:none!important}
-.mq-v-abs{position:absolute;top:0;left:0;text-align:center;cursor:pointer;padding:0 1px;z-index:2;transform:translateX(-50%)}
-.mq-v-abs .mq-v-stack{display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:0;line-height:1;background:#fff;border:1px solid rgba(15,23,42,.28);border-radius:5px;padding:3px 5px;box-shadow:0 1px 3px rgba(15,23,42,.18)}
+#mqVertOnChart{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;overflow:visible;z-index:3}
+.mq-v-onbar{position:absolute;transform:translate(-50%,-50%);pointer-events:auto;cursor:pointer;z-index:4}
+.mq-v-onbar .mq-v-stack{display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:0;line-height:1;background:#fff;border:1px solid rgba(15,23,42,.35);border-radius:5px;padding:3px 5px;box-shadow:0 1px 4px rgba(15,23,42,.25)}
+.mq-v-onbar .mq-v-ch{display:block;font-size:10px;font-weight:800;font-family:Inter,system-ui,-apple-system,sans-serif;color:#0f172a;line-height:1.05;letter-spacing:.04em}
 #mqHdLegend{display:flex;flex-wrap:wrap;align-items:center;gap:.4rem .75rem;margin-top:.45rem;padding:.45rem .65rem;background:var(--bg-secondary);border:1px dashed var(--border);border-radius:8px}
 #mqHdLegend .mq-hd-legend-title{font-size:.64rem;font-weight:800;color:var(--t1);text-transform:uppercase;letter-spacing:.04em;margin-right:.25rem}
 #mqBracketRow{position:relative;height:22px;margin-top:4px;min-height:20px}
@@ -7400,13 +7401,15 @@ function mqSyncChartLabels(chart,bars){
   var strip=el('mqXAxisStrip');
   var vstrip=el('mqVertAxisStrip');
   var overlay=el('mqVertOnChart');
-  if(overlay){ overlay.innerHTML=''; overlay.style.display='none'; }
+  if(overlay){
+    overlay.style.display='block';
+    overlay.style.width=cw+'px';
+    overlay.style.height=(canvas.clientHeight||0)+'px';
+    overlay.innerHTML='';
+  }
   if(vstrip){
-    vstrip.style.display=maxVertLen?'block':'none';
-    vstrip.style.width=cw+'px';
-    vstrip.style.minWidth=cw+'px';
-    vstrip.style.height=maxVertLen?Math.max(36,maxVertLen*12+10)+'px':'0';
-    vstrip.style.minHeight=maxVertLen?Math.max(36,maxVertLen*12+10)+'px':'0';
+    vstrip.style.display='none';
+    vstrip.style.height='0';
     vstrip.innerHTML='';
   }
   if(strip){
@@ -7417,19 +7420,21 @@ function mqSyncChartLabels(chart,bars){
   meta.data.forEach(function(bar,i){
     var b=bars[i]; if(!b) return;
     var nameLines=mqAxisNameLines(b);
-    if(vstrip&&b.verticalHint){
+    if(overlay&&b.verticalHint){
       var letters=mqVerticalLetters(b.verticalHint);
       if(letters.length){
+        var top=Math.min(bar.y,bar.base), bot=Math.max(bar.y,bar.base);
         var vcell=document.createElement('div');
-        vcell.className='mq-v-abs'+(GLK_MQ_DETAIL_IDX===i?' sel':'');
+        vcell.className='mq-v-onbar'+(GLK_MQ_DETAIL_IDX===i?' sel':'');
         vcell.style.left=bar.x+'px';
+        vcell.style.top=((top+bot)/2)+'px';
         var hd=mqVertHdGroup((b.bids&&b.bids[0]&&b.bids[0].vertical)||b.verticalHint);
         vcell.innerHTML=mqVerticalStackBlock(b.verticalHint);
         var stack=vcell.querySelector('.mq-v-stack');
         if(stack) stack.style.borderLeft='3px solid '+(MQ_HD_COLORS[hd]||MQ_HD_COLORS.other);
         vcell.title=b.verticalHint;
         vcell.onclick=function(){mqClickAxisCell(i);};
-        vstrip.appendChild(vcell);
+        overlay.appendChild(vcell);
       }
     }
     if(strip){
@@ -7757,21 +7762,18 @@ function glkMobileQtdLabelPlugin(bars){
       else if(b.type==='increase'||b.type==='base') lbl='+'+lbl.replace(/^\+/,'');
       else if(b.type==='total'||b.type==='target'||b.type==='gap'||b.type==='growth') lbl=fmtLines(val);
       ctx.textAlign='center';
-      if(b.type==='decrease'){
-        ctx.fillStyle=b.color||MQ_CLR_CHURN[0];
+      var putAbove=!!b.verticalHint||b.type==='decrease'||h<16||b.type==='empty';
+      if(b.type==='empty'){ ctx.restore(); return; }
+      if(putAbove){
+        ctx.fillStyle=b.color||MQ_CLR_INFLIGHT[0];
         ctx.font='bold 10px Inter';
         ctx.textBaseline='bottom';
         ctx.fillText(lbl,bar.x,top-4);
-      }else if(h>=16&&b.type!=='empty'){
+      }else{
         ctx.fillStyle='#fff';
         ctx.font='bold 10px Inter';
         ctx.textBaseline='middle';
         ctx.fillText(lbl,bar.x,top+h/2);
-      }else if(b.type!=='empty'){
-        ctx.fillStyle=b.color||MQ_CLR_INFLIGHT[0];
-        ctx.font='bold 9px Inter';
-        ctx.textBaseline='bottom';
-        ctx.fillText(lbl,bar.x,top-4);
       }
       if(GLK_MQ_DETAIL_IDX===i){
         ctx.strokeStyle='rgba(99,102,241,.9)'; ctx.lineWidth=2.5;
