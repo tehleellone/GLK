@@ -1266,6 +1266,7 @@ body[data-theme="dark"] .badge-warning,body[data-theme="duralux-dark"] .badge-wa
             </div>
             <div class="chart-container" style="height:420px;"><canvas id="chartRevenueRec"></canvas></div>
             <div id="rrChartLegend" style="display:flex;flex-wrap:wrap;gap:.45rem .65rem;margin-top:.55rem;font-size:.68rem;font-weight:600;color:var(--t2);"></div>
+            <div id="rrLineExplain" style="margin-top:.65rem;padding:.7rem .85rem;background:var(--bg-secondary);border:1px solid var(--border);border-radius:9px;font-size:.72rem;line-height:1.6;color:var(--t2);"></div>
             <div id="rrChartNote" style="font-size:.66rem;color:var(--t3);margin-top:.45rem;line-height:1.5;"></div>
           </div>
         </div>
@@ -8286,163 +8287,176 @@ window.mqExportBridgePpt=function(){
 };
 
 // ══════════════════════════════════════════════════════════════════
-//  REVENUE REC — Excel-driven trend charts
+//  REVENUE REC — Excel-driven trend charts (3 sheets only)
 // ══════════════════════════════════════════════════════════════════
 const RR_IDB_NAME='GLKRevenueRecCache';
 const RR_IDB_STORE='workbook';
 const RR_LS_META_KEY='glk_revenue_rec_meta';
 const RR_LS_DATA_KEY='glk_revenue_rec_b64';
 const RR_LS_MAX_B64=1800000;
-const RR_CHART_PALETTE=['#6366f1','#8b5cf6','#a855f7','#ec4899','#f43f5e','#f97316','#eab308','#22c55e','#14b8a6','#0ea5e9','#3b82f6','#64748b'];
 const RR_CHART_DEFS=[
-  {id:'revRecTrend',title:'Rev Rec 2026 vs 2025 Trend',subtitle:'Monthly revenue recognition (AED)',sheetKeys:['Rev Rec 2026 vs 2025 Trend'],kind:'line'},
-  {id:'netAddLines',title:'GLK Net Add Lines Trend',subtitle:'Net Add Lines MoM · actual vs forecast',sheetKeys:['GLK Net Add Lines Trend'],kind:'line'},
-  {id:'fixedMrc',title:'GLK Fixed Net MRC Trend',subtitle:'Fixed Net MRC · YoY & forecast',sheetKeys:['GLK Fixed Net MRC Trend'],kind:'line'},
-  {id:'keyB',title:'KEY-B Quarterly KPIs',subtitle:'Actual vs Target · QTD scorecard',sheetKeys:['KEY-B'],kind:'bar'}
+  {
+    id:'revRecTrend',
+    title:'Rev Rec 2026 vs 2025 Trend',
+    subtitle:'Sheet: Rev Rec 2026 vs 2025 Trend · Columns B (Month), C (2025 Revenue), D (2026 Revenue)',
+    sheetName:'Rev Rec 2026 vs 2025 Trend',
+    valueFmt:'currency',
+    yLabel:'Revenue (AED)'
+  },
+  {
+    id:'netAddLines',
+    title:'GLK Net Add Lines Trend',
+    subtitle:'Sheet: GLK Net Add Lines Trend · Columns B (Month), C/D/E (Actual + Forecasts)',
+    sheetName:'GLK Net Add Lines Trend',
+    valueFmt:'lines',
+    yLabel:'Net Add Lines'
+  },
+  {
+    id:'fixedMrc',
+    title:'GLK Fixed Net MRC Trend',
+    subtitle:'Sheet: GLK Fixed Net MRC Trend · Columns A (Month), B/C/D/E (YoY + Forecasts)',
+    sheetName:'GLK Fixed Net MRC Trend',
+    valueFmt:'currency',
+    yLabel:'Fixed Net MRC (AED)'
+  }
 ];
+const RR_SERIES_HELP={
+  revRecTrend:{
+    '2025 Revenue':'<strong>Column C — 2025 Revenue</strong> · Monthly revenue recognition actuals for calendar year 2025. Solid blue line in Excel.',
+    '2026 Revenue':'<strong>Column D — 2026 Revenue</strong> · Monthly revenue recognition actuals for 2026. Stops where Excel cell is blank (months not yet reported).'
+  },
+  netAddLines:{
+    'GLK Net Add Lines':'<strong>Column C — GLK Net Add Lines</strong> · Actual net add lines reported each month (includes negatives e.g. Mar).',
+    'Forecast - Most Likely':'<strong>Column D — Forecast Most Likely</strong> · Forward-looking most-likely forecast from current month onward.',
+    'Forecast - Upside':'<strong>Column E — Forecast Upside</strong> · Upside scenario forecast — higher pipeline assumption.'
+  },
+  fixedMrc:{
+    '2025 Fixed Net MRC':'<strong>Column B — 2025 Fixed Net MRC</strong> · Prior-year monthly fixed net MRC actuals (reference baseline).',
+    '2026 Fixed Net MRC':'<strong>Column C — 2026 Fixed Net MRC</strong> · Current-year fixed net MRC actuals month by month.',
+    'Forecast - Most Likely':'<strong>Column D — Forecast Most Likely</strong> · Forward MRC forecast — most likely case.',
+    'Forecast - Upside':'<strong>Column E — Forecast Upside</strong> · Forward MRC forecast — upside case.'
+  }
+};
+const RR_SERIES_STYLE={
+  '2025 Revenue':{color:'#4472C4',dash:[],fill:'rgba(68,114,196,.12)'},
+  '2026 Revenue':{color:'#ED7D31',dash:[],fill:'rgba(237,125,49,.12)'},
+  'GLK Net Add Lines':{color:'#4472C4',dash:[],fill:'rgba(68,114,196,.10)'},
+  'Forecast - Most Likely':{color:'#FFC000',dash:[7,4],fill:false},
+  'Forecast - Upside':{color:'#70AD47',dash:[7,4],fill:false},
+  '2025 Fixed Net MRC':{color:'#5B9BD5',dash:[],fill:'rgba(91,155,213,.10)'},
+  '2026 Fixed Net MRC':{color:'#ED7D31',dash:[],fill:'rgba(237,125,49,.10)'}
+};
 let RR_PARSED=null;
 let RR_META=null;
 let RR_ACTIVE_CHART='revRecTrend';
-const RR_DEFAULT_DATA={
-  revRecTrend:{
-    labels:['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],
-    series:[
-      {label:'2025 Revenue',data:[196609507,203607817,201846389,204084281,205696192,207946841,205337825,224422730,214850702,204827048,213044624,222984993],fmt:'currency'},
-      {label:'2026 Revenue',data:[220834937,220701659,217674602,221249972,226259087,226259087,218850158,null,null,null,null,null],fmt:'currency'}
-    ]
-  },
-  netAddLines:{
-    labels:['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],
-    series:[
-      {label:'GLK Net Add Lines',data:[19590,11871.425,-2316.5,12016,5777,19911,16125,19498,null,null,null,null],fmt:'lines'},
-      {label:'Forecast - Most Likely',data:[null,null,null,null,null,null,null,19498,13194,null,null,null],fmt:'lines'},
-      {label:'Forecast - Upside',data:[null,null,null,null,null,null,null,19498,21651,null,null,null],fmt:'lines'}
-    ]
-  },
-  fixedMrc:{
-    labels:['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],
-    series:[
-      {label:'2025 Fixed Net MRC',data:[2509391.3,1449303.52,939586.14,1304654.18,1198172.48,1612796.7,1803214.7,1876459.34,1001034.24,2083196.8,2816819.08,2119960.02],fmt:'currency'},
-      {label:'2026 Fixed Net MRC',data:[2700518.3,3065595.48,820152.96,2363395.5,3263065.84,1669362.3,2318321.22,3171282.06,null,null,null,null],fmt:'currency'},
-      {label:'Forecast - Most Likely',data:[null,null,null,null,null,null,null,3171282.06,610396.72,null,null,null],fmt:'currency'},
-      {label:'Forecast - Upside',data:[null,null,null,null,null,null,null,3171282.06,1320396.72,null,null,null],fmt:'currency'}
-    ]
-  },
-  keyB:{
-    labels:['Mobile Gross Adds','Mobile Net Adds','Fixed Net MRC','Revenue'],
-    series:[
-      {label:'Actual QTD',data:[0,0,0,0],fmt:'mixed'},
-      {label:'Target QTD',data:[0,0,0,0],fmt:'mixed'}
-    ],
-    note:'KEY-B KPI block — upload a live workbook with resolved formulas for AM-level Actual vs Target bars.'
-  }
-};
 function rrFmtMonth(v){
   if(v==null||v==='') return '';
-  if(v instanceof Date) return v.toLocaleString('en-US',{month:'short'});
+  var s=String(v).trim();
+  if(!s||s.toLowerCase()==='month') return '';
+  if(/^(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)/i.test(s)) return s;
+  if(v instanceof Date&&!isNaN(v.getTime())){
+    var months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    return months[v.getMonth()]+'-'+String(v.getFullYear()).slice(-2);
+  }
   if(typeof v==='number'&&v>40000&&v<60000){
     var d=new Date(Math.round((v-25569)*86400*1000));
-    return d.toLocaleString('en-US',{month:'short'});
+    if(!isNaN(d.getTime())){
+      var months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      return months[d.getUTCMonth()]+'-'+String(d.getUTCFullYear()).slice(-2);
+    }
   }
-  var s=String(v).trim();
-  if(/^\d{4}-\d{2}/.test(s)){ var p=s.split('-'); return new Date(+p[0],+p[1]-1,1).toLocaleString('en-US',{month:'short'}); }
-  return s.length>4?s.slice(0,3):s;
+  return s;
 }
 function rrNum(v){
   if(v==null||v===''||v===' ') return null;
   if(typeof v==='number'&&!isNaN(v)) return v;
   var s=String(v).trim();
-  if(!s||s.indexOf('#')===0) return null;
+  if(!s||s.charAt(0)==='#') return null;
   var n=parseFloat(s.replace(/,/g,''));
   return isNaN(n)?null:n;
 }
 function rrSheetCell(sheet,r,c){
-  if(typeof XLSX==='undefined') return null;
+  if(typeof XLSX==='undefined'||!sheet) return null;
   var addr=XLSX.utils.encode_cell({r:r,c:c});
   var cell=sheet[addr];
-  if(!cell) return null;
-  if(cell.t==='d'&&cell.v instanceof Date) return cell.v;
+  if(!cell||cell.v==null||cell.v==='') return null;
+  if(cell.w&&typeof cell.w==='string'){
+    var w=cell.w.trim();
+    if(/^(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)/i.test(w)) return w;
+  }
+  if(cell.t==='d'&&cell.v instanceof Date){
+    if(cell.z&&typeof XLSX!=='undefined'&&XLSX.SSF){
+      try{ var fw=XLSX.SSF.format(cell.z,cell.v); if(fw&&fw.trim()) return fw.trim(); }catch(e){}
+    }
+    return cell.v;
+  }
   return cell.v;
 }
-function rrParseTrendSheet(sheet,opts){
-  opts=opts||{};
-  var startRow=opts.startRow||2;
-  var monthCol=opts.monthCol||1;
-  var maxRow=opts.maxRow||20;
-  var labels=[], seriesMap={};
-  (opts.series||[]).forEach(function(s){ seriesMap[s.label]=[]; });
-  for(var r=startRow;r<=maxRow;r++){
-    var month=rrSheetCell(sheet,r,monthCol);
+function rrFindMonthHeader(sheet){
+  if(!sheet||!sheet['!ref']) return null;
+  var range=XLSX.utils.decode_range(sheet['!ref']);
+  for(var r=range.s.r;r<=Math.min(range.e.r,10);r++){
+    for(var c=range.s.c;c<=range.e.c;c++){
+      var v=rrSheetCell(sheet,r,c);
+      if(v!=null&&String(v).trim().toLowerCase()==='month'){
+        return {headerRow:r,monthCol:c,range:range};
+      }
+    }
+  }
+  return null;
+}
+function rrParseTrendSheetFromHeaders(sheet,valueFmt){
+  var hdr=rrFindMonthHeader(sheet);
+  if(!hdr) return null;
+  var seriesCols=[];
+  for(var c=hdr.monthCol+1;c<=hdr.range.e.c;c++){
+    var h=rrSheetCell(sheet,hdr.headerRow,c);
+    if(h==null||String(h).trim()==='') continue;
+    seriesCols.push({col:c,label:String(h).trim(),colLetter:XLSX.utils.encode_col(c)});
+  }
+  if(!seriesCols.length) return null;
+  var labels=[],dataMap=seriesCols.map(function(){return [];});
+  for(var r=hdr.headerRow+1;r<=hdr.range.e.r;r++){
+    var month=rrSheetCell(sheet,r,hdr.monthCol);
     if(month==null||month==='') continue;
     var lbl=rrFmtMonth(month);
     if(!lbl) continue;
     labels.push(lbl);
-    (opts.series||[]).forEach(function(s){
-      seriesMap[s.label].push(rrNum(rrSheetCell(sheet,r,s.col)));
+    seriesCols.forEach(function(sc,i){
+      dataMap[i].push(rrNum(rrSheetCell(sheet,r,sc.col)));
     });
   }
+  if(!labels.length) return null;
   return {
     labels:labels,
-    series:(opts.series||[]).map(function(s){
-      return {label:s.label,data:seriesMap[s.label],fmt:opts.valueFmt||'number'};
+    sheetRef:sheet['!ref']||'',
+    monthCol:XLSX.utils.encode_col(hdr.monthCol),
+    headerRow:hdr.headerRow+1,
+    series:seriesCols.map(function(sc,i){
+      return {label:sc.label,col:sc.colLetter,data:dataMap[i],fmt:valueFmt||'number'};
     })
   };
 }
-function rrFindSheet(wb,names){
+function rrFindSheet(wb,name){
   if(!wb||!wb.Sheets) return null;
+  if(wb.Sheets[name]) return wb.Sheets[name];
   var keys=Object.keys(wb.Sheets);
-  for(var i=0;i<names.length;i++){
-    if(wb.Sheets[names[i]]) return wb.Sheets[names[i]];
-    var fuzzy=keys.find(function(k){ return k.toLowerCase().indexOf(names[i].toLowerCase())>=0; });
-    if(fuzzy) return wb.Sheets[fuzzy];
-  }
-  return null;
-}
-function rrParseKeyBSheet(sheet){
-  var metrics=[
-    {label:'Mobile Gross Adds',actualCols:[1,2],targetCol:4},
-    {label:'Mobile Net Adds',actualCols:[6,7],targetCol:9},
-    {label:'Fixed Net MRC',actualCols:[11,12],targetCol:14},
-    {label:'Revenue',actualCols:[16,17],targetCol:19}
-  ];
-  var labels=[],actual=[],target=[];
-  metrics.forEach(function(m){
-    labels.push(m.label);
-    var actSum=0,actCnt=0,tgtSum=0,tgtCnt=0;
-    for(var r=21;r<80;r++){
-      var name=rrSheetCell(sheet,r,0);
-      if(!name||String(name).trim()==='') continue;
-      if(String(name).toUpperCase().indexOf('FOGH')>=0||String(name).toUpperCase().indexOf('KEY-B')>=0) continue;
-      m.actualCols.forEach(function(c){
-        var v=rrNum(rrSheetCell(sheet,r,c));
-        if(v!=null){ actSum+=v; actCnt++; }
-      });
-      var t=rrNum(rrSheetCell(sheet,r,m.targetCol));
-      if(t!=null){ tgtSum+=t; tgtCnt++; }
-    }
-    actual.push(actCnt?actSum:null);
-    target.push(tgtCnt?tgtSum:null);
-  });
-  var hasData=actual.some(function(v){return v!=null&&v!==0;})||target.some(function(v){return v!=null&&v!==0;});
-  return {
-    labels:labels,
-    series:[
-      {label:'Actual QTD',data:actual,fmt:'mixed'},
-      {label:'Target QTD',data:target,fmt:'mixed'}
-    ],
-    note:hasData?'Aggregated from KEY-B AM rows (May + Jun actual vs QTD target).':'KEY-B formulas may be unresolved in this file — re-upload when Excel calculates values.'
-  };
+  var exact=keys.find(function(k){return k.trim()===name.trim();});
+  if(exact) return wb.Sheets[exact];
+  var fuzzy=keys.find(function(k){return k.toLowerCase().indexOf(name.toLowerCase())>=0;});
+  return fuzzy?wb.Sheets[fuzzy]:null;
 }
 function rrParseWorkbook(wb){
   var out={};
-  var ws=rrFindSheet(wb,['Rev Rec 2026 vs 2025 Trend']);
-  if(ws) out.revRecTrend=rrParseTrendSheet(ws,{startRow:3,monthCol:1,series:[{col:2,label:'2025 Revenue'},{col:3,label:'2026 Revenue'}],valueFmt:'currency',maxRow:15});
-  ws=rrFindSheet(wb,['GLK Net Add Lines Trend']);
-  if(ws) out.netAddLines=rrParseTrendSheet(ws,{startRow:2,monthCol:1,series:[{col:2,label:'GLK Net Add Lines'},{col:3,label:'Forecast - Most Likely'},{col:4,label:'Forecast - Upside'}],valueFmt:'lines',maxRow:14});
-  ws=rrFindSheet(wb,['GLK Fixed Net MRC Trend']);
-  if(ws) out.fixedMrc=rrParseTrendSheet(ws,{startRow:2,monthCol:0,series:[{col:1,label:'2025 Fixed Net MRC'},{col:2,label:'2026 Fixed Net MRC'},{col:3,label:'Forecast - Most Likely'},{col:4,label:'Forecast - Upside'}],valueFmt:'currency',maxRow:14});
-  ws=rrFindSheet(wb,['KEY-B']);
-  if(ws) out.keyB=rrParseKeyBSheet(ws);
+  RR_CHART_DEFS.forEach(function(def){
+    var ws=rrFindSheet(wb,def.sheetName);
+    if(!ws) return;
+    var parsed=rrParseTrendSheetFromHeaders(ws,def.valueFmt);
+    if(parsed){
+      parsed.sheetName=def.sheetName;
+      out[def.id]=parsed;
+    }
+  });
   return out;
 }
 function rrIdbOpen(cb){
@@ -8504,20 +8518,24 @@ function rrRefreshMeta(){
   var m=el('rrReportMeta');
   if(!m) return;
   if(!RR_META){
-    m.textContent='Showing built-in sample from Copy of dummy.xlsx — upload your workbook to replace.';
+    m.textContent='Upload Copy of dummy.xlsx — data is read directly from each sheet column headers.';
     return;
   }
   var parts=[];
   if(RR_META.filename) parts.push('File: '+RR_META.filename);
   if(RR_META.cachedAt) parts.push('Cached: '+new Date(RR_META.cachedAt).toLocaleString());
   if(RR_META.size) parts.push((RR_META.size/1024).toFixed(0)+' KB');
-  m.textContent=parts.join(' · ')||'Workbook loaded';
+  var loaded=RR_PARSED?Object.keys(RR_PARSED).length:0;
+  parts.push(loaded+'/'+RR_CHART_DEFS.length+' sheets parsed');
+  m.textContent=parts.join(' · ');
 }
 function rrBuildChartTabs(){
   var wrap=el('rrChartTabs');
   if(!wrap) return;
   wrap.innerHTML=RR_CHART_DEFS.map(function(d){
-    return '<button type="button" class="rr-chart-tab'+(RR_ACTIVE_CHART===d.id?' active':'')+'" onclick="rrSetActiveChart(\''+d.id+'\')">'+d.title+'</button>';
+    var ok=RR_PARSED&&RR_PARSED[d.id]&&RR_PARSED[d.id].labels&&RR_PARSED[d.id].labels.length;
+    return '<button type="button" class="rr-chart-tab'+(RR_ACTIVE_CHART===d.id?' active':'')+'" onclick="rrSetActiveChart(\''+d.id+'\')">'+
+      d.title+(ok?'':' <span style="opacity:.55;">⚠</span>')+'</button>';
   }).join('');
 }
 window.rrSetActiveChart=function(id){
@@ -8529,34 +8547,38 @@ function rrFmtVal(v,fmt){
   if(v==null||isNaN(v)) return '—';
   if(fmt==='currency') return fmt(v);
   if(fmt==='lines') return fmtLines(v);
-  if(Math.abs(v)>=1e6) return fmt(v);
   return fmtLines(v);
 }
 function rrChartDataFor(id){
-  var parsed=RR_PARSED||{};
-  var data=parsed[id];
-  if(!data||!data.labels||!data.labels.length) data=RR_DEFAULT_DATA[id];
-  return data;
+  if(RR_PARSED&&RR_PARSED[id]&&RR_PARSED[id].labels&&RR_PARSED[id].labels.length) return RR_PARSED[id];
+  return null;
 }
-function rrRenderKpis(def,data){
-  var row=el('rrKpiRow');
-  if(!row) return;
-  if(def.kind!=='line'||!data||!data.series||!data.series.length){ row.style.display='none'; return; }
-  var kpis=[];
-  data.series.forEach(function(s){
-    var nums=(s.data||[]).filter(function(v){return v!=null&&!isNaN(v);});
-    if(!nums.length) return;
-    var sum=nums.reduce(function(a,b){return a+b;},0);
-    var last=nums[nums.length-1];
-    kpis.push({label:s.label,sum:sum,last:last,fmt:s.fmt});
+function rrSeriesStyle(label,idx){
+  var st=RR_SERIES_STYLE[label];
+  if(st) return st;
+  var palette=['#6366f1','#8b5cf6','#ec4899','#f97316','#22c55e','#0ea5e9'];
+  var col=palette[idx%palette.length];
+  return {color:col,dash:[],fill:col+'22'};
+}
+function rrRenderLineExplain(def,data){
+  var box=el('rrLineExplain');
+  if(!box) return;
+  if(!data||!data.series||!data.series.length){
+    box.innerHTML='<span style="color:#f59e0b;">No data parsed for this sheet. Re-upload the Excel file — columns are read from the <strong>Month</strong> header row.</span>';
+    return;
+  }
+  var help=RR_SERIES_HELP[def.id]||{};
+  var html='<div style="font-weight:700;color:var(--acc);margin-bottom:.35rem;">What each line represents</div>';
+  data.series.forEach(function(s,i){
+    var st=rrSeriesStyle(s.label,i);
+    var dash=st.dash&&st.dash.length?' (dashed)':' (solid)';
+    var txt=help[s.label]||('<strong>Column '+s.col+' — '+s.label+'</strong> · Values read directly from Excel column '+s.col+'.');
+    html+='<div style="display:flex;gap:.45rem;margin-bottom:.3rem;align-items:flex-start;">'+
+      '<span style="width:22px;height:3px;margin-top:.45rem;flex-shrink:0;background:'+st.color+';'+(st.dash.length?'background:repeating-linear-gradient(90deg,'+st.color+' 0 5px,transparent 5px 9px)':'')+'"></span>'+
+      '<span>'+txt+dash+'</span></div>';
   });
-  if(!kpis.length){ row.style.display='none'; return; }
-  row.style.display='grid';
-  row.innerHTML=kpis.slice(0,4).map(function(k,i){
-    return '<div class="rr-kpi"><div class="rr-kpi-label">'+k.label+'</div>'+
-      '<div class="rr-kpi-val">Last: '+rrFmtVal(k.last,k.fmt)+'</div>'+
-      '<div style="font-size:.62rem;color:var(--t3);margin-top:.1rem;">Sum: '+rrFmtVal(k.sum,k.fmt)+'</div></div>';
-  }).join('');
+  html+='<div style="margin-top:.4rem;color:var(--t3);font-size:.66rem;">Source: sheet <strong>'+(data.sheetName||def.sheetName)+'</strong> · Month column <strong>'+data.monthCol+'</strong> · '+data.labels.length+' data points</div>';
+  box.innerHTML=html;
 }
 function rrRenderActiveChart(){
   var def=RR_CHART_DEFS.find(function(d){return d.id===RR_ACTIVE_CHART;})||RR_CHART_DEFS[0];
@@ -8564,41 +8586,52 @@ function rrRenderActiveChart(){
   var titleEl=el('rrChartTitle'), subEl=el('rrChartSubtitle'), noteEl=el('rrChartNote'), legEl=el('rrChartLegend');
   if(titleEl) titleEl.textContent=def.title;
   if(subEl) subEl.textContent=def.subtitle;
-  if(noteEl) noteEl.textContent=(data&&data.note)||'';
-  rrRenderKpis(def,data);
+  rrRenderLineExplain(def,data);
+  if(noteEl){
+    noteEl.textContent=data
+      ?('Excel range '+((data.sheetRef)||'—')+' · Header row '+data.headerRow)
+      :('Could not read sheet "'+def.sheetName+'". Upload the workbook with columns Month + data series in the header row.');
+  }
   destroyChart('revenueRec');
   var canvas=el('chartRevenueRec');
-  if(!canvas||!data||!data.labels) return;
+  if(!canvas){
+    return;
+  }
+  if(!data||!data.labels||!data.labels.length){
+    if(legEl) legEl.innerHTML='';
+    var ctx=canvas.getContext('2d');
+    if(ctx){ ctx.clearRect(0,0,canvas.width,canvas.height); }
+    return;
+  }
   var c=getChartColors();
-  var isBar=def.kind==='bar';
   var datasets=(data.series||[]).map(function(s,i){
-    var col=RR_CHART_PALETTE[i%RR_CHART_PALETTE.length];
-    var base={
-      label:s.label,
+    var st=rrSeriesStyle(s.label,i);
+    return {
+      label:s.label+' ('+s.col+')',
       data:s.data,
-      borderColor:col,
-      backgroundColor:isBar?col+'cc':col+'33',
-      borderWidth:isBar?0:2.5,
-      tension:.35,
-      fill:!isBar,
-      pointRadius:isBar?0:4,
-      pointHoverRadius:isBar?0:7,
-      pointBackgroundColor:col,
+      borderColor:st.color,
+      backgroundColor:st.fill||st.color+'22',
+      borderWidth:2.5,
+      borderDash:st.dash||[],
+      tension:.3,
+      fill:!!st.fill,
+      pointRadius:4,
+      pointHoverRadius:7,
+      pointBackgroundColor:st.color,
       pointBorderColor:'#fff',
       pointBorderWidth:2,
       spanGaps:false
     };
-    if(isBar){ base.borderRadius=6; base.barPercentage=.72; base.categoryPercentage=.82; }
-    return base;
   });
   if(legEl){
     legEl.innerHTML=(data.series||[]).map(function(s,i){
-      return '<span style="display:inline-flex;align-items:center;gap:.25rem;"><span style="width:10px;height:10px;border-radius:3px;background:'+RR_CHART_PALETTE[i%RR_CHART_PALETTE.length]+';"></span>'+s.label+'</span>';
+      var st=rrSeriesStyle(s.label,i);
+      return '<span style="display:inline-flex;align-items:center;gap:.3rem;"><span style="width:14px;height:3px;background:'+st.color+';'+(st.dash.length?'background:repeating-linear-gradient(90deg,'+st.color+' 0 4px,transparent 4px 7px)':'')+'"></span>'+s.label+' <span style="color:var(--t3);font-weight:500;">('+s.col+')</span></span>';
     }).join('');
   }
   try{
     CHARTS.revenueRec=new Chart(canvas,{
-      type:isBar?'bar':'line',
+      type:'line',
       data:{labels:data.labels,datasets:datasets},
       options:{
         responsive:true,maintainAspectRatio:false,
@@ -8608,23 +8641,20 @@ function rrRenderActiveChart(){
           tooltip:{
             backgroundColor:'rgba(15,10,30,.92)',padding:12,cornerRadius:10,
             callbacks:{
+              title:function(items){return items[0]?data.labels[items[0].dataIndex]:'';},
               label:function(ctx){
-                var s=(data.series||[])[ctx.datasetIndex];
-                var v=ctx.parsed.y;
-                return ' '+ctx.dataset.label+': '+rrFmtVal(v,s?s.fmt:'number');
+                var s=data.series[ctx.datasetIndex];
+                return ' '+s.label+' ('+s.col+'): '+rrFmtVal(ctx.parsed.y,s?s.fmt:def.valueFmt);
               }
             }
           }
         },
         scales:{
-          x:{ticks:{color:c.text,font:{size:10,weight:'600'}},grid:{color:c.grid}},
+          x:{ticks:{color:c.text,font:{size:10,weight:'600'}},grid:{color:c.grid},title:{display:true,text:'Month (column '+data.monthCol+')',color:c.text,font:{size:9,weight:'600'}}},
           y:{
-            ticks:{
-              color:c.text,font:{size:10},
-              callback:function(v){ return def.id==='netAddLines'?fmtLines(v):fmt(v); }
-            },
+            ticks:{color:c.text,font:{size:10},callback:function(v){return def.valueFmt==='lines'?fmtLines(v):fmt(v);}},
             grid:{color:c.grid},
-            title:{display:true,text:def.id==='netAddLines'?'Net Add Lines':(def.id==='revRecTrend'?'Revenue (AED)':'Net MRC / Revenue'),color:c.text,font:{size:9,weight:'600'}}
+            title:{display:true,text:def.yLabel,color:c.text,font:{size:9,weight:'600'}}
           }
         }
       }
@@ -8632,12 +8662,20 @@ function rrRenderActiveChart(){
   }catch(err){ console.error('[GLK] Revenue Rec chart error:',err); }
 }
 function rrParseBuffer(arrayBuffer,meta,cb){
+  cb=cb||function(){};
   if(typeof XLSX==='undefined'){ alert('Excel parser not loaded.'); return cb(new Error('XLSX missing')); }
   try{
     var wb=XLSX.read(arrayBuffer,{type:'array',cellDates:true,cellNF:true});
     var parsed=rrParseWorkbook(wb);
-    if(!Object.keys(parsed).length) return cb(new Error('No Revenue Rec sheets found. Expected: Rev Rec 2026 vs 2025 Trend, GLK Net Add Lines Trend, GLK Fixed Net MRC Trend, KEY-B.'));
-    rrSetParsed(parsed,meta);
+    var count=Object.keys(parsed).length;
+    if(!count) return cb(new Error('No trend sheets found. Expected sheets:\n• Rev Rec 2026 vs 2025 Trend\n• GLK Net Add Lines Trend\n• GLK Fixed Net MRC Trend'));
+    RR_META=meta||null;
+    RR_PARSED=parsed;
+    rrRefreshMeta();
+    rrBuildChartTabs();
+    if(!RR_PARSED[RR_ACTIVE_CHART]) RR_ACTIVE_CHART=Object.keys(RR_PARSED)[0]||'revRecTrend';
+    rrRenderActiveChart();
+    if(count<3) console.warn('[GLK] Revenue Rec: only '+count+'/3 sheets parsed',Object.keys(parsed));
     cb(null,parsed);
   }catch(e){ cb(e); }
 }
@@ -8646,12 +8684,11 @@ window.rrReportUpload=function(file){
   if(typeof XLSX==='undefined'){ alert('Excel parser not loaded. Refresh the page.'); return; }
   var reader=new FileReader();
   reader.onload=function(){
-    glkShowLoader('Parsing Revenue Rec workbook…');
+    glkShowLoader('Reading Excel columns…');
     rrCacheSave(reader.result,{filename:file.name,size:file.size,uploadedAt:new Date().toISOString()},function(){
       rrParseBuffer(reader.result,{filename:file.name,size:file.size,uploadedAt:new Date().toISOString()},function(err){
         glkHideLoader();
         if(err) alert('Could not parse workbook:\n'+err.message);
-        else if(el('revenue-rec-view')&&el('revenue-rec-view').style.display!=='none') rrRenderActiveChart();
       });
     });
   };
@@ -8661,10 +8698,10 @@ window.rrReportUpload=function(file){
 window.rrReloadFromCache=function(){
   rrCacheLoad(function(err,buffer,meta){
     if(err||!buffer){
-      alert('No cached Revenue Rec file.\n\nUpload Copy of dummy.xlsx once — it will be saved in this browser (same as Performance Bridge).');
+      alert('No cached file. Upload Copy of dummy.xlsx once.');
       return;
     }
-    glkShowLoader('Loading cached Revenue Rec workbook…');
+    glkShowLoader('Loading cached workbook…');
     rrParseBuffer(buffer,meta,function(e){
       glkHideLoader();
       if(e) alert('Cache load failed: '+e.message);
@@ -8672,19 +8709,26 @@ window.rrReloadFromCache=function(){
   });
 };
 function rrInitView(deferRender){
-  if(RR_PARSED){ rrBuildChartTabs(); if(!deferRender) rrRenderActiveChart(); return; }
+  if(RR_PARSED&&Object.keys(RR_PARSED).length){
+    rrBuildChartTabs();
+    if(!deferRender) rrRenderActiveChart();
+    return;
+  }
   rrCacheLoad(function(err,buffer,meta){
     if(!err&&buffer){
       rrParseBuffer(buffer,meta,function(){});
       return;
     }
     rrTryLoadBundledWorkbook(function(loadErr){
-      if(!loadErr) return;
-      RR_PARSED=Object.assign({},RR_DEFAULT_DATA);
+      if(!loadErr){
+        if(!deferRender) rrRenderActiveChart();
+        return;
+      }
+      RR_PARSED=null;
       RR_META=null;
       rrRefreshMeta();
       rrBuildChartTabs();
-      if(!deferRender||el('revenue-rec-view')&&el('revenue-rec-view').style.display!=='none') rrRenderActiveChart();
+      if(!deferRender) rrRenderActiveChart();
     });
   });
 }
@@ -8724,5 +8768,4 @@ window.addEventListener('load',function(){
 });
 </script>
 </body>
-</html>
 </html>
