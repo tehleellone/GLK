@@ -1333,9 +1333,13 @@ function mqGroupVerticalHint(bids){
 }
 function mqVerticalStackHtml(label){
   if(!label) return '';
-  return String(label).toUpperCase().split('').map(function(ch){
+  return String(label).toUpperCase().replace(/[^A-Za-z0-9]/g,'').split('').map(function(ch){
     return '<span class="mq-v-ch">'+mqEscHtml(ch)+'</span>';
   }).join('');
+}
+function mqVerticalLetters(label){
+  if(!label) return [];
+  return String(label).toUpperCase().replace(/[^A-Za-z0-9]/g,'').split('');
 }
 function mqVerticalStackBlock(label){
   if(!label) return '';
@@ -7241,8 +7245,9 @@ function mqSyncChartLabels(chart,bars){
   if(vstrip){
     vstrip.style.width=cw+'px';
     vstrip.style.minWidth=cw+'px';
-    vstrip.style.height=maxVertLen?Math.max(28,maxVertLen*11+8)+'px':'0';
-    vstrip.style.minHeight=maxVertLen?Math.max(28,maxVertLen*11+8)+'px':'0';
+    vstrip.style.height='0';
+    vstrip.style.minHeight='0';
+    vstrip.style.display='none';
     vstrip.innerHTML='';
   }
   if(strip){
@@ -7253,16 +7258,6 @@ function mqSyncChartLabels(chart,bars){
   meta.data.forEach(function(bar,i){
     var b=bars[i]; if(!b) return;
     var nameLines=mqAxisNameLines(b);
-    if(vstrip&&b.verticalHint){
-      var vcell=document.createElement('div');
-      vcell.className='mq-v-abs'+(GLK_MQ_DETAIL_IDX===i?' sel':'');
-      vcell.style.left=bar.x+'px';
-      vcell.style.transform='translateX(-50%)';
-      vcell.innerHTML=mqVerticalStackBlock(b.verticalHint);
-      vcell.title=b.verticalHint;
-      vcell.onclick=function(){mqClickAxisCell(i);};
-      vstrip.appendChild(vcell);
-    }
     if(strip){
       var cell=document.createElement('div');
       var extra=b.type==='growth'?' growth-lbl':(b.type==='gap'?' gap-lbl':'');
@@ -7567,6 +7562,36 @@ function glkMobileQtdBracketPlugin(bars){
     });
   }};
 }
+function glkMobileQtdVertPlugin(bars){
+  return {id:'mqVertLabels',afterDatasetsDraw:function(chart){
+    var meta=chart.getDatasetMeta(0);
+    if(!meta||!meta.data) return;
+    var ctx=chart.ctx;
+    meta.data.forEach(function(bar,i){
+      var b=bars[i];
+      if(!b||!b.verticalHint) return;
+      var letters=mqVerticalLetters(b.verticalHint);
+      if(!letters.length) return;
+      var top=Math.min(bar.y,bar.base), bot=Math.max(bar.y,bar.base);
+      var x=bar.x, lineH=11, pad=6;
+      var blockH=letters.length*lineH;
+      var startY=Math.max(top+pad, bot-blockH-pad);
+      ctx.save();
+      ctx.font='700 10px Inter,system-ui,sans-serif';
+      ctx.textAlign='center';
+      ctx.textBaseline='top';
+      letters.forEach(function(ch,li){
+        var y=startY+li*lineH;
+        ctx.lineWidth=2.5;
+        ctx.strokeStyle='rgba(15,23,42,.4)';
+        ctx.strokeText(ch,x,y);
+        ctx.fillStyle='rgba(255,255,255,.96)';
+        ctx.fillText(ch,x,y);
+      });
+      ctx.restore();
+    });
+  }};
+}
 function glkMobileQtdLabelPlugin(bars){
   return {id:'mqLabels',afterDatasetsDraw:function(chart){
     var ctx=chart.ctx,meta=chart.getDatasetMeta(0);
@@ -7789,6 +7814,7 @@ function renderMobileQtdBridge(){
     glkMobileQtdSectionPlugin(bars),
     glkMobileQtdFlowPlugin(bars),
     glkMobileQtdLabelPlugin(bars),
+    glkMobileQtdVertPlugin(bars),
     glkMobileQtdSepPlugin(churnSepIdx,c)
   ];
   try{
@@ -8024,4 +8050,5 @@ window.addEventListener('load',function(){
 });
 </script>
 </body>
+</html>
 </html>
