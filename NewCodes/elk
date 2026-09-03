@@ -417,7 +417,7 @@ body[data-theme="dark"] .status-dot,body[data-theme="duralux-dark"] .status-dot{
 #mqChartWrap{position:relative;height:340px;min-width:100%;flex-shrink:0}
 #mqChartWrap canvas{display:block;width:100%!important;height:100%!important}
 #mqVertOnChart{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;overflow:visible;z-index:3}
-.mq-v-onbar{position:absolute;transform:translate(-50%,-50%);pointer-events:auto;cursor:pointer;z-index:4}
+.mq-v-onbar{position:absolute;transform:translateX(-50%);pointer-events:auto;cursor:pointer;z-index:4}
 .mq-v-onbar .mq-v-stack{display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:0;line-height:1;background:#fff;border:1px solid rgba(15,23,42,.35);border-radius:5px;padding:3px 5px;box-shadow:0 1px 4px rgba(15,23,42,.25)}
 .mq-v-onbar .mq-v-ch{display:block;font-size:10px;font-weight:800;font-family:Inter,system-ui,-apple-system,sans-serif;color:#0f172a;line-height:1.05;letter-spacing:.04em}
 #mqHdLegend{display:flex;flex-wrap:wrap;align-items:center;gap:.4rem .75rem;margin-top:.45rem;padding:.45rem .65rem;background:var(--bg-secondary);border:1px dashed var(--border);border-radius:8px}
@@ -426,13 +426,10 @@ body[data-theme="dark"] .status-dot,body[data-theme="duralux-dark"] .status-dot{
 .mq-bracket-abs{position:absolute;top:0;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:22px}
 .mq-bracket-line{display:block;width:calc(100% - 4px);height:0;border-top:1.5px solid rgba(100,116,139,.55);margin-bottom:2px}
 .mq-bracket-label{font-size:8px;font-weight:700;color:#64748b;line-height:1.2;text-align:center;padding:0 2px}
-#mqVertAxisStrip{position:relative;margin-top:2px;padding:0 0 2px;min-height:0}
 #mqXAxisStrip{position:relative;height:48px;margin-top:2px;padding-bottom:2px;min-height:48px}
 .mq-x-abs{position:absolute;top:0;text-align:center;font-size:9px;font-weight:600;color:var(--t3);line-height:1.3;padding:0 2px;word-break:break-word;hyphens:auto;cursor:pointer;transition:color .15s,background .15s}
-.mq-v-abs .mq-v-ch{display:block;font-size:10px;font-weight:800;font-family:Inter,system-ui,-apple-system,sans-serif;color:#0f172a;line-height:1.05;letter-spacing:.04em}
-.mq-v-abs:hover .mq-v-ch{color:#0f172a}
-.mq-v-abs.sel .mq-v-ch{color:#4338ca}
-.mq-v-abs.sel .mq-v-stack{border-color:rgba(99,102,241,.45);background:rgba(238,242,255,.95)}
+.mq-v-onbar.sel .mq-v-ch{color:#4338ca}
+.mq-v-onbar.sel .mq-v-stack{border-color:rgba(99,102,241,.55);background:rgba(238,242,255,.97)}
 .mq-x-abs:hover{color:var(--acc);background:var(--nab)}
 .mq-x-abs.sel{color:var(--acc);font-weight:800;background:var(--nab);border:1px solid var(--nab2);border-radius:4px}
 .mq-x-abs.growth-lbl{color:#22c55e;font-weight:700}
@@ -1205,7 +1202,6 @@ body[data-theme="dark"] .badge-warning,body[data-theme="duralux-dark"] .badge-wa
           <div class="mq-bridge-scroll" id="mqBridgeScroll">
             <div id="mqChartOuter">
               <div class="chart-container" id="mqChartWrap"><canvas id="chartMobileQtd"></canvas><div id="mqVertOnChart"></div></div>
-              <div id="mqVertAxisStrip"></div>
               <div id="mqBracketRow"></div>
               <div id="mqXAxisStrip"></div>
             </div>
@@ -7369,10 +7365,6 @@ function mqSyncChartLabels(chart,bars){
   var canvas=chart.canvas;
   var cw=canvas?canvas.clientWidth:0;
   if(!cw) return;
-  var maxVertLen=0;
-  bars.forEach(function(b){
-    if(b.verticalHint) maxVertLen=Math.max(maxVertLen,mqVerticalLetters(b.verticalHint).length);
-  });
   var brow=el('mqBracketRow');
   if(brow){
     brow.style.width=cw+'px';
@@ -7399,18 +7391,12 @@ function mqSyncChartLabels(chart,bars){
     });
   }
   var strip=el('mqXAxisStrip');
-  var vstrip=el('mqVertAxisStrip');
   var overlay=el('mqVertOnChart');
   if(overlay){
     overlay.style.display='block';
     overlay.style.width=cw+'px';
     overlay.style.height=(canvas.clientHeight||0)+'px';
     overlay.innerHTML='';
-  }
-  if(vstrip){
-    vstrip.style.display='none';
-    vstrip.style.height='0';
-    vstrip.innerHTML='';
   }
   if(strip){
     strip.style.width=cw+'px';
@@ -7423,11 +7409,13 @@ function mqSyncChartLabels(chart,bars){
     if(overlay&&b.verticalHint){
       var letters=mqVerticalLetters(b.verticalHint);
       if(letters.length){
-        var top=Math.min(bar.y,bar.base), bot=Math.max(bar.y,bar.base);
+        var bot=Math.max(bar.y,bar.base);
+        var blockH=letters.length*12+8;
+        var limit=(canvas.clientHeight||340)-blockH-4;
         var vcell=document.createElement('div');
         vcell.className='mq-v-onbar'+(GLK_MQ_DETAIL_IDX===i?' sel':'');
         vcell.style.left=bar.x+'px';
-        vcell.style.top=((top+bot)/2)+'px';
+        vcell.style.top=Math.min(bot+7,limit)+'px';
         var hd=mqVertHdGroup((b.bids&&b.bids[0]&&b.bids[0].vertical)||b.verticalHint);
         vcell.innerHTML=mqVerticalStackBlock(b.verticalHint);
         var stack=vcell.querySelector('.mq-v-stack');
