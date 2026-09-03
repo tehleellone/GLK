@@ -1143,8 +1143,18 @@ body[data-theme="dark"] .badge-warning,body[data-theme="duralux-dark"] .badge-wa
                 </div>
                 <span class="mq-control-hint">Most Likely = Proposed only · Upside = Proposed + Opportunity in-flight.</span>
               </div>
+              <div class="mq-control-block" id="mqHeadDirectorBlock">
+                <div class="mq-control-head"><span class="mq-control-step">4</span><span class="mq-control-label">Head director</span></div>
+                <div class="mq-control-tabs">
+                  <button type="button" id="mqHd_all" class="pf-tab active" onclick="glkSetMqHeadDirector('')">All</button>
+                  <button type="button" id="mqHd_khalid" class="pf-tab" onclick="glkSetMqHeadDirector('khalid')">Khalid</button>
+                  <button type="button" id="mqHd_amir" class="pf-tab" onclick="glkSetMqHeadDirector('amir')">Amir</button>
+                  <button type="button" id="mqHd_kamil" class="pf-tab" onclick="glkSetMqHeadDirector('kamil')">Kamil</button>
+                </div>
+                <span class="mq-control-hint">Khalid → AUH, F-NE, HUNT · Amir → DXB · Kamil → KEY-A, KEY-B, LE (auto-selects report level).</span>
+              </div>
               <div class="mq-control-block" id="mqReportLevelBlock">
-                <div class="mq-control-head"><span class="mq-control-step">4</span><span class="mq-control-label">Report level</span></div>
+                <div class="mq-control-head"><span class="mq-control-step">5</span><span class="mq-control-label">Report level</span></div>
                 <div class="ms-wrap" id="mqms_reportLevel">
                   <div class="ms-trigger" id="mqmst_reportLevel" onclick="event.stopPropagation();mqToggleReportLevel()">
                     <span id="mqmstext_reportLevel">GLK Overall</span>
@@ -1247,8 +1257,15 @@ const MQ_CLR_ACTUALS='#059669';
 const MQ_CLR_WON='#7c3aed';
 const MQ_CLR_INFLIGHT=['#3b82f6','#60a5fa','#2563eb','#818cf8','#a5b4fc'];
 const MQ_CLR_INFLIGHT_OTHERS='#93c5fd';
-const MQ_CLR_CHURN=['#b91c1c','#dc2626','#ef4444','#ea580c','#c2410c'];
+const MQ_CLR_CHURN=['#b91c1c','#dc2626','#ef4444','#c2410c','#991b1b'];
 const MQ_CLR_CHURN_OTHERS='#dc2626';
+const MQ_GROUP_INFLIGHT={khalid:'#2563eb',amir:'#0891b2',kamil:'#7c3aed',other:'#3b82f6'};
+const MQ_GROUP_CHURN={khalid:'#dc2626',amir:'#b91c1c',kamil:'#ea580c',other:'#ef4444'};
+const MQ_HEAD_DIRECTORS={
+  khalid:{label:'Khalid',patterns:['AUH','F-NE','FNE','HUNT']},
+  amir:{label:'Amir',patterns:['DXB']},
+  kamil:{label:'Kamil',patterns:['KEY-A','KEY-B','KEYA','KEYB','LE']}
+};
 const MQ_CLR_EMPTY='#cbd5e1';
 const MQ_SECTION_FILLS={
   actuals:'rgba(5,150,105,.07)',
@@ -1336,7 +1353,27 @@ function mqCaseDisplayName(c){
 }
 function mqBridgeShowsVertical(calc){
   calc=calc||GLK_MQ_CALC_LAST||{};
-  return !calc.activeReportLevels||!calc.activeReportLevels.length;
+  var n=(calc.activeReportLevels||[]).length;
+  return n===0||n>1;
+}
+function mqVertHdGroup(vertical){
+  var k=mqNormVertKey(vertical);
+  if(!k||k==='—') return 'other';
+  if(k==='dxb') return 'amir';
+  if(k==='auh'||k==='fne'||k==='hunt') return 'khalid';
+  if(k==='le'||k.indexOf('key')===0) return 'kamil';
+  return 'other';
+}
+function mqPoolBarColor(bids,isChurn){
+  var bid=(bids||[])[0];
+  var g=bid?mqVertHdGroup(bid.vertical):'other';
+  return isChurn?(MQ_GROUP_CHURN[g]||MQ_GROUP_CHURN.other):(MQ_GROUP_INFLIGHT[g]||MQ_GROUP_INFLIGHT.other);
+}
+function mqVerticalDisplayHint(bids){
+  var hint=mqGroupVerticalHint(bids);
+  if(!hint) return '';
+  if(hint.indexOf(' · ')>=0) return hint.split(' · ')[0];
+  return hint;
 }
 function mqGroupVerticalHint(bids){
   var verts={};
@@ -1364,6 +1401,7 @@ function mqVerticalStackBlock(label){
   return '<div class="mq-v-stack">'+mqVerticalStackHtml(label)+'</div>';
 }
 let mqReportLevels=[];
+let mqHeadDirector='';
 let GLK_MQ_DETAIL_IDX=-1;
 let GLK_MQ_DETAIL_GROUP_IDX=-1;
 let GLK_MQ_DETAIL_BID_IDX=-1;
@@ -5015,6 +5053,7 @@ function mqSyncBridgeControlsUi(){
       desc.innerHTML='Mobile QTD bridge. Select <strong>Fixed</strong> (step 1) to unlock Quarter to Go and Year to Go bridges.';
     }
   }
+  mqUpdateHeadDirectorUi();
   el('mqPfMobile')?.classList.toggle('active',!isFixed);
   el('mqPfFixed')?.classList.toggle('active',isFixed);
   var pfHint=el('mqPfHint');
@@ -5076,6 +5115,61 @@ function mqGetReportLevelsChecked(){
   if(!drop) return mqReportLevels.slice();
   return Array.from(drop.querySelectorAll('input:checked')).map(function(c){return c.value;});
 }
+function mqSetReportLevelsChecked(names){
+  var drop=el('mqmsd_reportLevel');
+  if(!drop) return;
+  var set={};
+  (names||[]).forEach(function(n){ set[n]=true; });
+  drop.querySelectorAll('input[type=checkbox]').forEach(function(inp){
+    inp.checked=!!set[inp.value];
+  });
+  mqUpdateReportLevelText();
+}
+function mqResolveReportVerticalNames(patterns){
+  var report=mqGetActiveReport();
+  var verts=(report&&report.verticals)||[];
+  var out=[];
+  (patterns||[]).forEach(function(pat){
+    verts.forEach(function(v){
+      if(v.name&&mqMatchVerticalName(v.name,pat)&&out.indexOf(v.name)<0) out.push(v.name);
+    });
+  });
+  return out;
+}
+function mqUpdateHeadDirectorUi(){
+  ['','khalid','amir','kamil'].forEach(function(k){
+    var btn=el(k?('mqHd_'+k):'mqHd_all');
+    if(btn) btn.classList.toggle('active',mqHeadDirector===k);
+  });
+}
+function mqSyncHeadDirectorFromLevels(){
+  var checked=mqGetReportLevelsChecked();
+  var matched='';
+  Object.keys(MQ_HEAD_DIRECTORS).forEach(function(hd){
+    var expected=mqResolveReportVerticalNames(MQ_HEAD_DIRECTORS[hd].patterns);
+    if(expected.length&&checked.length===expected.length&&expected.every(function(n){return checked.indexOf(n)>=0;})){
+      matched=hd;
+    }
+  });
+  mqHeadDirector=matched;
+  mqUpdateHeadDirectorUi();
+}
+window.glkSetMqHeadDirector=function(hd){
+  mqHeadDirector=hd||'';
+  mqUpdateHeadDirectorUi();
+  if(mqHeadDirector){
+    mqSetReportLevelsChecked(mqResolveReportVerticalNames(MQ_HEAD_DIRECTORS[mqHeadDirector].patterns));
+  }else{
+    mqSetReportLevelsChecked([]);
+  }
+  mqUpdateReportLevelText();
+  if(mqIsYtdBridge()&&mqProductFamily==='mobile'&&mqGetActiveReportLevels().length){
+    alert("Net Add Lines targets are on Overall level only — not per vertical.\n\nActuals will filter by your selection; the target bar stays GLK Overall.");
+  }
+  mqSyncYtdManualPanel();
+  GLK_MQ_DETAIL_IDX=-1;
+  renderMobileQtdBridge();
+};
 function mqUpdateReportLevelText(){
   var checked=mqGetReportLevelsChecked();
   var te=el('mqmstext_reportLevel'); if(!te) return;
@@ -5103,6 +5197,7 @@ window.mqToggleReportLevel=function(){
 };
 window.mqOnReportLevelChange=function(){
   mqUpdateReportLevelText();
+  mqSyncHeadDirectorFromLevels();
   if(mqIsYtdBridge()&&mqProductFamily==='mobile'&&mqGetActiveReportLevels().length){
     alert("Net Add Lines targets are on Overall level only — not per vertical.\n\nActuals will filter by your selection; the target bar stays GLK Overall.");
   }
@@ -6584,6 +6679,7 @@ function mqGetSelectedFilterLabels(){
   out['Product family']=mqProductFamily==='fixed'?'Fixed':'Mobile';
   out['Bridge type']=mqPeriodLongName(mqPeriod);
   out['Scenario']=mqCaseDisplayName();
+  if(mqHeadDirector&&MQ_HEAD_DIRECTORS[mqHeadDirector]) out['Head director']=MQ_HEAD_DIRECTORS[mqHeadDirector].label;
   return out;
 }
 function mqBuildRulesHtml(calc){
@@ -6630,7 +6726,8 @@ function mqBuildRulesHtml(calc){
   html+='<strong>1 Product family</strong> — Mobile (QTD + YTD) or Fixed (QTD + YTD + Quarter to Go + Year to Go)<br>';
   html+='<strong>2 Bridge type</strong> — QTD · YTD · Quarter to Go · Year to Go<br>';
   html+='<strong>3 Scenario</strong> — Most Likely vs Upside (see pipeline rules below)<br>';
-  html+='<strong>4 Report level</strong> — filters pipeline rows by GLK Excel vertical (AUH, DXB, KEY-A…). Applies to <em>all</em> bridge types. Excel target on Mobile YTD stays Overall-only.';
+  html+='<strong>4 Head director</strong> — Khalid (AUH, F-NE, HUNT) · Amir (DXB) · Kamil (KEY-A, KEY-B, LE) — auto-selects report level verticals<br>';
+  html+='<strong>5 Report level</strong> — filters pipeline rows by GLK Excel vertical (AUH, DXB, KEY-A…). Applies to <em>all</em> bridge types. Excel target on Mobile YTD stays Overall-only.';
   html+='</div>';
 
   html+='<div class="mq-info-section"><h4>Filters applied to pipeline</h4>';
@@ -7292,9 +7389,9 @@ function mqSyncChartLabels(chart,bars){
   if(vstrip){
     vstrip.style.width=cw+'px';
     vstrip.style.minWidth=cw+'px';
-    vstrip.style.display=maxVertLen?'block':'none';
-    vstrip.style.height=maxVertLen?Math.max(34,maxVertLen*13+10)+'px':'0';
-    vstrip.style.minHeight=maxVertLen?Math.max(34,maxVertLen*13+10)+'px':'0';
+    vstrip.style.height='0';
+    vstrip.style.minHeight='0';
+    vstrip.style.display='none';
     vstrip.innerHTML='';
   }
   if(strip){
@@ -7305,16 +7402,6 @@ function mqSyncChartLabels(chart,bars){
   meta.data.forEach(function(bar,i){
     var b=bars[i]; if(!b) return;
     var nameLines=mqAxisNameLines(b);
-    if(vstrip&&b.verticalHint){
-      var vcell=document.createElement('div');
-      vcell.className='mq-v-abs'+(GLK_MQ_DETAIL_IDX===i?' sel':'');
-      vcell.style.left=bar.x+'px';
-      vcell.style.transform='translateX(-50%)';
-      vcell.innerHTML=mqVerticalStackBlock(b.verticalHint);
-      vcell.title=b.verticalHint;
-      vcell.onclick=function(){mqClickAxisCell(i);};
-      vstrip.appendChild(vcell);
-    }
     if(strip){
       var cell=document.createElement('div');
       var extra=b.type==='growth'?' growth-lbl':(b.type==='gap'?' gap-lbl':'');
@@ -7619,6 +7706,39 @@ function glkMobileQtdBracketPlugin(bars){
     });
   }};
 }
+function glkMobileQtdVertPlugin(bars){
+  return {id:'mqVertLabels',afterDatasetsDraw:function(chart){
+    var meta=chart.getDatasetMeta(0);
+    if(!meta||!meta.data) return;
+    var ctx=chart.ctx;
+    meta.data.forEach(function(bar,i){
+      var b=bars[i];
+      if(!b||!b.verticalHint) return;
+      var letters=mqVerticalLetters(b.verticalHint);
+      if(!letters.length) return;
+      var top=Math.min(bar.y,bar.base), bot=Math.max(bar.y,bar.base), h=bot-top;
+      var x=bar.x, lineH=10, padX=5, padY=3;
+      var blockH=letters.length*lineH+padY*2;
+      var blockW=Math.max(16, padX*2+8);
+      var startY=Math.max(top+2, bot-blockH-3);
+      if(startY+blockH>bot-1) startY=Math.max(top+2, bot-blockH-1);
+      ctx.save();
+      ctx.fillStyle='rgba(255,255,255,.94)';
+      ctx.strokeStyle='rgba(30,41,59,.35)';
+      ctx.lineWidth=1;
+      ctx.fillRect(x-blockW/2, startY, blockW, blockH);
+      ctx.strokeRect(x-blockW/2+0.5, startY+0.5, blockW-1, blockH-1);
+      ctx.font='800 9px Inter,system-ui,sans-serif';
+      ctx.textAlign='center';
+      ctx.textBaseline='top';
+      ctx.fillStyle='#0f172a';
+      letters.forEach(function(ch,li){
+        ctx.fillText(ch, x, startY+padY+li*lineH);
+      });
+      ctx.restore();
+    });
+  }};
+}
 function glkMobileQtdLabelPlugin(bars){
   return {id:'mqLabels',afterDatasetsDraw:function(chart){
     var ctx=chart.ctx,meta=chart.getDatasetMeta(0);
@@ -7627,7 +7747,7 @@ function glkMobileQtdLabelPlugin(bars){
       var b=bars[i]; if(!b) return;
       var val=b.value, top=Math.min(bar.y,bar.base), bot=Math.max(bar.y,bar.base), h=bot-top;
       var hasVert=!!b.verticalHint;
-      var labelY=hasVert?(top+Math.min(14,h*0.35)):(top+h/2);
+      var labelY=hasVert?(top+10):(top+h/2);
       ctx.save();
       var lbl=fmtLines(Math.abs(val));
       if(b.type==='decrease') lbl='-'+lbl;
@@ -7759,11 +7879,11 @@ function renderMobileQtdBridge(){
     if(!p.value) return;
     trueCum+=p.value;
     var ds=dispTop,de=dispTop+dispH(p.value); dispTop=de;
-    var vHint=mqBridgeShowsVertical(calc)?mqGroupVerticalHint(p.bids):'';
+    var vHint=mqBridgeShowsVertical(calc)?mqVerticalDisplayHint(p.bids):'';
     var top5Lbl=mqInflightTop5Label();
     pushBar({
       value:p.value,trueCum:trueCum,displayStart:ds,displayEnd:de,
-      color:mqInflightBarColor(i),type:'increase',
+      color:mqPoolBarColor(p.bids,false),type:'increase',
       custName:p.name,section:'gross',bids:p.bids||[],bracketGroup:'top5gross',bracketLabel:top5Lbl,groupLabel:top5Lbl,
       verticalHint:vHint
     },'Top · '+p.name+' · '+fmtLines(p.value));
@@ -7789,9 +7909,9 @@ function renderMobileQtdBridge(){
       if(!p.value) return;
       trueCum+=p.value;
       var cs=dispTop,ce=dispTop-dispH(Math.abs(p.value)); dispTop=ce;
-      var vHintC=mqBridgeShowsVertical(calc)?mqGroupVerticalHint(p.bids):'';
+      var vHintC=mqBridgeShowsVertical(calc)?mqVerticalDisplayHint(p.bids):'';
       pushBar({
-        value:p.value,trueCum:trueCum,displayStart:cs,displayEnd:ce,color:mqChurnBarColor(i),type:'decrease',
+        value:p.value,trueCum:trueCum,displayStart:cs,displayEnd:ce,color:mqPoolBarColor(p.bids,true),type:'decrease',
         custName:p.name,section:'churn',bids:p.bids||[],bracketGroup:'top5churn',bracketLabel:'Top 5 Churn',groupLabel:'Top 5 Churn',
         verticalHint:vHintC
       },'Top Churn · '+p.name+' · '+fmtLines(p.value));
@@ -7848,6 +7968,7 @@ function renderMobileQtdBridge(){
     glkMobileQtdSectionPlugin(bars),
     glkMobileQtdFlowPlugin(bars),
     glkMobileQtdLabelPlugin(bars),
+    glkMobileQtdVertPlugin(bars),
     glkMobileQtdSepPlugin(churnSepIdx,c)
   ];
   try{
