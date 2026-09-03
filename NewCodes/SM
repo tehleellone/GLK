@@ -5219,6 +5219,8 @@ function computeLMRNPS(rnpsGrouped) {
             } catch (e) {}
             return item;
         }
+
+        async function smQueryListByAccountCode(listName, accountCode) {
             if (!listName) return null;
             var safe = String(accountCode).replace(/'/g, "''");
             var listEsc = String(listName).replace(/'/g, "''");
