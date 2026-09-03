@@ -416,22 +416,19 @@ body[data-theme="dark"] .status-dot,body[data-theme="duralux-dark"] .status-dot{
 #mqChartOuter{display:flex;flex-direction:column;min-width:100%}
 #mqChartWrap{position:relative;height:340px;min-width:100%;flex-shrink:0}
 #mqChartWrap canvas{display:block;width:100%!important;height:100%!important}
-#mqVertOnChart{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;overflow:visible;z-index:3}
-.mq-v-onbar{position:absolute;transform:translateX(-50%);pointer-events:auto;cursor:pointer;z-index:4}
-.mq-v-onbar .mq-v-stack{display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:0;line-height:1;background:#fff;border:1px solid rgba(15,23,42,.28);border-radius:5px;padding:3px 5px;box-shadow:0 1px 3px rgba(15,23,42,.18)}
-.mq-v-onbar .mq-v-ch{display:block;font-size:10px;font-weight:800;font-family:Inter,system-ui,-apple-system,sans-serif;color:#0f172a;line-height:1.05;letter-spacing:.04em}
+#mqVertOnChart{display:none!important}
+.mq-v-abs{position:absolute;top:0;left:0;text-align:center;cursor:pointer;padding:0 1px;z-index:2;transform:translateX(-50%)}
+.mq-v-abs .mq-v-stack{display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:0;line-height:1;background:#fff;border:1px solid rgba(15,23,42,.28);border-radius:5px;padding:3px 5px;box-shadow:0 1px 3px rgba(15,23,42,.18)}
 #mqHdLegend{display:flex;flex-wrap:wrap;align-items:center;gap:.4rem .75rem;margin-top:.45rem;padding:.45rem .65rem;background:var(--bg-secondary);border:1px dashed var(--border);border-radius:8px}
 #mqHdLegend .mq-hd-legend-title{font-size:.64rem;font-weight:800;color:var(--t1);text-transform:uppercase;letter-spacing:.04em;margin-right:.25rem}
 #mqBracketRow{position:relative;height:22px;margin-top:4px;min-height:20px}
 .mq-bracket-abs{position:absolute;top:0;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:22px}
 .mq-bracket-line{display:block;width:calc(100% - 4px);height:0;border-top:1.5px solid rgba(100,116,139,.55);margin-bottom:2px}
 .mq-bracket-label{font-size:8px;font-weight:700;color:#64748b;line-height:1.2;text-align:center;padding:0 2px}
-#mqVertAxisStrip{position:relative;margin-top:0;padding:0 0 3px;min-height:0}
-#mqXAxisStrip{position:relative;height:48px;margin-top:4px;padding-bottom:2px;min-height:48px}
+#mqVertAxisStrip{position:relative;margin-top:2px;padding:0 0 2px;min-height:0}
+#mqXAxisStrip{position:relative;height:48px;margin-top:2px;padding-bottom:2px;min-height:48px}
 .mq-x-abs{position:absolute;top:0;text-align:center;font-size:9px;font-weight:600;color:var(--t3);line-height:1.3;padding:0 2px;word-break:break-word;hyphens:auto;cursor:pointer;transition:color .15s,background .15s}
-.mq-v-abs{position:absolute;top:0;text-align:center;cursor:pointer;padding:0 1px;z-index:2}
-.mq-v-abs .mq-v-stack{display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:1px;line-height:1;background:rgba(255,255,255,.92);border:1px solid rgba(51,65,85,.22);border-radius:4px;padding:2px 4px;box-shadow:0 1px 2px rgba(15,23,42,.08)}
-.mq-v-abs .mq-v-ch{display:block;font-size:10px;font-weight:800;font-family:Inter,system-ui,-apple-system,sans-serif;color:#1e293b;line-height:1.05;letter-spacing:.04em}
+.mq-v-abs .mq-v-ch{display:block;font-size:10px;font-weight:800;font-family:Inter,system-ui,-apple-system,sans-serif;color:#0f172a;line-height:1.05;letter-spacing:.04em}
 .mq-v-abs:hover .mq-v-ch{color:#0f172a}
 .mq-v-abs.sel .mq-v-ch{color:#4338ca}
 .mq-v-abs.sel .mq-v-stack{border-color:rgba(99,102,241,.45);background:rgba(238,242,255,.95)}
@@ -7402,15 +7399,15 @@ function mqSyncChartLabels(chart,bars){
   }
   var strip=el('mqXAxisStrip');
   var vstrip=el('mqVertAxisStrip');
-  if(vstrip){
-    vstrip.style.display='none';
-    vstrip.innerHTML='';
-  }
   var overlay=el('mqVertOnChart');
-  if(overlay){
-    overlay.style.width=cw+'px';
-    overlay.style.height=(canvas.clientHeight||0)+'px';
-    overlay.innerHTML='';
+  if(overlay){ overlay.innerHTML=''; overlay.style.display='none'; }
+  if(vstrip){
+    vstrip.style.display=maxVertLen?'block':'none';
+    vstrip.style.width=cw+'px';
+    vstrip.style.minWidth=cw+'px';
+    vstrip.style.height=maxVertLen?Math.max(36,maxVertLen*12+10)+'px':'0';
+    vstrip.style.minHeight=maxVertLen?Math.max(36,maxVertLen*12+10)+'px':'0';
+    vstrip.innerHTML='';
   }
   if(strip){
     strip.style.width=cw+'px';
@@ -7420,25 +7417,19 @@ function mqSyncChartLabels(chart,bars){
   meta.data.forEach(function(bar,i){
     var b=bars[i]; if(!b) return;
     var nameLines=mqAxisNameLines(b);
-    if(overlay&&b.verticalHint){
+    if(vstrip&&b.verticalHint){
       var letters=mqVerticalLetters(b.verticalHint);
       if(letters.length){
-        var top=Math.min(bar.y,bar.base), bot=Math.max(bar.y,bar.base);
-        var blockH=letters.length*11+8;
-        var wrapH=canvas.clientHeight||340;
-        var y=bot+5;
-        if(y+blockH>wrapH-4) y=Math.max(2, top-blockH-5);
         var vcell=document.createElement('div');
-        vcell.className='mq-v-onbar'+(GLK_MQ_DETAIL_IDX===i?' sel':'');
+        vcell.className='mq-v-abs'+(GLK_MQ_DETAIL_IDX===i?' sel':'');
         vcell.style.left=bar.x+'px';
-        vcell.style.top=y+'px';
         var hd=mqVertHdGroup((b.bids&&b.bids[0]&&b.bids[0].vertical)||b.verticalHint);
         vcell.innerHTML=mqVerticalStackBlock(b.verticalHint);
         var stack=vcell.querySelector('.mq-v-stack');
         if(stack) stack.style.borderLeft='3px solid '+(MQ_HD_COLORS[hd]||MQ_HD_COLORS.other);
         vcell.title=b.verticalHint;
         vcell.onclick=function(){mqClickAxisCell(i);};
-        overlay.appendChild(vcell);
+        vstrip.appendChild(vcell);
       }
     }
     if(strip){
@@ -7840,9 +7831,10 @@ function renderMobileQtdBridge(){
   var bars=[],barMeta=[],churnSepIdx=-1;
   var trueCum=0,dispTop=0;
   var scaleMax=Math.max(calc.target,calc.actualsQtd,calc.forecast,1);
-  function dispH(v,isPlaceholder){
+  function dispH(v,isPlaceholder,asTile){
     var a=Math.abs(num(v));
-    if(isPlaceholder) return Math.max(scaleMax*0.012,24);
+    if(isPlaceholder) return Math.max(scaleMax*0.05, 28);
+    if(asTile) return Math.max(a, scaleMax*0.07);
     return a;
   }
   function pushBar(b,meta){
@@ -7884,7 +7876,7 @@ function renderMobileQtdBridge(){
   calc.grossPool.top.forEach(function(p,i){
     if(!p.value) return;
     trueCum+=p.value;
-    var ds=dispTop,de=dispTop+dispH(p.value); dispTop=de;
+    var ds=dispTop,de=dispTop+dispH(p.value,false,true); dispTop=de;
     var vHint=mqBridgeShowsVertical(calc)?mqVerticalDisplayHint(p.bids):'';
     var top5Lbl=mqInflightTop5Label();
     pushBar({
@@ -7914,7 +7906,7 @@ function renderMobileQtdBridge(){
     calc.churnPool.top.forEach(function(p,i){
       if(!p.value) return;
       trueCum+=p.value;
-      var cs=dispTop,ce=dispTop-dispH(Math.abs(p.value)); dispTop=ce;
+      var cs=dispTop,ce=dispTop-dispH(Math.abs(p.value),false,true); dispTop=ce;
       var vHintC=mqBridgeShowsVertical(calc)?mqVerticalDisplayHint(p.bids):'';
       pushBar({
         value:p.value,trueCum:trueCum,displayStart:cs,displayEnd:ce,color:mqPoolBarColor(p.bids),type:'decrease',
@@ -7924,7 +7916,7 @@ function renderMobileQtdBridge(){
     });
     if(calc.churnPool.others!==0){
       trueCum+=calc.churnPool.others;
-      var os=dispTop,oe=dispTop-dispH(Math.abs(calc.churnPool.others)); dispTop=oe;
+      var os=dispTop,oe=dispTop-dispH(Math.abs(calc.churnPool.others),false,true); dispTop=oe;
       pushBar({
         value:calc.churnPool.others,trueCum:trueCum,displayStart:os,displayEnd:oe,color:MQ_CLR_CHURN_OTHERS,type:'decrease',
         custName:'Others Churn',section:'churn',bids:calc.churnPool.othersBids||[],groupLabel:'Others Churn'
@@ -7949,10 +7941,13 @@ function renderMobileQtdBridge(){
     }
   }
   var yMax=Math.max(calc.forecast,isForward?0:calc.target,isForward?0:calc.actualsQtd,1);
+  var yMin=0;
   bars.forEach(function(b){
     yMax=Math.max(yMax,b.displayStart,b.displayEnd,Math.abs(b.trueCum||0),Math.abs(b.value));
+    yMin=Math.min(yMin,b.displayStart,b.displayEnd);
   });
   yMax*=1.08;
+  if(yMin<0) yMin=Math.floor(yMin*1.06);
   var maxNameLen=0;
   bars.forEach(function(b){ maxNameLen=Math.max(maxNameLen,String(b.custName||'').length); });
   var scrollWrap=el('mqBridgeScroll');
@@ -7991,7 +7986,7 @@ function renderMobileQtdBridge(){
         }),
         borderWidth:bars.map(function(b){return (b.type==='total'||b.type==='target'||b.type==='growth'||b.type==='gap')?2:0;}),
         borderRadius:6,borderSkipped:false,
-        barPercentage:.82,categoryPercentage:.88,minBarLength:0,maxBarThickness:56
+        barPercentage:.82,categoryPercentage:.88,minBarLength:36,maxBarThickness:56
       }]},
       options:{responsive:true,maintainAspectRatio:false,
         layout:{padding:{bottom:axisPad,top:16,left:4,right:8}},
@@ -8014,7 +8009,7 @@ function renderMobileQtdBridge(){
         scales:{
           x:{ticks:{display:false,color:c.text,font:{size:9,weight:'600'}},grid:{display:false},
             border:{display:true,color:c.grid}},
-          y:{min:0,max:yMax,ticks:{color:c.text,font:{size:10},callback:function(v){return fmtLines(v);}},grid:{color:c.grid},
+          y:{min:yMin,max:yMax,ticks:{color:c.text,font:{size:10},callback:function(v){return fmtLines(v);}},grid:{color:c.grid},
             title:{display:true,text:(isForward?('Aggregated Revenue (MRC + OTC)'):mqMetricUnit())+' · '+mqCaseDisplayName(calc.isBest?'best':'worst'),color:c.text,font:{size:9,weight:'600'}}}
         }
       }
