@@ -5031,7 +5031,7 @@ function computeLMRNPS(rnpsGrouped) {
             return role === 'Account_Search_Viewer';
         }
         function smIsAccountSearchOnlyRole() {
-            return isAccountSearchViewerRole(USER_CONTEXT.role);
+            return USER_CONTEXT.isAccountSearchViewer === true;
         }
         function smApplyAccountSearchOnlyLandingUI() {
             if (!smIsAccountSearchOnlyRole()) return;
@@ -5087,6 +5087,132 @@ function computeLMRNPS(rnpsGrouped) {
         }
         function smODataEscapeLiteral(value) {
             return String(value == null ? '' : value).replace(/'/g, "''");
+        }
+        async function smDiscoverTsmSeListName() {
+            if (window._smTsmSeListName) return window._smTsmSeListName;
+            var named = [window.TSM_SE_LIST, window.TSM_SE_SP_LIST, window.TSMSE_LIST, window.TSM_SE_SP_LIST_NAME];
+            for (var n = 0; n < named.length; n++) {
+                if (named[n]) {
+                    window._smTsmSeListName = named[n];
+                    return named[n];
+                }
+            }
+            try {
+                var listsRes = await fetch(SP_URL + "/_api/web/lists?$select=Title,ItemCount&$filter=Hidden eq false&$top=500", {
+                    headers: { 'Accept': 'application/json;odata=verbose' },
+                    credentials: 'include'
+                });
+                if (listsRes.ok) {
+                    var lists = (((await listsRes.json()).d || {}).results) || [];
+                    var scored = lists.filter(function (l) {
+                        return l.Title !== SP_LIST && (l.ItemCount || 0) >= 5000;
+                    }).sort(function (a, b) {
+                        var sa = /TSM|SE|Undedicated/i.test(a.Title) ? 1 : 0;
+                        var sb = /TSM|SE|Undedicated/i.test(b.Title) ? 1 : 0;
+                        if (sb !== sa) return sb - sa;
+                        return (b.ItemCount || 0) - (a.ItemCount || 0);
+                    });
+                    if (scored.length) {
+                        window._smTsmSeListName = scored[0].Title;
+                        console.log('[Account Search] TSM SE list:', scored[0].Title, scored[0].ItemCount);
+                        return window._smTsmSeListName;
+                    }
+                }
+            } catch (e) {}
+            var candidates = ['Service Manager Request SE', 'TSM SE Request', 'TSM_SE_Request', 'TSM SE Accounts', 'TSM_SE_Accounts', 'Undedicated Accounts'];
+            for (var i = 0; i < candidates.length; i++) {
+                try {
+                    var cRes = await fetch(SP_URL + "/_api/web/lists/getbytitle('" + candidates[i].replace(/'/g, "''") + "')?$select=Title,ItemCount", {
+                        headers: { 'Accept': 'application/json;odata=verbose' },
+                        credentials: 'include'
+                    });
+                    if (cRes.ok) {
+                        window._smTsmSeListName = candidates[i];
+                        return candidates[i];
+                    }
+                } catch (e) {}
+            }
+            return null;
+        }
+
+        async function smQueryListByAccountCode(listName, accountCode) {
+            if (!listName) return null;
+            var safe = String(accountCode).replace(/'/g, "''");
+            var listEsc = String(listName).replace(/'/g, "''");
+            var filters = [
+                "Title eq '" + safe + "'",
+                "substringof('" + safe + "', Title)"
+            ];
+            for (var f = 0; f < filters.length; f++) {
+                try {
+                    var url = SP_URL + "/_api/web/lists/getbytitle('" + listEsc + "')/items?$filter=" + filters[f] + "&$top=1";
+                    var res = await fetch(url, {
+                        headers: { 'Accept': 'application/json;odata=verbose' },
+                        credentials: 'include'
+                    });
+                    if (!res.ok) continue;
+                    var data = await res.json();
+                    var rows = (data.d && data.d.results) || [];
+                    if (rows.length) {
+                        var hit = rows[0];
+                        if (!hit.Title) hit.Title = accountCode;
+                        if (!hit.Team) hit.Team = 'TSM_SE';
+                        return hit;
+                    }
+                } catch (e) {}
+            }
+            return null;
+        }
+
+        function smFindTsmSeInMemory(accountCode) {
+            var want = String(accountCode || '').trim();
+            if (!want) return null;
+            var rows = [];
+            function add(arr) {
+                if (Array.isArray(arr) && arr.length) rows = rows.concat(arr);
+            }
+            ['tsmSeAllData', 'tsmSeRows', 'TSM_SE_ROWS', 'tsmSeData', 'tsmSeAccounts', 'tsmSeAllRows'].forEach(function (k) { add(window[k]); });
+            if (window.tsmSeGridApi && typeof window.tsmSeGridApi.forEachNode === 'function') {
+                try {
+                    window.tsmSeGridApi.forEachNode(function (node) {
+                        if (node && node.data) rows.push(node.data);
+                    });
+                } catch (e) {}
+            }
+            for (var i = 0; i < rows.length; i++) {
+                var r = rows[i];
+                if (!r) continue;
+                var codes = [r.Title, r.code, r.accountCode, r.account, r.Account_Code, r['Account Code']];
+                for (var j = 0; j < codes.length; j++) {
+                    if (String(codes[j] == null ? '' : codes[j]).trim() === want) {
+                        if (!r.Title) r.Title = want;
+                        if (!r.Team) r.Team = 'TSM_SE';
+                        return r;
+                    }
+                }
+            }
+            return null;
+        }
+
+        async function smSearchTsmSeAccount(accountCode) {
+            if (typeof window.tsmSeFindAccountForSearch === 'function') {
+                try {
+                    var a = window.tsmSeFindAccountForSearch(accountCode);
+                    if (a && typeof a.then === 'function') a = await a;
+                    if (a) return a;
+                } catch (e) {}
+            }
+            if (typeof window.tsmSeFindAccount === 'function') {
+                try {
+                    var b = window.tsmSeFindAccount(accountCode);
+                    if (b && typeof b.then === 'function') b = await b;
+                    if (b) return b;
+                } catch (e) {}
+            }
+            var mem = smFindTsmSeInMemory(accountCode);
+            if (mem) return mem;
+            var listName = await smDiscoverTsmSeListName();
+            return smQueryListByAccountCode(listName, accountCode);
         }
         function smShowAccountSearchDenied(team) {
             var el = document.getElementById('searchErrorMessage');
@@ -5332,6 +5458,10 @@ USER_CONTEXT.isReadOnly = (DEV_USER_PROFILE.role === 'Read Only');
 USER_CONTEXT.isTSMManager = (DEV_USER_PROFILE.role === 'TSM Manager');
 USER_CONTEXT.isTSMSEViewer = (DEV_USER_PROFILE.role === 'TSM_SE_Viewer');
 USER_CONTEXT.isAccountSearchViewer = (DEV_USER_PROFILE.role === 'Account_Search_Viewer');
+            if (USER_CONTEXT.isAccountSearchViewer) {
+                USER_CONTEXT.role = 'Admin';
+                USER_CONTEXT.isAdmin = true;
+            }
             // For LM/SM roles, use manager name from config
             if (USER_CONTEXT.isLM || USER_CONTEXT.isSM) {
                 USER_CONTEXT.userName = DEV_USER_PROFILE.managerName;
@@ -5422,6 +5552,11 @@ USER_CONTEXT.isRcAdmin = (USER_CONTEXT.role === 'RC_Admin');
 USER_CONTEXT.isRcAgent = (USER_CONTEXT.role === 'RC_Agent');
 USER_CONTEXT.occSearchEnabled = parseAccessControlYesNo(accessRecord.OCC_SEARCH);
 USER_CONTEXT.isActive = true;
+                        // Same search/data as Admin; landing page stays search-only
+                        if (USER_CONTEXT.isAccountSearchViewer) {
+                            USER_CONTEXT.role = 'Admin';
+                            USER_CONTEXT.isAdmin = true;
+                        }
 
                         localStorage.setItem('sm_user_email', userEmail);
                         localStorage.setItem('sm_user_name', userName);
@@ -5534,7 +5669,11 @@ USER_CONTEXT.isActive = true;
 
             // Enhanced role badge with gradients and icons
             const roleEl = document.getElementById('landingUserRole');
-            if (USER_CONTEXT.role === 'Admin') {
+            if (USER_CONTEXT.isAccountSearchViewer) {
+                roleEl.innerHTML = '<i data-lucide="search" style="width: 14px; height: 14px; display: inline-block; vertical-align: middle; margin-right: 4px;"></i>Account Search Viewer';
+                roleEl.style.background = 'linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(5, 150, 105, 0.2))';
+                roleEl.style.borderColor = 'rgba(16, 185, 129, 0.6)';
+            } else if (USER_CONTEXT.role === 'Admin') {
                 roleEl.innerHTML = '<i data-lucide="crown" style="width: 14px; height: 14px; display: inline-block; vertical-align: middle; margin-right: 4px;"></i>Administrator';
                 roleEl.style.background = 'linear-gradient(135deg, rgba(234, 179, 8, 0.2), rgba(251, 191, 36, 0.2))';
                 roleEl.style.borderColor = 'rgba(234, 179, 8, 0.6)';
@@ -10575,8 +10714,13 @@ else if (sectionId === 'rcView') {
                 if (!res.ok) throw new Error('Failed to search account');
 
                 const data = await res.json();
+                let account = (data.d && data.d.results && data.d.results.length) ? data.d.results[0] : null;
 
-                if (!data.d.results.length) {
+                if (!account) {
+                    account = await smSearchTsmSeAccount(accountCode);
+                }
+
+                if (!account) {
                     document.getElementById('searchErrorMessage').style.display = 'block';
                     document.getElementById('accountDetailsSection').style.display = 'none';
                     document.getElementById('relatedAccountsSection').style.display = 'none';
@@ -10587,10 +10731,12 @@ else if (sectionId === 'rcView') {
                 }
 
                 document.getElementById('searchErrorMessage').style.display = 'none';
-
-                const account = data.d.results[0];
                 displayAccountDetails(account);
-                await loadRelatedAccounts(account);
+                try {
+                    await loadRelatedAccounts(account);
+                } catch (relErr) {
+                    console.warn('Related accounts skipped:', relErr);
+                }
 
             } catch (err) {
                 console.error('Search error:', err);
