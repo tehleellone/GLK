@@ -1,18 +1,17 @@
-    // tsm-se.js — TSM SE Dashboard Module v5.0.0
-    // SP List mode: load / upload TSM SE accounts (~22k) from SharePoint list + Excel
-    (function () {
-        'use strict';
+// tsm-se.js — TSM SE Dashboard Module v5.0.2
+// SP List: TSM_SE_Accounts (~22k rows)
+(function () {
+    'use strict';
 
-        var TSM_SE_MODULE_VERSION = '5.0.1';
+    var TSM_SE_MODULE_VERSION = '5.0.2';
+    var TSM_SE_PRIMARY_LIST = 'TSM_SE_Accounts';
     var TSM_SE_UPLOAD_EMAILS = ['tehleel.lone@du.ae', 'ubaid.mir@du.ae'];
-        var TSM_SE_CANDIDATE_LISTS = [
-            'Service Manager Request SE',
-            'TSM SE Request',
-            'TSM_SE_Request',
-            'TSM SE Accounts',
-            'TSM_SE_Accounts',
-            'Undedicated Accounts'
-        ];
+    var TSM_SE_CANDIDATE_LISTS = [
+        'TSM_SE_Accounts',
+        'TSM SE Accounts',
+        'Service Manager Request SE',
+        'Undedicated Accounts'
+    ];
         var TSM_SE_SP_CONCURRENCY = 8;
         var TSM_SE_MIN_LIST_ROWS = 5000;
 
@@ -27,7 +26,7 @@
             loading: false
         };
 
-        window.TSM_SE_LIST = window.TSM_SE_LIST || null;
+        window.TSM_SE_LIST = window.TSM_SE_LIST || TSM_SE_PRIMARY_LIST;
         window.tsmSeAllData = window.tsmSeAllData || [];
         window.tsmSeRows = window.tsmSeRows || [];
         window.tsmSeGridApi = window.tsmSeGridApi || null;
@@ -115,40 +114,34 @@
             return data.d.GetContextWebInformation.FormDigestValue;
         }
 
+        function tsmSePickField(item, names) {
+            for (var i = 0; i < names.length; i++) {
+                var v = item[names[i]];
+                if (v != null && v !== '') return tsmSePlain(v);
+            }
+            return '';
+        }
+
+        function tsmSeFirstMonthValue(item) {
+            var keys = ['_x004a_an26', '_x0046_eb26', '_x004d_ar26', '_x0041_pr26', '_x004d_ay26',
+                '_x004a_un26', '_x004a_ul26', '_x0041_ug26', '_x0053_ep26', '_x004f_ct26', '_x004e_ov26', '_x0044_ec26',
+                'Jan26', 'Feb26', 'Mar26', 'Apr26', 'May26', 'Jun26', 'Jul26', 'Aug26', 'Sep26', 'Oct26', 'Nov26', 'Dec26'];
+            for (var i = 0; i < keys.length; i++) {
+                var n = parseFloat(item[keys[i]]);
+                if (!isNaN(n) && n !== 0) return n;
+            }
+            return 0;
+        }
+
         async function tsmSeDiscoverListName() {
             if (tsmSeState.listName) return tsmSeState.listName;
-            var named = [window.TSM_SE_LIST, window.TSM_SE_SP_LIST, window.TSMSE_LIST, window.TSM_SE_SP_LIST_NAME];
+            var named = [window.TSM_SE_LIST, window.TSM_SE_SP_LIST, window.TSMSE_LIST, window.TSM_SE_SP_LIST_NAME, TSM_SE_PRIMARY_LIST];
             for (var i = 0; i < named.length; i++) {
                 if (named[i]) {
                     tsmSeState.listName = named[i];
                     window.TSM_SE_LIST = named[i];
                     return named[i];
                 }
-            }
-            try {
-                var listsRes = await fetch(tsmSeSpUrl() + "/_api/web/lists?$select=Title,ItemCount&$filter=Hidden eq false&$top=500", {
-                    headers: { 'Accept': 'application/json;odata=verbose' },
-                    credentials: 'include'
-                });
-                if (listsRes.ok) {
-                    var lists = (((await listsRes.json()).d || {}).results) || [];
-                    var scored = lists.filter(function (l) {
-                        return l.Title !== 'Service Manager Request' && (l.ItemCount || 0) >= TSM_SE_MIN_LIST_ROWS;
-                    }).sort(function (a, b) {
-                        var sa = /TSM|SE|Undedicated/i.test(a.Title) ? 1 : 0;
-                        var sb = /TSM|SE|Undedicated/i.test(b.Title) ? 1 : 0;
-                        if (sb !== sa) return sb - sa;
-                        return (b.ItemCount || 0) - (a.ItemCount || 0);
-                    });
-                    if (scored.length) {
-                        tsmSeState.listName = scored[0].Title;
-                        window.TSM_SE_LIST = scored[0].Title;
-                        console.log('[TSM SE] SP List mode:', scored[0].Title, scored[0].ItemCount);
-                        return tsmSeState.listName;
-                    }
-                }
-            } catch (e) {
-                console.warn('[TSM SE] list discovery failed', e);
             }
             for (var c = 0; c < TSM_SE_CANDIDATE_LISTS.length; c++) {
                 try {
@@ -159,6 +152,7 @@
                     if (cRes.ok) {
                         tsmSeState.listName = TSM_SE_CANDIDATE_LISTS[c];
                         window.TSM_SE_LIST = TSM_SE_CANDIDATE_LISTS[c];
+                        console.log('[TSM SE] Using list:', TSM_SE_CANDIDATE_LISTS[c]);
                         return tsmSeState.listName;
                     }
                 } catch (e) {}
@@ -190,24 +184,22 @@
 
         function tsmSeMapSpItem(item) {
             var code = tsmSePlain(item.Title);
-            var parent = tsmSePlain(item.Parent_x0020_Code) || code;
-            var isGroup = !item.Parent_x0020_Code || parent === code;
+            var parent = tsmSePickField(item, ['ParentCode', 'Parent_x0020_Code']) || code;
+            var isGroup = parent === code;
             return {
                 spItemId: item.ID || item.Id || null,
                 code: code,
                 parent: parent,
-                customer: tsmSePlain(item.Customer_x0020_Name),
-                team: tsmSePlain(item.Team) || 'TSM_SE',
-                lm: tsmSePlain(item.Line_x0020_Manager),
-                sm: tsmSePlain(item.Service_x0020_Manager),
-                secondarySm: tsmSePlain(item.Secondary_x0020_Service_x0020_Ma),
-                am: tsmSePlain(item.Account_x0020_Manager),
-                ad: tsmSePlain(item.Account_x0020_Director),
-                pocName: tsmSePlain(item.POC_x0020_Name),
-                pocEmail: tsmSePlain(item.POC_x0020_Email_x0020_ID),
-                pocPhone: tsmSePlain(item.POC_x0020_Contact_x0020_No),
+                customer: tsmSePickField(item, ['CustomerName', 'Customer_x0020_Name']),
+                team: tsmSePickField(item, ['Team']) || 'TSM_SE',
+                lm: tsmSePickField(item, ['LineManager', 'Line_x0020_Manager']),
+                sm: tsmSePickField(item, ['ServiceManager', 'Service_x0020_Manager']),
+                secondarySm: tsmSePickField(item, ['SecondaryServiceManager', 'Secondary_x0020_Service_x0020_Ma']),
+                am: tsmSePickField(item, ['AccountManager', 'Account_x0020_Manager']),
+                ad: tsmSePickField(item, ['AccountDirector', 'Account_x0020_Director']),
+                segment: tsmSePickField(item, ['Segment']),
                 type: isGroup ? 'Group' : 'Child',
-                avg: parseFloat(item.Jan_x002d_26 || item.Feb_x002d_26 || 0) || 0,
+                avg: tsmSeFirstMonthValue(item),
                 _raw: item
             };
         }
@@ -238,25 +230,61 @@
 
         var TSM_SE_HEADER_MAP = {
             Title: ['account code', 'account', 'title', 'code', 'account no', 'account number', 'acct code'],
-            Parent_x0020_Code: ['parent code', 'parent', 'parent account', 'parent account code'],
-            Customer_x0020_Name: ['customer name', 'customer', 'company', 'company name'],
+            ParentCode: ['parent code', 'parent', 'parent account', 'parent account code'],
+            CustomerName: ['customer name', 'customer', 'company', 'company name'],
             Team: ['team'],
-            Line_x0020_Manager: ['line manager', 'lm', 'line mgr'],
-            Service_x0020_Manager: ['service manager', 'sm', 'service mgr', 'service manager name'],
-            Secondary_x0020_Service_x0020_Ma: ['secondary sm', 'secondary service manager', 'secondary service mgr'],
-            Account_x0020_Manager: ['account manager', 'am', 'account mgr'],
-            Account_x0020_Director: ['account director', 'ad', 'account dir'],
-            POC_x0020_Name: ['poc name', 'primary poc', 'poc'],
-            POC_x0020_Email_x0020_ID: ['poc email', 'poc email id', 'email'],
-            POC_x0020_Contact_x0020_No: ['poc contact', 'poc phone', 'poc mobile', 'contact']
+            LineManager: ['line manager', 'lm', 'line mgr'],
+            ServiceManager: ['service manager', 'sm', 'service mgr', 'service manager name'],
+            AccountManager: ['account manager', 'am', 'account mgr'],
+            AccountDirector: ['account director', 'ad', 'account dir'],
+            Segment: ['segment']
+        };
+
+        // TSM_SE_Accounts month columns — display key Jan26 → SP internal name
+        var TSM_SE_MONTH_INTERNAL = {
+            Jan26: '_x004a_an26',
+            Feb26: '_x0046_eb26',
+            Mar26: '_x004d_ar26',
+            Apr26: '_x0041_pr26',
+            May26: '_x004d_ay26',
+            Jun26: '_x004a_un26',
+            Jul26: '_x004a_ul26',
+            Aug26: '_x0041_ug26',
+            Sep26: '_x0053_ep26',
+            Oct26: '_x004f_ct26',
+            Nov26: '_x004e_ov26',
+            Dec26: '_x0044_ec26'
         };
 
         function tsmSeMonthFieldFromHeader(h) {
-            var m = String(h || '').trim().match(/^([A-Za-z]{3})[\s\-\/]?(\d{2,4})$/);
+            var compact = String(h || '').trim().replace(/[\s\-\/_.]+/g, '');
+            var m = compact.match(/^([A-Za-z]{3})(\d{2,4})$/);
             if (!m) return null;
             var mon = m[1].charAt(0).toUpperCase() + m[1].slice(1).toLowerCase();
             var yr = m[2].length === 4 ? m[2].slice(-2) : m[2];
-            return mon + '_x002d_' + yr;
+            var displayKey = mon + yr;
+            return TSM_SE_MONTH_INTERNAL[displayKey] || null;
+        }
+
+        function tsmSeIsNumberField(internalName) {
+            var t = tsmSeState.listFields[internalName];
+            if (t === 'Number' || t === 'Currency') return true;
+            return Object.keys(TSM_SE_MONTH_INTERNAL).some(function (k) {
+                return TSM_SE_MONTH_INTERNAL[k] === internalName;
+            });
+        }
+
+        function tsmSeCoerceValue(internalName, val) {
+            if (val == null || val === '') return null;
+            var isMonth = false;
+            Object.keys(TSM_SE_MONTH_INTERNAL).forEach(function (k) {
+                if (TSM_SE_MONTH_INTERNAL[k] === internalName) isMonth = true;
+            });
+            if (isMonth || tsmSeIsNumberField(internalName)) {
+                var n = parseFloat(String(val).replace(/,/g, ''));
+                return isNaN(n) ? null : n;
+            }
+            return String(val).trim();
         }
 
         function tsmSeBuildColumnIndex(headers) {
@@ -307,10 +335,11 @@
                     if (field === 'Title') return;
                     var val = row[colIndex[field]];
                     if (val == null || val === '') return;
-                    fields[field] = String(val).trim();
+                    var coerced = tsmSeCoerceValue(field, val);
+                    if (coerced != null && coerced !== '') fields[field] = coerced;
                 });
 
-                if (!fields.Parent_x0020_Code) fields.Parent_x0020_Code = title;
+                if (!fields.ParentCode) fields.ParentCode = title;
                 if (!fields.Team) fields.Team = 'TSM_SE';
 
                 out.push(fields);
@@ -320,11 +349,12 @@
 
         function tsmSeFilterPayload(fields) {
             var out = {};
+            var allowed = tsmSeState.listFields || {};
             Object.keys(fields).forEach(function (k) {
-                if (k === 'Title' || fields[k] == null || fields[k] === '') return;
-                if (tsmSeState.listFields[k] || k.indexOf('_x002d_') >= 0 || k.indexOf('_x0020_') >= 0) {
-                    out[k] = fields[k];
-                }
+                if (k === 'Title') return;
+                if (fields[k] == null || fields[k] === '') return;
+                if (!allowed[k]) return;
+                out[k] = fields[k];
             });
             return out;
         }
