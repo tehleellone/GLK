@@ -3,7 +3,7 @@
 (function () {
     'use strict';
 
-    var TSM_SE_MODULE_VERSION = '5.0.3';
+    var TSM_SE_MODULE_VERSION = '5.0.4';
     var TSM_SE_PRIMARY_LIST = 'TSM_SE_Accounts';
     var TSM_SE_UPLOAD_EMAILS = ['tehleel.lone@du.ae', 'ubaid.mir@du.ae'];
     var TSM_SE_CANDIDATE_LISTS = [
@@ -134,22 +134,30 @@
         }
 
         async function tsmSeDiscoverListName() {
-            if (tsmSeState.listName) return tsmSeState.listName;
-            var named = [window.TSM_SE_LIST, window.TSM_SE_SP_LIST, window.TSMSE_LIST, window.TSM_SE_SP_LIST_NAME, TSM_SE_PRIMARY_LIST];
+            if (tsmSeState.listName === TSM_SE_PRIMARY_LIST) return tsmSeState.listName;
+            var named = [TSM_SE_PRIMARY_LIST, window.TSM_SE_LIST, window.TSM_SE_SP_LIST, window.TSMSE_LIST, window.TSM_SE_SP_LIST_NAME];
             for (var i = 0; i < named.length; i++) {
-                if (named[i]) {
-                    tsmSeState.listName = named[i];
-                    window.TSM_SE_LIST = named[i];
-                    return named[i];
-                }
-            }
-            for (var c = 0; c < TSM_SE_CANDIDATE_LISTS.length; c++) {
+                if (!named[i]) continue;
                 try {
-                    var cRes = await fetch(tsmSeSpUrl() + "/_api/web/lists/getbytitle('" + tsmSeOdata(TSM_SE_CANDIDATE_LISTS[c]) + "')?$select=Title,ItemCount", {
+                    var cRes = await fetch(tsmSeSpUrl() + "/_api/web/lists/getbytitle('" + tsmSeOdata(named[i]) + "')?$select=Title,ItemCount", {
                         headers: { 'Accept': 'application/json;odata=verbose' },
                         credentials: 'include'
                     });
                     if (cRes.ok) {
+                        tsmSeState.listName = named[i];
+                        window.TSM_SE_LIST = named[i];
+                        console.log('[TSM SE] Using list:', named[i]);
+                        return tsmSeState.listName;
+                    }
+                } catch (e) {}
+            }
+            for (var c = 0; c < TSM_SE_CANDIDATE_LISTS.length; c++) {
+                try {
+                    var cRes2 = await fetch(tsmSeSpUrl() + "/_api/web/lists/getbytitle('" + tsmSeOdata(TSM_SE_CANDIDATE_LISTS[c]) + "')?$select=Title,ItemCount", {
+                        headers: { 'Accept': 'application/json;odata=verbose' },
+                        credentials: 'include'
+                    });
+                    if (cRes2.ok) {
                         tsmSeState.listName = TSM_SE_CANDIDATE_LISTS[c];
                         window.TSM_SE_LIST = TSM_SE_CANDIDATE_LISTS[c];
                         console.log('[TSM SE] Using list:', TSM_SE_CANDIDATE_LISTS[c]);
@@ -159,6 +167,20 @@
             }
             throw new Error('TSM SE SharePoint list not found');
         }
+
+        window.tsmSeEnterMode = function () {
+            tsmSeState.listName = TSM_SE_PRIMARY_LIST;
+            window.TSM_SE_LIST = TSM_SE_PRIMARY_LIST;
+            tsmSeState.loaded = false;
+            tsmSeState.loading = false;
+            console.log('[TSM SE] Enter mode — will load from', TSM_SE_PRIMARY_LIST);
+        };
+
+        window.tsmSeReload = function () {
+            tsmSeState.loaded = false;
+            tsmSeState.loading = false;
+            return window.tsmSeRenderTable();
+        };
 
         async function tsmSeLoadListFields(listName) {
             var url = tsmSeSpUrl() + "/_api/web/lists/getbytitle('" + tsmSeOdata(listName) + "')/fields?$select=Title,InternalName,TypeAsString&$filter=Hidden eq false and ReadOnlyField eq false&$top=500";
@@ -708,12 +730,16 @@
             var gridDiv = document.getElementById('myGrid');
             if (!gridDiv) return;
 
+            if (typeof window.smDestroyMainGridOnly === 'function') {
+                window.smDestroyMainGridOnly();
+            }
+
             tsmSeEnsureToolbar();
             tsmSeDestroyGrid();
 
             if (!tsmSeState.loaded && !tsmSeState.loading) {
                 tsmSeState.loading = true;
-                gridDiv.innerHTML = '<div style="padding:40px;text-align:center;color:var(--t2);font-weight:600;">Loading TSM SE accounts from SharePoint...</div>';
+                gridDiv.innerHTML = '<div style="padding:40px;text-align:center;color:var(--t2);font-weight:600;">Loading TSM SE accounts from TSM_SE_Accounts...</div>';
                 try {
                     await tsmSeFetchAllRows();
                 } catch (e) {
@@ -757,7 +783,10 @@
             }
 
             if (typeof lucide !== 'undefined') lucide.createIcons();
-            console.log('[TSM SE] Grid rendered with', rows.length, 'rows');
+            console.log('[TSM SE] Grid rendered with', rows.length, 'rows from', tsmSeState.listName || TSM_SE_PRIMARY_LIST);
+            if (typeof window.smUpdateTsmSeDashboardStats === 'function') {
+                window.smUpdateTsmSeDashboardStats(rows);
+            }
         };
 
         window.tsmSeFindAccount = function (accountCode) {
