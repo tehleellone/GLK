@@ -75,13 +75,13 @@
 
     // ── Excel column map ──────────────────────────────────────
     const COL_MAP = {
-        code    : ['title','account code','accountcode','account_code','code','account','account no','account number'],
-        parent  : ['parent code','parentcode','parent_code','parent','l-10','l10'],
-        customer: ['customer_name','customername','customer name','customer','company','company name'],
-        am      : ['account manager','accountmanager','account_manager','am'],
-        ad      : ['account director','accountdirector','account_director','ad'],
-        sm      : ['service manager','servicemanager','service_manager','sm','service manager name'],
-        lm      : ['line manager','linemanager','line_manager','lm','line mgr'],
+        code    : ['title','account code','accountcode','account_code','code'],
+        parent  : ['parentcode','parent code','parent_code','l-10','l10'],
+        customer: ['customername','customer_name','customer name','customer','name'],
+        am      : ['accountmanager','account manager','account_manager','am'],
+        ad      : ['accountdirector','account director','account_director','ad'],
+        sm      : ['servicemanager','service manager','service_manager','sm'],
+        lm      : ['linemanager','line manager','line_manager','lm'],
         team    : ['team'],
         segment : ['segment'],
     };
@@ -104,26 +104,13 @@
         var map = {};
         headers.forEach(function(h, i) {
             var raw = (h || '').toString().trim();
-            var norm = normaliseHeader(h);
-            var matched = false;
-
-            // Excel / SP camelCase headers: Title, ParentCode, CustomerName, Jan26, ...
+            var norm = normaliseHeader(h), matched = false;
             if (SP_TO_INTERNAL[raw]) {
                 map[i] = SP_TO_INTERNAL[raw];
                 return;
             }
-            MONTH_MAP.forEach(function(m) {
-                if (matched) return;
-                if (raw === m.display || norm === normaliseHeader(m.display)) {
-                    map[i] = m.display.toLowerCase();
-                    matched = true;
-                }
-            });
-            if (matched) return;
-
             for (var field in COL_MAP) {
                 var aliases = COL_MAP[field];
-                if (norm === field) { map[i] = field; matched = true; break; }
                 for (var a = 0; a < aliases.length; a++) {
                     if (normaliseHeader(aliases[a]) === norm) { map[i] = field; matched = true; break; }
                 }
@@ -134,6 +121,20 @@
         return map;
     }
 
+    function findExcelHeaderRow(raw) {
+        for (var r = 0; r < Math.min(raw.length, 15); r++) {
+            var row = raw[r];
+            if (!row || !row.length) continue;
+            var map = buildHeaderMap(row.map(function(h) { return (h || '').toString(); }));
+            var hasCode = false;
+            for (var k in map) {
+                if (map[k] === 'code') { hasCode = true; break; }
+            }
+            if (hasCode) return r;
+        }
+        return 0;
+    }
+
     // ── Parse Excel → array of row objects ───────────────────
     function parseExcelToRows(arrayBuffer) {
         var workbook = XLSX.read(arrayBuffer, { type: 'array' });
@@ -141,18 +142,15 @@
         var raw      = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
         if (!raw || raw.length < 2) return [];
 
-        var headerRowIdx = 0;
-        for (var hr = 0; hr < Math.min(raw.length, 15); hr++) {
-            var joined = raw[hr].map(function(c) { return normaliseHeader(c); }).join(' ');
-            if (/account|title|customer|parent|service manager|parentcode/.test(joined)) {
-                headerRowIdx = hr;
-                break;
-            }
-        }
-
-        var headers   = raw[headerRowIdx].map(function(h){ return (h||'').toString(); });
-        var headerMap = buildHeaderMap(headers);
-        var rows      = [];
+        var headerRowIdx = findExcelHeaderRow(raw);
+        var headers      = raw[headerRowIdx].map(function(h){ return (h||'').toString(); });
+        var headerMap    = buildHeaderMap(headers);
+        var monthCols    = {};
+        headers.forEach(function(_, i) {
+            var field = headerMap[i];
+            if (field && /^[a-z]{3}26$/.test(field)) monthCols[field] = true;
+        });
+        var rows = [];
 
         for (var r = headerRowIdx + 1; r < raw.length; r++) {
             var row = raw[r];
@@ -176,13 +174,15 @@
 
             if (!obj.code) continue;
 
-            // ── FIX 1c: Only parse 2026 months from Excel ──
+            obj._monthsInExcel = monthCols;
             ['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'].forEach(function(mn) {
                 var k = mn + '26';
-                if (obj[k] !== undefined) {
+                if (obj[k] !== undefined && obj[k] !== '') {
                     var v = obj[k];
                     obj[k] = typeof v === 'number' ? v : (parseFloat((v+'').replace(/,/g,''))||0);
-                } else { obj[k] = 0; }
+                } else {
+                    delete obj[k];
+                }
             });
 
             // avg from last 3 completed months
@@ -199,7 +199,6 @@
     }
 
     // ── Convert internal row → SP list item ──────────────────
-    // Month columns MUST use SP internal names (hex-encoded) as keys
     function rowToSPItem(row) {
         var item = {
             __metadata    : { type: 'SP.Data.TSM_x005f_SE_x005f_AccountsListItem' },
@@ -213,9 +212,13 @@
             Team           : row.team       || 'TSM_SE',
             Segment        : row.segment    || '',
         };
-        // Month columns — SP internal hex names (matches TSM_SE_Accounts list)
+        // Write using OData__ names (EntityPropertyName) — only form SP accepts on POST/MERGE
+        var monthKeys = row._monthsInExcel || {};
         MONTH_MAP.forEach(function(m) {
-            item[m.internal] = row[m.display.toLowerCase()] || 0;
+            var key = m.display.toLowerCase();
+            if (Object.keys(monthKeys).length && !monthKeys[key]) return;
+            if (row[key] !== undefined) item[m.odata] = row[key];
+            else if (!Object.keys(monthKeys).length) item[m.odata] = 0;
         });
         return item;
     }
@@ -389,8 +392,6 @@
             window.TSM_SE_DATA    = rows;
             window.TSM_SE_LOADED  = true;
             window.TSM_SE_LOADING = false;
-            window.tsmSeAllData   = rows;
-            window.tsmSeRows      = rows;
             console.log('[TSM_SE] Loaded', rows.length, 'rows from SP list');
             return true;
         } catch(err) {
@@ -555,10 +556,7 @@
             tsmSeSetMsg('');
             var buf  = await file.arrayBuffer();
             var rows = parseExcelToRows(buf);
-            if (!rows.length) {
-                throw new Error('0 accounts parsed — check Excel headers: Title, ParentCode, CustomerName, ServiceManager, LineManager, Team, Segment, Jan26…');
-            }
-            console.log('[TSM_SE] Parsed', rows.length, 'rows; sample:', rows[0]);
+            if (!rows.length) throw new Error('No valid rows found. Excel must have a Title (account code) column.');
             tsmSeUpdateProgress('Excel parsed', 10, rows.length.toLocaleString() + ' rows found in Excel');
 
             // Step 2: Get digest
@@ -576,11 +574,9 @@
             window.TSM_SE_LOADED  = false;
             window.TSM_SE_LOADING = false;
             var ok = await loadTSMSEData('Reloading TSM SE data...', true);
-            window.tsmSeAllData = window.TSM_SE_DATA;
-            window.tsmSeRows = window.TSM_SE_DATA;
-            if (ok && tsmSeIsTeamTsmSeActive()) {
-                await tsmSeRenderTSMSEView();
-                hideSpinner();
+            if (ok) {
+                var tf = document.getElementById('filterTeam');
+                if (tf && tf.value === 'TSM_SE') { tsmSeRenderTSMSEView(); hideSpinner(); }
             }
 
             tsmSeSetMsg('✅ Done! ' + rows.length.toLocaleString() + ' accounts updated.', '#10b981');
@@ -668,9 +664,10 @@
                 if ((existing.Segment||'') !== (row.segment||'')) changed = true;
                 if (!changed) {
                     MONTH_MAP.forEach(function(m) {
-                        var existingVal = existing[m.internal] || existing[m.odata] || 0;
+                        // SP returns OData__ key in GET responses
+                        var existingVal = existing[m.odata] || existing[m.internal] || 0;
                         var rowVal      = row[m.display.toLowerCase()] || 0;
-                        if (!changed && Number(existingVal) !== Number(rowVal)) changed = true;
+                        if (!changed && existingVal !== rowVal) changed = true;
                     });
                 }
                 if (changed) { toUpdate.push({ row: row, id: existing.ID }); }
@@ -689,8 +686,18 @@
             var batch = toUpdate.slice(i, i + 50);
             await Promise.all(batch.map(function(entry) {
                 var item = rowToSPItem(entry.row);
+                delete item.__metadata;
                 item.__metadata = { type: 'SP.Data.TSM_x005f_SE_x005f_AccountsListItem' };
-                return tsmSeMergeItem(entry.id, item, digest);
+                return fetch(SP_URL + "/_api/web/lists/getbytitle('" + TSM_LIST + "')/items(" + entry.id + ")", {
+                    method: 'POST',
+                    headers: {
+                        'Accept': 'application/json;odata=verbose',
+                        'Content-Type': 'application/json;odata=verbose',
+                        'X-RequestDigest': digest, 'IF-MATCH': '*', 'X-HTTP-Method': 'MERGE'
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify(item)
+                });
             }));
             done += batch.length;
             var pct = 25 + Math.round(done / Math.max(total, 1) * 35);
@@ -705,53 +712,27 @@
         }
     }
 
-    async function tsmSePostItem(body, digest) {
-        var res = await fetch(SP_URL + "/_api/web/lists/getbytitle('" + TSM_LIST + "')/items", {
-            method: 'POST',
-            headers: {
-                'Accept': 'application/json;odata=verbose',
-                'Content-Type': 'application/json;odata=verbose',
-                'X-RequestDigest': digest
-            },
-            credentials: 'include',
-            body: JSON.stringify(body)
-        });
-        if (!res.ok) {
-            var errText = await res.text();
-            throw new Error('Create failed for ' + (body.Title || '?') + ': ' + errText.slice(0, 220));
-        }
-        return res.json();
-    }
-
-    async function tsmSeMergeItem(id, body, digest) {
-        var res = await fetch(SP_URL + "/_api/web/lists/getbytitle('" + TSM_LIST + "')/items(" + id + ")", {
-            method: 'POST',
-            headers: {
-                'Accept': 'application/json;odata=verbose',
-                'Content-Type': 'application/json;odata=verbose',
-                'X-RequestDigest': digest,
-                'IF-MATCH': '*',
-                'X-HTTP-Method': 'MERGE'
-            },
-            credentials: 'include',
-            body: JSON.stringify(body)
-        });
-        if (!res.ok) {
-            var errText = await res.text();
-            throw new Error('Update failed for ID ' + id + ': ' + errText.slice(0, 220));
-        }
-    }
-
     // ── Insert rows in batches ────────────────────────────────
     async function tsmSeInsertRows(rows, digest, doneStart, total, startPct, label) {
         var done = doneStart || 0;
-        var entityType = 'SP.Data.TSM_x005f_SE_x005f_AccountsListItem';
         for (var i = 0; i < rows.length; i += 50) {
             var batch = rows.slice(i, i + 50);
-            await Promise.all(batch.map(function(row) {
-                var item = rowToSPItem(row);
-                item.__metadata = { type: entityType };
-                return tsmSePostItem(item, digest);
+            await Promise.all(batch.map(async function(row) {
+                var body = rowToSPItem(row);
+                var res = await fetch(SP_URL + "/_api/web/lists/getbytitle('" + TSM_LIST + "')/items", {
+                    method: 'POST',
+                    headers: {
+                        'Accept': 'application/json;odata=verbose',
+                        'Content-Type': 'application/json;odata=verbose',
+                        'X-RequestDigest': digest
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify(body)
+                });
+                if (!res.ok) {
+                    var errText = await res.text();
+                    throw new Error('Create failed for ' + (body.Title || '?') + ': ' + errText.slice(0, 220));
+                }
             }));
             done += batch.length;
             var pct = startPct + Math.round((i + batch.length) / rows.length * (100 - startPct));
@@ -762,26 +743,6 @@
     }
 
     // ── Upload button (admin/owner only) ──────────────────────
-    window.tsmSeMountDashboardUpload = function() {
-        var email = (window.USER_CONTEXT && window.USER_CONTEXT.userEmail || '').toLowerCase();
-        var isAdmin = window.USER_CONTEXT && window.USER_CONTEXT.isAdmin;
-        if (!isAdmin && ADMIN_EMAILS.indexOf(email) < 0) return;
-        var section = document.querySelector('#dashboardContent .filters-section');
-        if (!section) return;
-        var panel = document.getElementById('tsmSeDashboardUpload');
-        if (!panel) {
-            panel = document.createElement('div');
-            panel.id = 'tsmSeDashboardUpload';
-            panel.style.cssText = 'margin:0 0 14px;padding:14px;border:1px solid var(--border);border-radius:12px;background:var(--bg-card);display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;';
-            section.insertBefore(panel, section.firstChild);
-        }
-        panel.innerHTML = '<div><div style="font-size:.92rem;font-weight:800;color:var(--t1);">TSM SE Upload</div>' +
-            '<div style="font-size:.76rem;color:var(--t3);">TSM_SE_Accounts · Smart or Full Replace</div></div>' +
-            '<button type="button" class="export-btn" onclick="tsmSeShowUploadModal()" style="background:linear-gradient(135deg,#2563eb,#1d4ed8);color:#fff;border:none;">' +
-            '<i data-lucide="upload-cloud" style="width:14px;height:14px;display:inline-block;vertical-align:middle;margin-right:6px;"></i>Upload / Replace Excel</button>';
-        if (typeof lucide !== 'undefined') lucide.createIcons();
-    };
-
     window.tsmSeInjectUploadBtn = function() {
         var email = (window.USER_CONTEXT && window.USER_CONTEXT.userEmail || '').toLowerCase();
         var isAdmin = window.USER_CONTEXT && window.USER_CONTEXT.isAdmin;
@@ -923,92 +884,22 @@
         agGrid.createGrid(gridDiv, gridOptions);
     }
 
-    // ── Dashboard filter helpers (multiselect + legacy selects) ──
-    function tsmSeGetDashboardFilters() {
-        function msValues(key) {
-            if (typeof smGetMsFilterValues === 'function') {
-                var v = smGetMsFilterValues(key) || [];
-                if (v.length) return v;
-            }
-            return [];
-        }
-        function legacyOne(id) {
-            var el = document.getElementById(id);
-            return (el && el.value) ? [el.value] : [];
-        }
-        var lm = msValues('LM').length ? msValues('LM') : legacyOne('filterLM');
-        var sm = msValues('SM').length ? msValues('SM') : legacyOne('filterSM');
-        return {
-            lm: lm,
-            sm: sm,
-            selectedLM: (typeof selectedLM !== 'undefined' && selectedLM) ? selectedLM : null,
-            selectedSM: (typeof selectedSM !== 'undefined' && selectedSM) ? selectedSM : null
-        };
-    }
-
-    function tsmSeIsTeamTsmSeActive() {
-        var teamEl = document.getElementById('filterTeam');
-        if (teamEl && teamEl.value === 'TSM_SE') return true;
-        if (typeof smGetMsFilterValues === 'function') {
-            var t = smGetMsFilterValues('Team') || [];
-            return t.length === 1 && t[0] === 'TSM_SE';
-        }
-        return false;
-    }
-
-    function tsmSeShowLmLoading(msg) {
-        var grid = document.getElementById('lineManagersGrid');
-        if (!grid) return;
-        grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:48px 20px;color:var(--t2);">' +
-            '<div style="width:36px;height:36px;border:3px solid var(--border);border-top-color:var(--acc);border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 14px;"></div>' +
-            '<div style="font-size:.9rem;font-weight:700;">' + (msg || 'Loading TSM SE accounts...') + '</div></div>';
-    }
-
-    async function tsmSeEnsureDataLoaded() {
-        if (window.TSM_SE_LOADED) return true;
-        if (window.TSM_SE_LOADING) {
-            await new Promise(function(resolve) {
-                var check = setInterval(function() {
-                    if (!window.TSM_SE_LOADING) { clearInterval(check); resolve(); }
-                }, 200);
-            });
-            return window.TSM_SE_LOADED;
-        }
-        tsmSeShowLmLoading('Loading TSM SE accounts from SharePoint...');
-        return loadTSMSEData(null, true);
-    }
-
-    function tsmSeSyncMsLmSmDropdowns(lms, sms) {
-        try {
-            if (typeof smBuildMsDropdown === 'function') {
-                var curLm = typeof smGetMsFilterValues === 'function' ? smGetMsFilterValues('LM') : [];
-                var curSm = typeof smGetMsFilterValues === 'function' ? smGetMsFilterValues('SM') : [];
-                smBuildMsDropdown('LM', lms, curLm.filter(function(v){ return lms.indexOf(v) >= 0; }));
-                smBuildMsDropdown('SM', sms, curSm.filter(function(v){ return sms.indexOf(v) >= 0; }));
-            }
-        } catch (e) {}
-    }
-
     // ── Render TSM_SE view from TSM_SE_DATA only ─────────────
-    async function tsmSeRenderTSMSEView() {
-        if (!window.TSM_SE_DATA.length) {
-            tsmSeShowLmLoading('Loading TSM SE accounts...');
-            return;
-        }
+    function tsmSeRenderTSMSEView() {
+        if (!window.TSM_SE_DATA.length) return;
 
         // Hide RNPS/ETA analytics button — not relevant for TSM_SE
         var analyticsBtn = document.getElementById('loadAnalyticsBtn');
         if (analyticsBtn) analyticsBtn.style.display = 'none';
 
         var segFilter = window.TSM_SE_SEGMENT_FILTER;
-        var f = tsmSeGetDashboardFilters();
+        var lmFilter  = (document.getElementById('filterLM') ||{}).value||'';
+        var smFilter  = (document.getElementById('filterSM') ||{}).value||'';
 
         var data = window.TSM_SE_DATA.filter(function(a) {
             if (segFilter && a.segment !== segFilter) return false;
-            if (f.lm.length && f.lm.indexOf(a.lm) < 0) return false;
-            if (f.sm.length && f.sm.indexOf(a.sm) < 0) return false;
-            if (f.selectedLM && a.lm !== f.selectedLM) return false;
-            if (f.selectedSM && a.sm !== f.selectedSM) return false;
+            if (lmFilter  && a.lm !== lmFilter)       return false;
+            if (smFilter  && a.sm !== smFilter)        return false;
             return true;
         });
 
@@ -1023,7 +914,6 @@
                 if (a.sm && !smSeen[a.sm]) { smSeen[a.sm]=true; sms.push(a.sm); }
             });
             lms.sort(); sms.sort();
-            tsmSeSyncMsLmSmDropdowns(lms, sms);
             var lmSel = document.getElementById('filterLM');
             var smSel = document.getElementById('filterSM');
             if (lmSel) {
@@ -1094,7 +984,7 @@
                 await new Promise(function(r){ setTimeout(r, 50); });
             }
 
-            await tsmSeRenderTSMSEView();
+            tsmSeRenderTSMSEView();
             hideSpinner();
         });
     }
@@ -1202,13 +1092,11 @@
         var orig = window.applyFilters;
         if (typeof orig !== 'function') return;
         window._tsmSeFilterPatched = true;
-        window.applyFilters = async function() {
-            if (typeof smSyncLegacyFilterSelects === 'function') {
-                smSyncLegacyFilterSelects(false);
-            }
-            if (tsmSeIsTeamTsmSeActive()) {
-                await tsmSeEnsureDataLoaded();
-                await tsmSeRenderTSMSEView();
+        window.applyFilters = function() {
+            var teamFilter = document.getElementById('filterTeam');
+            // ── FIX 3b: If TSM_SE is selected, don't let applyFilters touch ALL_DATA ──
+            if (teamFilter && teamFilter.value === 'TSM_SE') {
+                tsmSeRenderTSMSEView();
                 tsmSeRenderSegmentChips();
                 return;
             }
@@ -1246,7 +1134,6 @@
         injectSegmentContainer();
         hookTeamFilter();
         window.tsmSeInjectUploadBtn();
-        window.tsmSeMountDashboardUpload();
         window.tsmSePatchApplyFilters();
         window.tsmSeEnhanceAccountSearch();
 
@@ -1261,11 +1148,7 @@
         }
     };
 
-    window.tsmSeRenderTable = async function () {
-        if (!tsmSeIsTeamTsmSeActive()) return;
-        await tsmSeEnsureDataLoaded();
-        await tsmSeRenderTSMSEView();
-    };
+    window.tsmSeRenderTable = tsmSeRenderTSMSEView;
 
     console.log('[TSM_SE] Module loaded - SP List mode (2026 months only)');
 })();
