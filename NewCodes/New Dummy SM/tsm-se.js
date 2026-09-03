@@ -3,7 +3,8 @@
     (function () {
         'use strict';
 
-        var TSM_SE_MODULE_VERSION = '5.0.0';
+        var TSM_SE_MODULE_VERSION = '5.0.1';
+    var TSM_SE_UPLOAD_EMAILS = ['tehleel.lone@du.ae', 'ubaid.mir@du.ae'];
         var TSM_SE_CANDIDATE_LISTS = [
             'Service Manager Request SE',
             'TSM SE Request',
@@ -64,10 +65,44 @@
             else alert(msg);
         }
 
-        function tsmSeCanUpload() {
-            var role = (window.USER_CONTEXT && USER_CONTEXT.role) || '';
-            return !!(window.USER_CONTEXT && (window.USER_CONTEXT.isAdmin || role === 'Admin' || role === 'Service Director'));
+    function tsmSeCanUpload() {
+        var email = ((window.USER_CONTEXT && USER_CONTEXT.userEmail) || '').toLowerCase();
+        if (TSM_SE_UPLOAD_EMAILS.indexOf(email) >= 0) return true;
+        var role = (window.USER_CONTEXT && USER_CONTEXT.role) || '';
+        return !!(window.USER_CONTEXT && (window.USER_CONTEXT.isAdmin || role === 'Admin' || role === 'Service Director'));
+    }
+
+    function tsmSeUploadControlsHTML(prefix) {
+        prefix = prefix || 'dash';
+        var idSuffix = prefix === 'dash' ? 'Dash' : 'Bar';
+        return '<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">' +
+            '<div><div style="font-size:.92rem;font-weight:800;color:var(--t1);">TSM SE Upload</div>' +
+            '<div style="font-size:.76rem;color:var(--t3);">Upload / replace TSM SE accounts in SharePoint · Tehleel &amp; Ubaid only</div></div>' +
+            '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">' +
+                '<label class="export-btn" style="cursor:pointer;margin:0;">' +
+                    '<input type="file" accept=".xlsx,.xls,.csv" style="display:none;" onchange="tsmSeParseFile(event, \'' + prefix + '\')">Choose Excel</label>' +
+                '<button type="button" class="export-btn" onclick="tsmSeSmartUpload()" style="background:linear-gradient(135deg,#2563eb,#1d4ed8);color:#fff;border:none;">Smart Upload (Replace All)</button>' +
+            '</div></div>' +
+            '<div id="tsmSeUploadPreview' + idSuffix + '" style="margin-top:.75rem;"></div>' +
+            '<div id="tsmSeUploadProgress' + idSuffix + '" style="margin-top:.5rem;font-size:.78rem;color:var(--t2);font-weight:600;"></div>';
+    }
+
+    window.tsmSeMountDashboardUpload = function () {
+        if (!tsmSeCanUpload()) return;
+        var host = document.querySelector('#dashboardContent .filters-section .filter-actions') ||
+            document.querySelector('#dashboardContent .filters-section');
+        if (!host) return;
+        var panel = document.getElementById('tsmSeDashboardUpload');
+        if (!panel) {
+            panel = document.createElement('div');
+            panel.id = 'tsmSeDashboardUpload';
+            panel.style.cssText = 'margin:0 0 14px;padding:14px;border:1px solid var(--border);border-radius:12px;background:var(--bg-card);';
+            host.parentElement.insertBefore(panel, host);
         }
+        panel.style.display = 'block';
+        panel.innerHTML = tsmSeUploadControlsHTML('dash');
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+    };
 
         async function tsmSeGetDigest() {
             var res = await fetch(tsmSeSpUrl() + '/_api/contextinfo', {
@@ -370,10 +405,13 @@
             return { ok: ok, fail: fail };
         }
 
-        function tsmSeSetProgress(msg) {
-            var el = document.getElementById('tsmSeUploadProgress');
-            if (el) el.textContent = msg;
-        }
+    function tsmSeSetProgress(msg, prefix) {
+        prefix = prefix || tsmSeState.uploadUiPrefix || 'dash';
+        var idSuffix = prefix === 'dash' ? 'Dash' : 'Bar';
+        var el = document.getElementById('tsmSeUploadProgress' + idSuffix) ||
+            document.getElementById('tsmSeUploadProgress');
+        if (el) el.textContent = msg;
+    }
 
         window.tsmSeConfirmUpload = async function (smartReplace) {
             var rows = tsmSeState.uploadRows || [];
@@ -381,10 +419,10 @@
                 tsmSeToast('No rows to upload. Choose an Excel file first.', 'warn');
                 return;
             }
-            if (!tsmSeCanUpload()) {
-                tsmSeToast('Only Admin can upload TSM SE accounts', 'warn');
-                return;
-            }
+        if (!tsmSeCanUpload()) {
+            tsmSeToast('Only Tehleel and Ubaid can upload TSM SE accounts', 'warn');
+            return;
+        }
 
             var modeLabel = smartReplace ? 'Smart Upload (replace all accounts in list)' : 'Upload (add/update)';
             if (!confirm(modeLabel + '\n\nRows to upload: ' + rows.length + '\n\nContinue?')) return;
@@ -444,9 +482,12 @@
             window.tsmSeConfirmUpload(true);
         };
 
-        window.tsmSeParseFile = function (ev) {
-            var file = ev.target.files && ev.target.files[0];
-            var preview = document.getElementById('tsmSeUploadPreview');
+    window.tsmSeParseFile = function (ev, uiPrefix) {
+        tsmSeState.uploadUiPrefix = uiPrefix || 'dash';
+        var file = ev.target.files && ev.target.files[0];
+        var idSuffix = tsmSeState.uploadUiPrefix === 'dash' ? 'Dash' : 'Bar';
+        var preview = document.getElementById('tsmSeUploadPreview' + idSuffix) ||
+            document.getElementById('tsmSeUploadPreview');
             if (!file) return;
             if (typeof XLSX === 'undefined') {
                 tsmSeToast('XLSX library not loaded', 'error');
@@ -517,14 +558,8 @@
                 '<div><div style="font-size:.92rem;font-weight:800;color:var(--t1);">TSM SE Accounts</div>' +
                 '<div style="font-size:.76rem;color:var(--t3);">SP List mode · v' + TSM_SE_MODULE_VERSION + (tsmSeState.listName ? ' · ' + tsmSeEsc(tsmSeState.listName) : '') + '</div></div>' +
                 (tsmSeCanUpload() ?
-                    '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">' +
-                        '<label class="export-btn" style="cursor:pointer;margin:0;">' +
-                            '<input type="file" accept=".xlsx,.xls,.csv" style="display:none;" onchange="tsmSeParseFile(event)">Choose Excel</label>' +
-                        '<button type="button" class="export-btn" onclick="tsmSeSmartUpload()" style="background:linear-gradient(135deg,#2563eb,#1d4ed8);color:#fff;border:none;">Smart Upload</button>' +
-                    '</div>' : '') +
-                '</div>' +
-                '<div id="tsmSeUploadPreview" style="margin-top:.75rem;"></div>' +
-                '<div id="tsmSeUploadProgress" style="margin-top:.5rem;font-size:.78rem;color:var(--t2);font-weight:600;"></div>';
+                    '<div style="font-size:.76rem;color:var(--t3);">Use <b>TSM SE Upload</b> on the dashboard above to upload Excel.</div>' : '') +
+                '</div>';
             return bar;
         }
 
@@ -627,13 +662,18 @@
             return hit._raw;
         };
 
-        window.tsmSeInit = function () {
-            console.log('[TSM SE] Module loaded v' + TSM_SE_MODULE_VERSION);
-            tsmSeDiscoverListName().catch(function (e) {
-                console.warn('[TSM SE] Init list discovery:', e.message);
-            });
-            return true;
-        };
+    window.tsmSeInit = function () {
+        console.log('[TSM SE] Module loaded v' + TSM_SE_MODULE_VERSION);
+        tsmSeDiscoverListName().catch(function (e) {
+            console.warn('[TSM SE] Init list discovery:', e.message);
+        });
+        setTimeout(function () {
+            if (typeof window.tsmSeMountDashboardUpload === 'function') {
+                window.tsmSeMountDashboardUpload();
+            }
+        }, 300);
+        return true;
+    };
 
         window.tsmSeDestroy = tsmSeDestroyGrid;
         window.tsmSeReset = function () { tsmSeState.loaded = false; tsmSeState.allRows = []; window.tsmSeAllData = []; };
