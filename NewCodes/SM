@@ -5031,7 +5031,7 @@ function computeLMRNPS(rnpsGrouped) {
             return role === 'Account_Search_Viewer';
         }
         function smIsAccountSearchOnlyRole() {
-            return isAccountSearchViewerRole(USER_CONTEXT.role);
+            return USER_CONTEXT.isAccountSearchViewer === true;
         }
         function smApplyAccountSearchOnlyLandingUI() {
             if (!smIsAccountSearchOnlyRole()) return;
@@ -5332,6 +5332,10 @@ USER_CONTEXT.isReadOnly = (DEV_USER_PROFILE.role === 'Read Only');
 USER_CONTEXT.isTSMManager = (DEV_USER_PROFILE.role === 'TSM Manager');
 USER_CONTEXT.isTSMSEViewer = (DEV_USER_PROFILE.role === 'TSM_SE_Viewer');
 USER_CONTEXT.isAccountSearchViewer = (DEV_USER_PROFILE.role === 'Account_Search_Viewer');
+            if (USER_CONTEXT.isAccountSearchViewer) {
+                USER_CONTEXT.role = 'Admin';
+                USER_CONTEXT.isAdmin = true;
+            }
             // For LM/SM roles, use manager name from config
             if (USER_CONTEXT.isLM || USER_CONTEXT.isSM) {
                 USER_CONTEXT.userName = DEV_USER_PROFILE.managerName;
@@ -5422,6 +5426,11 @@ USER_CONTEXT.isRcAdmin = (USER_CONTEXT.role === 'RC_Admin');
 USER_CONTEXT.isRcAgent = (USER_CONTEXT.role === 'RC_Agent');
 USER_CONTEXT.occSearchEnabled = parseAccessControlYesNo(accessRecord.OCC_SEARCH);
 USER_CONTEXT.isActive = true;
+                        // Same search/data as Admin; landing page stays search-only
+                        if (USER_CONTEXT.isAccountSearchViewer) {
+                            USER_CONTEXT.role = 'Admin';
+                            USER_CONTEXT.isAdmin = true;
+                        }
 
                         localStorage.setItem('sm_user_email', userEmail);
                         localStorage.setItem('sm_user_name', userName);
@@ -5534,7 +5543,11 @@ USER_CONTEXT.isActive = true;
 
             // Enhanced role badge with gradients and icons
             const roleEl = document.getElementById('landingUserRole');
-            if (USER_CONTEXT.role === 'Admin') {
+            if (USER_CONTEXT.isAccountSearchViewer) {
+                roleEl.innerHTML = '<i data-lucide="search" style="width: 14px; height: 14px; display: inline-block; vertical-align: middle; margin-right: 4px;"></i>Account Search Viewer';
+                roleEl.style.background = 'linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(5, 150, 105, 0.2))';
+                roleEl.style.borderColor = 'rgba(16, 185, 129, 0.6)';
+            } else if (USER_CONTEXT.role === 'Admin') {
                 roleEl.innerHTML = '<i data-lucide="crown" style="width: 14px; height: 14px; display: inline-block; vertical-align: middle; margin-right: 4px;"></i>Administrator';
                 roleEl.style.background = 'linear-gradient(135deg, rgba(234, 179, 8, 0.2), rgba(251, 191, 36, 0.2))';
                 roleEl.style.borderColor = 'rgba(234, 179, 8, 0.6)';
