@@ -5053,7 +5053,7 @@ function computeLMRNPS(rnpsGrouped) {
         }
         function smAccountSearchAllowedTeams() {
             if (USER_CONTEXT.isTSMSEViewer || USER_CONTEXT.role === 'TSM_SE_Viewer') return ['TSM_SE'];
-            if (isAccountSearchViewerRole(USER_CONTEXT.role)) return ['TSM_ME', 'DSM', 'TSM_SE'];
+            // Account_Search_Viewer uses the same search as Admin (no team gate)
             return null;
         }
         function smCanSearchTsmSeFromExcel() {
@@ -5107,6 +5107,88 @@ function computeLMRNPS(rnpsGrouped) {
             return rows;
         }
 
+        async function smDiscoverTsmSeListName() {
+            if (window._smTsmSeListName) return window._smTsmSeListName;
+            var names = [];
+            [window.TSM_SE_LIST, window.TSM_SE_SP_LIST, window.TSMSE_LIST, window.TSM_SE_SP_LIST_NAME].forEach(function (n) {
+                if (n && names.indexOf(n) < 0) names.push(n);
+            });
+            ['Service Manager Request SE', 'TSM SE Request', 'TSM_SE_Request', 'TSM SE Accounts', 'TSM_SE_Accounts', 'Undedicated Accounts'].forEach(function (n) {
+                if (names.indexOf(n) < 0) names.push(n);
+            });
+            try {
+                var listsUrl = SP_URL + "/_api/web/lists?$select=Title,ItemCount&$filter=Hidden eq false&$top=500";
+                var listsRes = await fetch(listsUrl, {
+                    headers: { 'Accept': 'application/json;odata=verbose' },
+                    credentials: 'include'
+                });
+                if (listsRes.ok) {
+                    var listsData = await listsRes.json();
+                    var lists = (listsData.d && listsData.d.results) || [];
+                    lists.sort(function (a, b) { return (b.ItemCount || 0) - (a.ItemCount || 0); });
+                    for (var i = 0; i < lists.length; i++) {
+                        var title = lists[i].Title;
+                        var count = lists[i].ItemCount || 0;
+                        if (title === SP_LIST) continue;
+                        if (count >= 10000) {
+                            window._smTsmSeListName = title;
+                            console.log('[Account Search] TSM SE list:', title, '(' + count + ')');
+                            return title;
+                        }
+                    }
+                }
+            } catch (e) {}
+            for (var j = 0; j < names.length; j++) {
+                try {
+                    var cUrl = SP_URL + "/_api/web/lists/getbytitle('" + String(names[j]).replace(/'/g, "''") + "')?$select=Title,ItemCount";
+                    var cRes = await fetch(cUrl, {
+                        headers: { 'Accept': 'application/json;odata=verbose' },
+                        credentials: 'include'
+                    });
+                    if (!cRes.ok) continue;
+                    var cData = await cRes.json();
+                    if (cData.d && (cData.d.ItemCount || 0) > 0) {
+                        window._smTsmSeListName = cData.d.Title || names[j];
+                        return window._smTsmSeListName;
+                    }
+                } catch (e) {}
+            }
+            return window._smTsmSeListName || null;
+        }
+
+        async function smQueryListByTitle(listName, accountCode) {
+            if (!listName) return null;
+            var safeCode = smODataEscapeLiteral(accountCode);
+            var pocFields = smCanViewAccountSearchPocDetails()
+                ? ",POC_x0020_Name,POC_x0020_Email_x0020_ID,POC_x0020_Contact_x0020_No," +
+                  "Secondary_x0020_POC_x0020_Name,Secondary_x0020_POC_x0020_Email,Secondary_x0020_POC_x0020_Contac," +
+                  "Technical_x0020_POC_x0020_Name,Technical_x0020_POC_x0020_Email,Technical_x0020_POC_x0020_Contac"
+                : "";
+            var url = SP_URL + "/_api/web/lists/getbytitle('" + String(listName).replace(/'/g, "''") + "')/items?" +
+                "$select=Title,Parent_x0020_Code,Customer_x0020_Name,Team," +
+                "Line_x0020_Manager/Title,Service_x0020_Manager/Title," +
+                "Secondary_x0020_Service_x0020_Ma/Title," +
+                "Account_x0020_Manager/Title,Account_x0020_Director/Title," +
+                "Service_x0020_Director/Title,Jan_x002d_26" + pocFields + "&" +
+                "$expand=Line_x0020_Manager,Service_x0020_Manager," +
+                "Secondary_x0020_Service_x0020_Ma,Account_x0020_Manager," +
+                "Account_x0020_Director,Service_x0020_Director&" +
+                "$filter=Title eq '" + safeCode + "'&$top=1";
+            var res = await fetch(url, {
+                headers: { 'Accept': 'application/json;odata=verbose' },
+                credentials: 'include'
+            });
+            if (!res.ok) return null;
+            var data = await res.json();
+            if (data.d && data.d.results && data.d.results.length) {
+                var hit = data.d.results[0];
+                if (!smNormalizeAccountSearchTeam(hit.Team)) hit.Team = 'TSM_SE';
+                hit._tsmSeSource = (listName !== SP_LIST);
+                return hit;
+            }
+            return null;
+        }
+
         async function smLookupTsmSeAccountAsync(accountCode) {
             if (!smCanSearchTsmSeFromExcel()) return null;
             if (typeof window.tsmSeFindAccountForSearch === 'function') {
@@ -5122,6 +5204,13 @@ function computeLMRNPS(rnpsGrouped) {
                     if (direct2 && typeof direct2.then === 'function') direct2 = await direct2;
                     if (direct2) return smMapTsmSeRowToSearchAccount(direct2, accountCode) || direct2;
                 } catch (e) {}
+            }
+            var listName = await smDiscoverTsmSeListName();
+            if (listName) {
+                try {
+                    var spHit = await smQueryListByTitle(listName, accountCode);
+                    if (spHit) return spHit;
+                } catch (e) { console.warn('[Account Search] TSM SE list query failed:', e); }
             }
             var hit = smFindAccountInTsmSeRows(smCollectTsmSeRows(), accountCode);
             return hit ? smMapTsmSeRowToSearchAccount(hit, accountCode) : null;
@@ -5981,16 +6070,6 @@ populateFilters({ preserve: false });
 updateServiceManagerFilter();
 applyFilters();
 
-                if (smIsAccountSearchOnlyRole()) {
-                    document.getElementById('loading').style.display = 'none';
-                    document.getElementById('content').style.display = 'none';
-                    var landingOnly = document.getElementById('landingPage');
-                    if (landingOnly) landingOnly.style.display = 'grid';
-                    smApplyAccountSearchOnlyLandingUI();
-                    if (typeof lucide !== 'undefined') lucide.createIcons();
-                    return;
-                }
-
 if (!window._smMsDropdownClickBound) {
     window._smMsDropdownClickBound = true;
     document.addEventListener('click', function (event) {
@@ -6105,6 +6184,12 @@ if (rnpsNav) rnpsNav.style.display = 'flex';
 
                 if (typeof nlCheckOnLoad === 'function') {
                     nlCheckOnLoad();
+                }
+
+                if (smIsAccountSearchOnlyRole()) {
+                    var landingOnly = document.getElementById('landingPage');
+                    if (landingOnly) landingOnly.style.display = 'grid';
+                    smApplyAccountSearchOnlyLandingUI();
                 }
             } catch (err) {
                 console.error('Error:', err);
@@ -10673,18 +10758,6 @@ else if (sectionId === 'rcView') {
                 let account = (data.d.results && data.d.results.length) ? data.d.results[0] : null;
 
                 if (!account) {
-                    if (smCanSearchTsmSeFromExcel()) {
-                        var errEl = document.getElementById('searchErrorMessage');
-                        if (errEl) {
-                            errEl.style.display = 'block';
-                            errEl.innerHTML =
-                                '<div style="display:flex;align-items:center;gap:12px;">' +
-                                    '<i data-lucide="loader-2" style="width:20px;height:20px;color:var(--accent);animation:spin 1s linear infinite;"></i>' +
-                                    '<div style="font-size:13px;color:var(--text-secondary);">Loading TSM SE data (same source as dashboard)...</div>' +
-                                '</div>';
-                            if (typeof lucide !== 'undefined') lucide.createIcons();
-                        }
-                    }
                     account = await smLookupTsmSeAccountAsync(accountCode);
                 } else if (!smAccountSearchTeamAllowed(account.Team)) {
                     var tsmSeAccount = await smLookupTsmSeAccountAsync(accountCode);
