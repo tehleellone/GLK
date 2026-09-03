@@ -5135,7 +5135,90 @@ function computeLMRNPS(rnpsGrouped) {
             return null;
         }
 
-        async function smQueryListByAccountCode(listName, accountCode) {
+        function smPickText(row, keys) {
+            if (!row) return '';
+            for (var i = 0; i < keys.length; i++) {
+                var key = keys[i];
+                var val = row[key];
+                if (val == null || val === '') continue;
+                if (typeof val === 'object') {
+                    if (val.Title) return String(val.Title).trim();
+                    if (val.Name) return String(val.Name).trim();
+                    continue;
+                }
+                var s = String(val).trim();
+                if (s && s !== '[object Object]') return s;
+            }
+            if (row._asText) {
+                for (var j = 0; j < keys.length; j++) {
+                    var t = row._asText[keys[j]];
+                    if (t != null && String(t).trim()) return String(t).trim();
+                }
+            }
+            return '';
+        }
+        function smPickPerson(row, keys) {
+            var name = smPickText(row, keys);
+            return name ? { Title: name } : null;
+        }
+        function smMapAnyAccountToSearchShape(row, accountCode) {
+            if (!row) return null;
+            var code = smPickText(row, ['Title', 'code', 'accountCode', 'account', 'Account_Code', 'Account Code']) || accountCode;
+            var parent = smPickText(row, ['Parent_x0020_Code', 'parent', 'parentCode', 'Parent Code', 'Parent_Code']) || code;
+            var customer = smPickText(row, [
+                'Customer_x0020_Name', 'Customer', 'CustomerName', 'Customer_Name', 'Customer Name',
+                'customer', 'customerName', 'Account_Name', 'AccountName', 'Company', 'Company_Name'
+            ]);
+            var mapped = {
+                Title: code,
+                Parent_x0020_Code: parent,
+                Customer_x0020_Name: customer,
+                Team: smNormalizeAccountSearchTeam(row.Team) || smPickText(row, ['Team', 'team']) || 'TSM_SE',
+                Line_x0020_Manager: smPickPerson(row, ['Line_x0020_Manager', 'lm', 'lineManager', 'Line_Manager', 'Line Manager', 'LM']),
+                Service_x0020_Manager: smPickPerson(row, ['Service_x0020_Manager', 'sm', 'serviceManager', 'Service_Manager', 'Service Manager', 'SM']),
+                Secondary_x0020_Service_x0020_Ma: smPickPerson(row, ['Secondary_x0020_Service_x0020_Ma', 'secondarySm', 'Secondary SM']),
+                Account_x0020_Manager: smPickPerson(row, ['Account_x0020_Manager', 'am', 'accountManager', 'Account_Manager', 'Account Manager', 'AM', 'AccountManager']),
+                Account_x0020_Director: smPickPerson(row, ['Account_x0020_Director', 'ad', 'accountDirector', 'Account_Director', 'Account Director', 'AD']),
+                Service_x0020_Director: smPickPerson(row, ['Service_x0020_Director', 'sd', 'serviceDirector', 'Service_Director', 'Service Director', 'SD']),
+                POC_x0020_Name: smPickText(row, ['POC_x0020_Name', 'pocName', 'POC Name']),
+                POC_x0020_Email_x0020_ID: smPickText(row, ['POC_x0020_Email_x0020_ID', 'pocEmail']),
+                POC_x0020_Contact_x0020_No: smPickText(row, ['POC_x0020_Contact_x0020_No', 'pocContact']),
+                _tsmSeSource: true,
+                Id: row.Id || row.ID
+            };
+            if (!mapped.Customer_x0020_Name && row._asText) {
+                Object.keys(row._asText).forEach(function (k) {
+                    if (/customer/i.test(k) && row._asText[k] && !mapped.Customer_x0020_Name) {
+                        mapped.Customer_x0020_Name = String(row._asText[k]).trim();
+                    }
+                    if (/Account.*Manager|AccountManager|^AM$/i.test(k) && row._asText[k] && !mapped.Account_x0020_Manager) {
+                        mapped.Account_x0020_Manager = { Title: String(row._asText[k]).trim() };
+                    }
+                    if (/Line.*Manager|^LM$/i.test(k) && row._asText[k] && !mapped.Line_x0020_Manager) {
+                        mapped.Line_x0020_Manager = { Title: String(row._asText[k]).trim() };
+                    }
+                    if (/Service.*Manager|^SM$/i.test(k) && !/Secondary/i.test(k) && row._asText[k] && !mapped.Service_x0020_Manager) {
+                        mapped.Service_x0020_Manager = { Title: String(row._asText[k]).trim() };
+                    }
+                });
+            }
+            return mapped;
+        }
+
+        async function smEnrichSpItemAsText(listName, item) {
+            if (!item || !(item.Id || item.ID) || !listName) return item;
+            try {
+                var url = SP_URL + "/_api/web/lists/getbytitle('" + String(listName).replace(/'/g, "''") + "')/items(" + (item.Id || item.ID) + ")/FieldValuesAsText";
+                var res = await fetch(url, {
+                    headers: { 'Accept': 'application/json;odata=verbose' },
+                    credentials: 'include'
+                });
+                if (!res.ok) return item;
+                var data = await res.json();
+                if (data.d) item._asText = data.d;
+            } catch (e) {}
+            return item;
+        }
             if (!listName) return null;
             var safe = String(accountCode).replace(/'/g, "''");
             var listEsc = String(listName).replace(/'/g, "''");
@@ -5154,10 +5237,8 @@ function computeLMRNPS(rnpsGrouped) {
                     var data = await res.json();
                     var rows = (data.d && data.d.results) || [];
                     if (rows.length) {
-                        var hit = rows[0];
-                        if (!hit.Title) hit.Title = accountCode;
-                        if (!hit.Team) hit.Team = 'TSM_SE';
-                        return hit;
+                        var hit = await smEnrichSpItemAsText(listName, rows[0]);
+                        return smMapAnyAccountToSearchShape(hit, accountCode);
                     }
                 } catch (e) {}
             }
@@ -5185,9 +5266,7 @@ function computeLMRNPS(rnpsGrouped) {
                 var codes = [r.Title, r.code, r.accountCode, r.account, r.Account_Code, r['Account Code']];
                 for (var j = 0; j < codes.length; j++) {
                     if (String(codes[j] == null ? '' : codes[j]).trim() === want) {
-                        if (!r.Title) r.Title = want;
-                        if (!r.Team) r.Team = 'TSM_SE';
-                        return r;
+                        return smMapAnyAccountToSearchShape(r, want);
                     }
                 }
             }
@@ -5199,14 +5278,14 @@ function computeLMRNPS(rnpsGrouped) {
                 try {
                     var a = window.tsmSeFindAccountForSearch(accountCode);
                     if (a && typeof a.then === 'function') a = await a;
-                    if (a) return a;
+                    if (a) return smMapAnyAccountToSearchShape(a, accountCode) || a;
                 } catch (e) {}
             }
             if (typeof window.tsmSeFindAccount === 'function') {
                 try {
                     var b = window.tsmSeFindAccount(accountCode);
                     if (b && typeof b.then === 'function') b = await b;
-                    if (b) return b;
+                    if (b) return smMapAnyAccountToSearchShape(b, accountCode) || b;
                 } catch (e) {}
             }
             var mem = smFindTsmSeInMemory(accountCode);
@@ -10774,17 +10853,18 @@ else if (sectionId === 'rcView') {
             const fields = [
                 ['Account Code', account.Title],
                 ['Parent Code', account.Parent_x0020_Code || account.Title],
+                ['Customer Name', account.Customer_x0020_Name || 'N/A'],
                 ['Team', smNormalizeAccountSearchTeam(account.Team) || account.Team || 'N/A'],
                 ['Account Type', isGroup ?
                     '<span style="color: var(--success); font-weight: 700; font-size: 16px;">🟢 Group Account</span>' :
                     '<span style="color: var(--accent); font-weight: 700; font-size: 16px;">🔵 Child Account</span>'
                 ],
-                ['Line Manager', account.Line_x0020_Manager?.Title || 'N/A'],
-                ['Service Manager', account.Service_x0020_Manager?.Title || 'N/A'],
-                ['Secondary SM', account.Secondary_x0020_Service_x0020_Ma?.Title || 'N/A'],
-                ['Account Manager', account.Account_x0020_Manager?.Title || 'N/A'],
-                ['Account Director', account.Account_x0020_Director?.Title || 'N/A'],
-                ['Service Director', account.Service_x0020_Director?.Title || 'N/A']
+                ['Line Manager', (account.Line_x0020_Manager && account.Line_x0020_Manager.Title) || 'N/A'],
+                ['Service Manager', (account.Service_x0020_Manager && account.Service_x0020_Manager.Title) || 'N/A'],
+                ['Secondary SM', (account.Secondary_x0020_Service_x0020_Ma && account.Secondary_x0020_Service_x0020_Ma.Title) || 'N/A'],
+                ['Account Manager', (account.Account_x0020_Manager && account.Account_x0020_Manager.Title) || 'N/A'],
+                ['Account Director', (account.Account_x0020_Director && account.Account_x0020_Director.Title) || 'N/A'],
+                ['Service Director', (account.Service_x0020_Director && account.Service_x0020_Director.Title) || 'N/A']
             ];
 
             fields.forEach(([label, value]) => {
