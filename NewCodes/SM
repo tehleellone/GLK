@@ -5085,183 +5085,6 @@ function computeLMRNPS(rnpsGrouped) {
         function smNormAccountCode(code) {
             return String(code == null ? '' : code).trim();
         }
-        function smCollectTsmSeRows() {
-            var rows = [];
-            function add(arr) {
-                if (Array.isArray(arr) && arr.length) rows = rows.concat(arr);
-            }
-            ['tsmSeAllData', 'tsmSeRows', 'TSM_SE_ROWS', 'tsmSeData', 'tsmSeAccounts', 'tsmSeAllRows'].forEach(function (k) {
-                add(window[k]);
-            });
-            ['tsmSeGetAllRows', 'tsmSeGetRows', 'tsmSeGetData'].forEach(function (fnName) {
-                if (typeof window[fnName] !== 'function') return;
-                try { add(window[fnName]()); } catch (e) {}
-            });
-            if (window.tsmSeGridApi && typeof window.tsmSeGridApi.forEachNode === 'function') {
-                try {
-                    window.tsmSeGridApi.forEachNode(function (node) {
-                        if (node && node.data) rows.push(node.data);
-                    });
-                } catch (e) {}
-            }
-            return rows;
-        }
-
-        async function smDiscoverTsmSeListName() {
-            if (window._smTsmSeListName) return window._smTsmSeListName;
-            var names = [];
-            [window.TSM_SE_LIST, window.TSM_SE_SP_LIST, window.TSMSE_LIST, window.TSM_SE_SP_LIST_NAME].forEach(function (n) {
-                if (n && names.indexOf(n) < 0) names.push(n);
-            });
-            ['Service Manager Request SE', 'TSM SE Request', 'TSM_SE_Request', 'TSM SE Accounts', 'TSM_SE_Accounts', 'Undedicated Accounts'].forEach(function (n) {
-                if (names.indexOf(n) < 0) names.push(n);
-            });
-            try {
-                var listsUrl = SP_URL + "/_api/web/lists?$select=Title,ItemCount&$filter=Hidden eq false&$top=500";
-                var listsRes = await fetch(listsUrl, {
-                    headers: { 'Accept': 'application/json;odata=verbose' },
-                    credentials: 'include'
-                });
-                if (listsRes.ok) {
-                    var listsData = await listsRes.json();
-                    var lists = (listsData.d && listsData.d.results) || [];
-                    lists.sort(function (a, b) { return (b.ItemCount || 0) - (a.ItemCount || 0); });
-                    for (var i = 0; i < lists.length; i++) {
-                        var title = lists[i].Title;
-                        var count = lists[i].ItemCount || 0;
-                        if (title === SP_LIST) continue;
-                        if (count >= 10000) {
-                            window._smTsmSeListName = title;
-                            console.log('[Account Search] TSM SE list:', title, '(' + count + ')');
-                            return title;
-                        }
-                    }
-                }
-            } catch (e) {}
-            for (var j = 0; j < names.length; j++) {
-                try {
-                    var cUrl = SP_URL + "/_api/web/lists/getbytitle('" + String(names[j]).replace(/'/g, "''") + "')?$select=Title,ItemCount";
-                    var cRes = await fetch(cUrl, {
-                        headers: { 'Accept': 'application/json;odata=verbose' },
-                        credentials: 'include'
-                    });
-                    if (!cRes.ok) continue;
-                    var cData = await cRes.json();
-                    if (cData.d && (cData.d.ItemCount || 0) > 0) {
-                        window._smTsmSeListName = cData.d.Title || names[j];
-                        return window._smTsmSeListName;
-                    }
-                } catch (e) {}
-            }
-            return window._smTsmSeListName || null;
-        }
-
-        async function smQueryListByTitle(listName, accountCode) {
-            if (!listName) return null;
-            var safeCode = smODataEscapeLiteral(accountCode);
-            var pocFields = smCanViewAccountSearchPocDetails()
-                ? ",POC_x0020_Name,POC_x0020_Email_x0020_ID,POC_x0020_Contact_x0020_No," +
-                  "Secondary_x0020_POC_x0020_Name,Secondary_x0020_POC_x0020_Email,Secondary_x0020_POC_x0020_Contac," +
-                  "Technical_x0020_POC_x0020_Name,Technical_x0020_POC_x0020_Email,Technical_x0020_POC_x0020_Contac"
-                : "";
-            var url = SP_URL + "/_api/web/lists/getbytitle('" + String(listName).replace(/'/g, "''") + "')/items?" +
-                "$select=Title,Parent_x0020_Code,Customer_x0020_Name,Team," +
-                "Line_x0020_Manager/Title,Service_x0020_Manager/Title," +
-                "Secondary_x0020_Service_x0020_Ma/Title," +
-                "Account_x0020_Manager/Title,Account_x0020_Director/Title," +
-                "Service_x0020_Director/Title,Jan_x002d_26" + pocFields + "&" +
-                "$expand=Line_x0020_Manager,Service_x0020_Manager," +
-                "Secondary_x0020_Service_x0020_Ma,Account_x0020_Manager," +
-                "Account_x0020_Director,Service_x0020_Director&" +
-                "$filter=Title eq '" + safeCode + "'&$top=1";
-            var res = await fetch(url, {
-                headers: { 'Accept': 'application/json;odata=verbose' },
-                credentials: 'include'
-            });
-            if (!res.ok) return null;
-            var data = await res.json();
-            if (data.d && data.d.results && data.d.results.length) {
-                var hit = data.d.results[0];
-                if (!smNormalizeAccountSearchTeam(hit.Team)) hit.Team = 'TSM_SE';
-                hit._tsmSeSource = (listName !== SP_LIST);
-                return hit;
-            }
-            return null;
-        }
-
-        async function smLookupTsmSeAccountAsync(accountCode) {
-            if (!smCanSearchTsmSeFromExcel()) return null;
-            if (typeof window.tsmSeFindAccountForSearch === 'function') {
-                try {
-                    var direct = window.tsmSeFindAccountForSearch(accountCode);
-                    if (direct && typeof direct.then === 'function') direct = await direct;
-                    if (direct) return smMapTsmSeRowToSearchAccount(direct, accountCode) || direct;
-                } catch (e) { console.warn('[Account Search] tsmSeFindAccountForSearch failed:', e); }
-            }
-            if (typeof window.tsmSeFindAccount === 'function') {
-                try {
-                    var direct2 = window.tsmSeFindAccount(accountCode);
-                    if (direct2 && typeof direct2.then === 'function') direct2 = await direct2;
-                    if (direct2) return smMapTsmSeRowToSearchAccount(direct2, accountCode) || direct2;
-                } catch (e) {}
-            }
-            var listName = await smDiscoverTsmSeListName();
-            if (listName) {
-                try {
-                    var spHit = await smQueryListByTitle(listName, accountCode);
-                    if (spHit) return spHit;
-                } catch (e) { console.warn('[Account Search] TSM SE list query failed:', e); }
-            }
-            var hit = smFindAccountInTsmSeRows(smCollectTsmSeRows(), accountCode);
-            return hit ? smMapTsmSeRowToSearchAccount(hit, accountCode) : null;
-        }
-        function smFindAccountInTsmSeRows(rows, accountCode) {
-            if (!rows || !rows.length) return null;
-            var want = smNormAccountCode(accountCode);
-            for (var i = 0; i < rows.length; i++) {
-                var r = rows[i];
-                if (!r) continue;
-                var codes = [r.code, r.accountCode, r.Title, r.account, r.Account_Code, r['Account Code'], r.parent, r.parentCode, r.Parent_x0020_Code];
-                for (var j = 0; j < codes.length; j++) {
-                    if (smNormAccountCode(codes[j]) === want) return r;
-                }
-            }
-            return null;
-        }
-        function smMapTsmSeRowToSearchAccount(row, accountCode) {
-            if (!row) return null;
-            var code = smNormAccountCode(accountCode || row.code || row.accountCode || row.Title || row.account || row.Account_Code || row['Account Code']);
-            var parent = smNormAccountCode(row.parent || row.parentCode || row.Parent_x0020_Code || row.parent_code || row['Parent Code'] || code);
-            function person(val, objKey) {
-                if (val && typeof val === 'object' && val.Title) return val;
-                if (val) return { Title: String(val) };
-                if (row[objKey] && typeof row[objKey] === 'object') return row[objKey];
-                if (row[objKey]) return { Title: String(row[objKey]) };
-                return null;
-            }
-            return {
-                Title: code,
-                Parent_x0020_Code: parent || code,
-                Customer_x0020_Name: row.customer || row.customerName || row.Customer_x0020_Name || row['Customer Name'] || row.customer_name || '',
-                Team: 'TSM_SE',
-                Line_x0020_Manager: person(row.lm || row.lineManager || row.Line_Manager, 'Line_x0020_Manager'),
-                Service_x0020_Manager: person(row.sm || row.serviceManager || row.Service_Manager, 'Service_x0020_Manager'),
-                Secondary_x0020_Service_x0020_Ma: person(row.secondarySm || row.secondary_sm, 'Secondary_x0020_Service_x0020_Ma'),
-                Account_x0020_Manager: person(row.am || row.accountManager, 'Account_x0020_Manager'),
-                Account_x0020_Director: person(row.ad || row.accountDirector, 'Account_x0020_Director'),
-                Service_x0020_Director: person(row.sd || row.serviceDirector, 'Service_x0020_Director'),
-                POC_x0020_Name: row.pocName || row.poc_name || row.POC_x0020_Name || '',
-                POC_x0020_Email_x0020_ID: row.pocEmail || row.poc_email || row.POC_x0020_Email_x0020_ID || '',
-                POC_x0020_Contact_x0020_No: row.pocContact || row.poc_contact || row.POC_x0020_Contact_x0020_No || '',
-                Secondary_x0020_POC_x0020_Name: row.secondaryPocName || row.Secondary_x0020_POC_x0020_Name || '',
-                Secondary_x0020_POC_x0020_Email: row.secondaryPocEmail || row.Secondary_x0020_POC_x0020_Email || '',
-                Secondary_x0020_POC_x0020_Contac: row.secondaryPocContact || row.Secondary_x0020_POC_x0020_Contac || '',
-                Technical_x0020_POC_x0020_Name: row.technicalPocName || row.Technical_x0020_POC_x0020_Name || '',
-                Technical_x0020_POC_x0020_Email: row.technicalPocEmail || row.Technical_x0020_POC_x0020_Email || '',
-                Technical_x0020_POC_x0020_Contac: row.technicalPocContact || row.Technical_x0020_POC_x0020_Contac || '',
-                _tsmSeSource: true
-            };
-        }
         function smODataEscapeLiteral(value) {
             return String(value == null ? '' : value).replace(/'/g, "''");
         }
@@ -10725,14 +10548,11 @@ else if (sectionId === 'rcView') {
             }
 
             try {
-                document.getElementById('searchErrorMessage').style.display = 'none';
-
                 const pocFields = smCanViewAccountSearchPocDetails()
                     ? ",POC_x0020_Name,POC_x0020_Email_x0020_ID,POC_x0020_Contact_x0020_No," +
                       "Secondary_x0020_POC_x0020_Name,Secondary_x0020_POC_x0020_Email,Secondary_x0020_POC_x0020_Contac," +
                       "Technical_x0020_POC_x0020_Name,Technical_x0020_POC_x0020_Email,Technical_x0020_POC_x0020_Contac"
                     : "";
-                const safeCode = smODataEscapeLiteral(accountCode);
                 const url = SP_URL + "/_api/web/lists/getbytitle('" + SP_LIST + "')/items?" +
                     "$select=Title,Parent_x0020_Code,Customer_x0020_Name,Team," +
                     "Line_x0020_Manager/Title,Service_x0020_Manager/Title," +
@@ -10742,7 +10562,7 @@ else if (sectionId === 'rcView') {
                     "$expand=Line_x0020_Manager,Service_x0020_Manager," +
                     "Secondary_x0020_Service_x0020_Ma,Account_x0020_Manager," +
                     "Account_x0020_Director,Service_x0020_Director&" +
-                    "$filter=Title eq '" + safeCode + "'&" +
+                    "$filter=Title eq '" + accountCode.replace(/'/g, "''") + "'&" +
                     "$top=1";
 
                 const res = await fetch(url, {
@@ -10755,37 +10575,20 @@ else if (sectionId === 'rcView') {
                 if (!res.ok) throw new Error('Failed to search account');
 
                 const data = await res.json();
-                let account = (data.d.results && data.d.results.length) ? data.d.results[0] : null;
 
-                if (!account) {
-                    account = await smLookupTsmSeAccountAsync(accountCode);
-                } else if (!smAccountSearchTeamAllowed(account.Team)) {
-                    var tsmSeAccount = await smLookupTsmSeAccountAsync(accountCode);
-                    if (tsmSeAccount) account = tsmSeAccount;
-                }
-
-                if (!account) {
+                if (!data.d.results.length) {
                     document.getElementById('searchErrorMessage').style.display = 'block';
-                    document.getElementById('searchErrorMessage').innerHTML =
-                        '<div style="display:flex;align-items:center;gap:12px;">' +
-                            '<i data-lucide="alert-circle" style="width:20px;height:20px;color:#ef4444;"></i>' +
-                            '<div>' +
-                                '<div style="font-weight:700;color:#ef4444;margin-bottom:4px;">Account Not Found</div>' +
-                                '<div style="font-size:13px;color:var(--text-secondary);">No match in Service Manager Request or TSM SE data. Check the account code and try again.</div>' +
-                            '</div>' +
-                        '</div>';
                     document.getElementById('accountDetailsSection').style.display = 'none';
                     document.getElementById('relatedAccountsSection').style.display = 'none';
-                    if (typeof lucide !== 'undefined') lucide.createIcons();
+                    if (typeof lucide !== 'undefined') {
+                        lucide.createIcons();
+                    }
                     return;
                 }
 
                 document.getElementById('searchErrorMessage').style.display = 'none';
 
-                if (!smAccountSearchTeamAllowed(account.Team)) {
-                    smShowAccountSearchDenied(account.Team);
-                    return;
-                }
+                const account = data.d.results[0];
                 displayAccountDetails(account);
                 await loadRelatedAccounts(account);
 
@@ -10825,7 +10628,7 @@ else if (sectionId === 'rcView') {
             const fields = [
                 ['Account Code', account.Title],
                 ['Parent Code', account.Parent_x0020_Code || account.Title],
-                ['Team', smNormalizeAccountSearchTeam(account.Team) || (account._tsmSeSource ? 'TSM_SE (Excel)' : 'N/A')],
+                ['Team', smNormalizeAccountSearchTeam(account.Team) || account.Team || 'N/A'],
                 ['Account Type', isGroup ?
                     '<span style="color: var(--success); font-weight: 700; font-size: 16px;">🟢 Group Account</span>' :
                     '<span style="color: var(--accent); font-weight: 700; font-size: 16px;">🔵 Child Account</span>'
@@ -10873,41 +10676,7 @@ else if (sectionId === 'rcView') {
 
         let relatedAccountsGridApi = null;
 
-        function smLoadTsmSeRelatedAccounts(account) {
-            const isGroup = (account.Title === account.Parent_x0020_Code) || !account.Parent_x0020_Code;
-            let relatedAccounts = [];
-            let titleText = isGroup ? 'Child Accounts' : 'Parent/Group Account';
-            const rows = smCollectTsmSeRows();
-            const code = smNormAccountCode(account.Title);
-
-            if (isGroup) {
-                rows.forEach(function (row) {
-                    var rowCode = smNormAccountCode(row.code || row.accountCode || row.Title || row.account);
-                    var parent = smNormAccountCode(row.parent || row.parentCode || row.Parent_x0020_Code);
-                    if (parent === code && rowCode && rowCode !== code) {
-                        var mapped = smMapTsmSeRowToSearchAccount(row, rowCode);
-                        if (mapped && smAccountSearchTeamAllowed(mapped.Team)) relatedAccounts.push(mapped);
-                    }
-                });
-            } else {
-                var parentCode = smNormAccountCode(account.Parent_x0020_Code);
-                var hit = smFindAccountInTsmSeRows(rows, parentCode);
-                if (hit) {
-                    var mappedParent = smMapTsmSeRowToSearchAccount(hit, parentCode);
-                    if (mappedParent && smAccountSearchTeamAllowed(mappedParent.Team)) relatedAccounts.push(mappedParent);
-                }
-            }
-
-            document.getElementById('relatedAccountsTitle').textContent = titleText;
-            renderRelatedAccountsGrid(relatedAccounts, isGroup);
-            document.getElementById('relatedAccountsSection').style.display = 'block';
-        }
-
         async function loadRelatedAccounts(account) {
-            if (account && account._tsmSeSource) {
-                smLoadTsmSeRelatedAccounts(account);
-                return;
-            }
 
             const isGroup = (account.Title === account.Parent_x0020_Code) || !account.Parent_x0020_Code;
 
