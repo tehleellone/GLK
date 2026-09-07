@@ -233,10 +233,10 @@ body[data-theme="dark"] .status-dot,body[data-theme="duralux-dark"] .status-dot{
 .portal-shell.mq-full{max-width:none;width:100%;margin:0}
 #mobile-qtd-view{width:100%;max-width:100%;margin:0;padding:0;box-sizing:border-box}
 #revenue-rec-view{width:100%;max-width:100%;margin:0;padding:0;box-sizing:border-box}
-.rr-chart-tabs{display:flex;gap:.4rem;flex-wrap:wrap;margin-bottom:.85rem}
-.rr-chart-tab{padding:.4rem .85rem;border-radius:8px;font-size:.72rem;font-weight:700;border:1px solid var(--border);background:var(--bg-secondary);color:var(--t3);cursor:pointer;transition:all .15s}
-.rr-chart-tab:hover{color:var(--t1);border-color:var(--border-s)}
-.rr-chart-tab.active{background:var(--nab);border-color:var(--nab2);color:var(--acc)}
+.rr-chart-tabs{display:flex;gap:.55rem;flex-wrap:wrap;margin-bottom:1rem}
+.rr-chart-tab{padding:.55rem 1.15rem;border-radius:10px;font-size:.88rem;font-weight:800;border:1px solid var(--border);background:var(--bg-secondary);color:var(--t2);cursor:pointer;transition:all .15s;line-height:1.25}
+.rr-chart-tab:hover{color:var(--t1);border-color:var(--border-s);background:var(--bg-hover)}
+.rr-chart-tab.active{background:var(--nab);border-color:var(--nab2);color:var(--acc);box-shadow:0 2px 12px rgba(168,85,247,.22)}
 .rr-kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:.55rem;margin-bottom:.85rem}
 .rr-kpi-label{font-size:.62rem;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);font-weight:700}
 .rr-kpi-sub{font-size:.62rem;color:var(--t3);margin-top:.15rem;font-weight:600}
@@ -250,7 +250,12 @@ body[data-theme="dark"] .status-dot,body[data-theme="duralux-dark"] .status-dot{
 #rrChartWrap .chart-container{height:560px;position:relative;z-index:1}
 .rr-kpi{padding:.7rem .85rem;border-radius:12px;background:linear-gradient(135deg,var(--bg-card) 0%,var(--bg-secondary) 100%);border:1px solid var(--border-s);border-left:4px solid var(--acc);box-shadow:var(--cs),0 4px 14px rgba(0,0,0,.06)}
 .rr-kpi-val{font-size:1.15rem;font-weight:900;color:var(--acc);margin-top:.2rem;line-height:1.2;letter-spacing:-.01em}
-.rr-chart-tab.active{box-shadow:0 2px 10px rgba(168,85,247,.2)}
+.rr-chart-title{font-size:1.08rem;font-weight:800;color:var(--t1);margin-bottom:.5rem;display:flex;align-items:center;gap:.4rem;line-height:1.3}
+.rr-chart-title svg{width:18px;height:18px;stroke:var(--acc);fill:none;stroke-width:2;flex-shrink:0}
+.rr-chart-subtitle{font-size:.78rem;font-weight:600;color:var(--t3);margin-bottom:.55rem;line-height:1.45}
+#rrControlsPanel{overflow:hidden;transition:max-height .28s ease,opacity .22s ease,margin .22s ease}
+#rrControlsPanel.collapsed{max-height:0!important;opacity:0;margin:0!important;pointer-events:none}
+#rrControlsPanel:not(.collapsed){max-height:800px;opacity:1}
 .dashboard-section{animation:fadeSection .25s ease;padding:.5rem 0}
 @keyframes fadeSection{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
 #glkLoader{
@@ -1250,31 +1255,42 @@ body[data-theme="dark"] .badge-warning,body[data-theme="duralux-dark"] .badge-wa
       <!-- TRENDS VIEW -->
       <div id="revenue-rec-view" class="dashboard-section" style="display:none;margin:0;padding:0;">
         <div class="filters-section" style="margin-bottom:1rem;">
-          <h2 class="section-title" style="margin-top:0;">
-            <svg viewBox="0 0 24 24"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 8 12 3 7 8"/></svg>
-            Trends
-          </h2>
-          <p style="font-size:.78rem;color:var(--t3);margin:0 0 .85rem;">Source of truth: Excel workbook (<strong>Copy of dummy.xlsx</strong> or your uploaded file). Charts mirror each sheet — upload once and the file is cached in this browser.</p>
-          <div style="display:flex;align-items:center;gap:.75rem;flex-wrap:wrap;margin-bottom:.85rem;padding:.75rem 1rem;background:var(--bg-secondary);border:1px solid var(--border);border-radius:10px;">
-            <input type="file" id="rrReportInp" accept=".xlsx,.xls,.xlsm" style="display:none;" onchange="rrReportUpload(this.files[0])">
-            <button type="button" class="export-btn" onclick="document.getElementById('rrReportInp').click()">
-              <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-              Upload Excel
+          <div class="mq-controls-toolbar">
+            <h2 class="section-title" style="margin-top:0;margin-bottom:0!important;">
+              <svg viewBox="0 0 24 24"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 8 12 3 7 8"/></svg>
+              Trends
+            </h2>
+            <button type="button" id="rrControlsToggleBtn" class="mq-controls-toggle-btn" onclick="rrToggleControlsPanel()" title="Show or hide Excel upload and file info">
+              <span id="rrControlsToggleLabel">Hide controls</span>
+              <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
             </button>
-            <button type="button" class="reset-btn" onclick="rrReloadFromCache()">
-              <svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
-              Reload cached file
-            </button>
-            <div id="rrReportMeta" style="flex:1 1 100%;font-size:.75rem;color:var(--t2);font-weight:600;margin-top:.15rem;">No workbook loaded — upload Copy of dummy.xlsx</div>
           </div>
+          <div id="rrControlsPanel">
+            <p style="font-size:.78rem;color:var(--t3);margin:0 0 .85rem;">Source of truth: Excel workbook (<strong>Copy of dummy.xlsx</strong> or your uploaded file). Charts mirror each sheet — upload once and the file is cached in this browser.</p>
+            <div style="display:flex;align-items:center;gap:.75rem;flex-wrap:wrap;margin-bottom:.85rem;padding:.75rem 1rem;background:var(--bg-secondary);border:1px solid var(--border);border-radius:10px;">
+              <input type="file" id="rrReportInp" accept=".xlsx,.xls,.xlsm" style="display:none;" onchange="rrReportUpload(this.files[0])">
+              <button type="button" class="export-btn" onclick="document.getElementById('rrReportInp').click()">
+                <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                Upload Excel
+              </button>
+              <button type="button" class="reset-btn" onclick="rrReloadFromCache()">
+                <svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+                Reload cached file
+              </button>
+              <div id="rrReportMeta" style="flex:1 1 100%;font-size:.75rem;color:var(--t2);font-weight:600;margin-top:.15rem;">No workbook loaded — upload Copy of dummy.xlsx</div>
+            </div>
+          </div><!-- /rrControlsPanel -->
           <div class="rr-chart-tabs" id="rrChartTabs"></div>
             <div id="rrKpiRow" class="rr-kpi-row"></div>
             <div class="chart-card">
-            <div class="chart-title" style="justify-content:space-between;flex-wrap:wrap;gap:.5rem;">
-              <span id="rrChartTitle">—</span>
+            <div class="rr-chart-title" style="justify-content:space-between;flex-wrap:wrap;gap:.5rem;">
+              <span style="display:flex;align-items:center;gap:.4rem;">
+                <svg viewBox="0 0 24 24"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 8 12 3 7 8"/></svg>
+                <span id="rrChartTitle">—</span>
+              </span>
               <span id="rrProjBadge" class="rr-proj-badge" style="display:none;">Projection zone</span>
             </div>
-            <div id="rrChartSubtitle" style="font-size:.68rem;font-weight:600;color:var(--t3);margin-bottom:.45rem;"></div>
+            <div id="rrChartSubtitle" class="rr-chart-subtitle"></div>
             <div id="rrChartWrap"><div class="chart-container"><canvas id="chartRevenueRec"></canvas></div></div>
             <div id="rrChartLegend" class="rr-legend-row"></div>
             <div id="rrLineExplain" style="margin-top:.65rem;padding:.7rem .85rem;background:var(--bg-secondary);border:1px solid var(--border);border-radius:9px;font-size:.72rem;line-height:1.6;color:var(--t2);"></div>
@@ -9075,6 +9091,31 @@ function rrRefreshMeta(){
   parts.push(loaded+'/'+RR_CHART_DEFS.length+' sheets parsed');
   m.textContent=parts.join(' · ');
 }
+function rrSetControlsPanelCollapsed(collapsed){
+  var panel=el('rrControlsPanel');
+  var lbl=el('rrControlsToggleLabel');
+  var btn=el('rrControlsToggleBtn');
+  if(!panel) return;
+  panel.classList.toggle('collapsed',!!collapsed);
+  if(lbl) lbl.textContent=collapsed?'Show controls':'Hide controls';
+  if(btn) btn.classList.toggle('collapsed',!!collapsed);
+  try{ localStorage.setItem('glk_rr_controls_collapsed',collapsed?'1':'0'); }catch(e){}
+  if(!collapsed){
+    setTimeout(function(){
+      if(CHARTS.revenueRec) CHARTS.revenueRec.resize();
+    },260);
+  }
+}
+window.rrToggleControlsPanel=function(){
+  var panel=el('rrControlsPanel');
+  if(!panel) return;
+  rrSetControlsPanelCollapsed(!panel.classList.contains('collapsed'));
+};
+function rrInitControlsPanel(){
+  var collapsed=false;
+  try{ collapsed=localStorage.getItem('glk_rr_controls_collapsed')==='1'; }catch(e){}
+  rrSetControlsPanelCollapsed(collapsed);
+}
 function rrBuildChartTabs(){
   var wrap=el('rrChartTabs');
   if(!wrap) return;
@@ -9329,6 +9370,7 @@ window.rrReloadFromCache=function(){
   });
 };
 function rrInitView(deferRender){
+  rrInitControlsPanel();
   if(RR_PARSED&&Object.keys(RR_PARSED).length){
     rrBuildChartTabs();
     if(!deferRender) rrRenderActiveChart();
