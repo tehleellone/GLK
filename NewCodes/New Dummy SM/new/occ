@@ -665,9 +665,13 @@ body[data-theme="dark"] .badge-warning,body[data-theme="magenta-dark"] .badge-wa
               <div class="chart-hint">Click a bubble to see OCCs stuck at that stage.</div>
             </div>
             <div class="chart-card">
-              <div class="chart-title"><span>Reason Concentration</span></div>
-              <div class="chart-container exec" style="cursor:pointer"><canvas id="chartRadar"></canvas></div>
-              <div class="chart-hint">Radar of top reasons by value. Click an axis point to filter.</div>
+              <div class="chart-title"><span>Top Reasons</span><div>
+                <button type="button" class="toggle-btn active" id="reasonHsAll" onclick="setReasonHandsetFilter('all')">All</button>
+                <button type="button" class="toggle-btn" id="reasonHsYes" onclick="setReasonHandsetFilter('yes')">Handset</button>
+                <button type="button" class="toggle-btn" id="reasonHsNo" onclick="setReasonHandsetFilter('no')">Non-handset</button>
+              </div></div>
+              <div class="chart-container exec" style="cursor:pointer"><canvas id="chartReason"></canvas></div>
+              <div class="chart-hint">Value by reason. Click a bar to filter the grid. Use Handset / Non-handset to split the mix.</div>
             </div>
           </div>
         </div>
@@ -808,7 +812,7 @@ if(typeof Chart!=='undefined'){
 }
 let chartsVisible=false, selStatusTile=null, selHD=null, selDirector=null, selAMTile=null;
 let reasonChartMode='open', vertChartMode='value', usingMock=false;
-let occBridgePeriod='ytd', occBridgeMode='portfolio', selChartFilter=null;
+let occBridgePeriod='ytd', occBridgeMode='portfolio', selChartFilter=null, occReasonHandsetFilter='all';
 let currentView='dashboard';
 
 const MS_STATE = { vertical:new Set(), portalStatus:new Set(), reason:new Set(), year:new Set(), handset:new Set() };
@@ -971,11 +975,54 @@ function guessEmail(name){
   return name.toLowerCase().replace(/\s+/g,'.')+'@du.ae';
 }
 
+function parseOccDate(v){
+  if(!v && v!==0) return null;
+  if(v instanceof Date) return isNaN(v.getTime()) ? null : v;
+  if(typeof v==='object'){
+    if(typeof v.getTime==='function'){ const d=new Date(v.getTime()); return isNaN(d) ? null : d; }
+    if(v.Year) return new Date(v.Year, (v.Month||1)-1, v.Day||1);
+  }
+  const s = String(v).trim();
+  if(!s) return null;
+  const ms = s.match(/\/Date\((\-?\d+)/);
+  if(ms){ const d=new Date(Number(ms[1])); return isNaN(d) ? null : d; }
+  const d = new Date(s);
+  return isNaN(d) ? null : d;
+}
+
 function daysBetween(from, to){
-  if(!from) return 0;
-  const a=new Date(from), b=to?new Date(to):new Date();
-  if(isNaN(a)) return 0;
-  return Math.max(0, Math.floor((b-a)/86400000));
+  const a = parseOccDate(from);
+  const b = to ? parseOccDate(to) : new Date();
+  if(!a || !b) return 0;
+  return Math.max(0, Math.floor((b.getTime()-a.getTime())/86400000));
+}
+
+function getStepTimestamp(item, step, allSteps){
+  let ts = parseOccDate(item._raw[step.tsField]);
+  if(ts) return ts;
+  if(step.autoOnHm){
+    const hm = (allSteps||[]).find(function(s){ return s.key==='hm'; });
+    if(hm) ts = parseOccDate(item._raw[hm.tsField]);
+  }
+  return ts || null;
+}
+
+function calcDaysStuck(item){
+  if(getPortalStatus(item)!=='Open') return 0;
+  const steps = getRequiredSteps(item);
+  let pendingIdx = -1;
+  for(let i=0;i<steps.length;i++){
+    if(getStepStatus(item, steps[i], steps)==='pending'){ pendingIdx = i; break; }
+  }
+  if(pendingIdx < 0) return 0;
+  if(pendingIdx === 0) return daysBetween(item.created);
+  for(let i=pendingIdx-1; i>=0; i--){
+    const st = getStepStatus(item, steps[i], steps);
+    if(st!=='approved') continue;
+    const ts = getStepTimestamp(item, steps[i], steps);
+    if(ts) return daysBetween(ts);
+  }
+  return daysBetween(item.created);
 }
 
 function buildTimeline(item){
@@ -1023,7 +1070,7 @@ function parseItem(r){
   item.portalStatus = getPortalStatus(item);
   item.stuckAt = getStuckAt(item);
   item.daysRaised = daysBetween(created);
-  item.daysStuck = item.portalStatus==='Open' ? daysBetween(posted||created) : 0;
+  item.daysStuck = calcDaysStuck(item);
   item.responsible = getResponsible(item);
   item.timeline = buildTimeline(item);
   return item;
@@ -2166,6 +2213,7 @@ function occBarValuePlugin(opts){
   return { id:pid, afterDatasetsDraw:function(chart){
     const c = getChartColors();
     const dsCount = chart.data.datasets.length;
+    const placed = [];
     chart.data.datasets.forEach(function(ds, di){
       if(opts.datasetIndex!==undefined && di!==opts.datasetIndex) return;
       if(opts.onlyLastDataset && di !== dsCount-1) return;
@@ -2178,11 +2226,11 @@ function occBarValuePlugin(opts){
         if(val===null||val===undefined || (typeof val==='number' && (isNaN(val)||val===0))) return;
         const label = fmtChartLabel(val, { money:isMoney, isValue:isMoney });
         const pos = bar.tooltipPosition();
-        if(isHorizontal){
-          occDrawChartLabel(chart.ctx, label, pos.x + 8, pos.y, {align:'left', size:11, color:c.text, bold:true});
-        } else {
-          occDrawChartLabel(chart.ctx, label, pos.x, pos.y - 14, {align:'center', size:11, color:c.text, bold:true});
-        }
+        const x = isHorizontal ? pos.x + 8 : pos.x;
+        const y = isHorizontal ? pos.y : pos.y - 14;
+        if(placed.some(function(p){ return Math.abs(p.x-x)<42 && Math.abs(p.y-y)<13; })) return;
+        placed.push({x:x,y:y});
+        occDrawChartLabel(chart.ctx, label, x, y, {align: isHorizontal?'left':'center', size:11, color:c.text, bold:true});
       });
     });
   }};
@@ -2191,15 +2239,18 @@ function occBarValuePlugin(opts){
 function occLineValuePlugin(){
   return { id:'occLineVals', afterDatasetsDraw:function(chart){
     const c = getChartColors();
-    chart.data.datasets.forEach(function(ds, di){
-      const meta = chart.getDatasetMeta(di); if(meta.hidden) return;
-      const isMoney = /value|aed|\(m\)/i.test(String(ds.label||''));
-      meta.data.forEach(function(pt, i){
-        const val = ds.data[i];
-        if(val===null||val===undefined) return;
-        const label = isMoney ? fmtChartLabel(val, {money:true}) : fmtChartLabel(val, {});
-        occDrawChartLabel(chart.ctx, label, pt.x, pt.y - (di===0?16:-14), {align:'center', size:10, color:c.text, bold:true});
-      });
+    const placed = [];
+    const ds = chart.data.datasets[0];
+    const meta = chart.getDatasetMeta(0);
+    if(!ds || !meta || meta.hidden) return;
+    meta.data.forEach(function(pt, i){
+      const val = ds.data[i];
+      if(val===null||val===undefined) return;
+      const label = fmtChartLabel(val, {money:/value|aed/i.test(String(ds.label||''))});
+      const x = pt.x, y = pt.y - 16;
+      if(placed.some(function(p){ return Math.abs(p.x-x)<46; })) return;
+      placed.push({x:x,y:y});
+      occDrawChartLabel(chart.ctx, label, x, y, {align:'center', size:10, color:c.text, bold:true});
     });
   }};
 }
@@ -2211,18 +2262,19 @@ function occArcLabelPlugin(){
     const total = data.reduce(function(a,b){ return a+b; }, 0);
     if(!total) return;
     const meta = chart.getDatasetMeta(0);
+    const placed = [];
     meta.data.forEach(function(arc, i){
       const val = data[i];
       const pct = Math.round(val/total*100);
-      if(pct < 5) return;
+      if(pct < 8) return;
       const pos = arc.tooltipPosition();
+      if(placed.some(function(p){ return Math.abs(p.x-pos.x)<28 && Math.abs(p.y-pos.y)<18; })) return;
+      placed.push({x:pos.x,y:pos.y});
       ctx.save();
       ctx.font='bold 12px Inter,sans-serif';
       ctx.fillStyle='#fff';
       ctx.textAlign='center'; ctx.textBaseline='middle';
-      ctx.fillText(pct+'%', pos.x, pos.y-7);
-      ctx.font='600 10px Inter,sans-serif';
-      ctx.fillText(fmt(val), pos.x, pos.y+8);
+      ctx.fillText(pct+'%', pos.x, pos.y);
       ctx.restore();
     });
   }};
@@ -2368,11 +2420,13 @@ function renderOccBridge(){
   const bridgeLabelPlugin = { id:'occBridgeLbl', afterDatasetsDraw:function(chart){
     const meta = chart.getDatasetMeta(0);
     const tc = getChartColors();
+    const placed = [];
     meta.data.forEach(function(bar, i){
-      const b = bars[i]; if(!b) return;
+      const b = bars[i]; if(!b || !b.value) return;
       const pos = bar.tooltipPosition();
+      if(placed.some(function(p){ return Math.abs(p.x-pos.x)<50; })) return;
+      placed.push({x:pos.x});
       occDrawChartLabel(chart.ctx, fmt(b.value), pos.x, pos.y - 16, {align:'center', size:12, color:tc.text, bold:true});
-      occDrawChartLabel(chart.ctx, b.meta, pos.x, pos.y + 16, {align:'center', size:10, color:tc.text, bold:false});
     });
   }};
   CHARTS.bridge = new Chart(canvas, Object.assign({
@@ -2411,7 +2465,7 @@ function renderTrendChart(){
       if(!els.length) return;
       const k = keys[els[0].index];
       applyChartFilter({ type:'month', value:k, label:'Month '+map[k].label });
-    }, plugins:{legend:{labels:{color:c.text,usePointStyle:true,font:{weight:'700'}}}}, scales:{ x:{ticks:{color:c.text},grid:{color:c.grid}}, y:{position:'left',ticks:{color:c.text,callback:function(v){return fmt(v);}},grid:{color:c.grid},grace:'18%'}, y1:{position:'right',grid:{drawOnChartArea:false},ticks:{color:c.text,stepSize:1},grace:'18%'} } }
+    }, plugins:{legend:{labels:{color:c.text,usePointStyle:true,font:{weight:'700'}}}}, scales:{ x:{ticks:{color:c.text,maxRotation:0},grid:{color:c.grid}}, y:{position:'left',ticks:{color:c.text,callback:function(v){return fmt(v);}},grid:{color:c.grid},grace:'22%'}, y1:{position:'right',grid:{drawOnChartArea:false},ticks:{color:c.text,stepSize:1},grace:'22%'} } }
   }, occChartLayoutPad()));
 }
 
@@ -2421,7 +2475,7 @@ function renderCharts(){
   renderTop10Chart();
   renderVerticalChart();
   renderBubbleChart();
-  renderRadarChart();
+  renderReasonChart();
 }
 
 function setVertChartMode(mode){
@@ -2489,7 +2543,7 @@ function renderBubbleChart(){
   open.forEach(function(i){
     const k = i.stuckAt||'Unknown';
     if(!map[k]) map[k]={stage:k, days:0, value:0, count:0};
-    map[k].days += (i.daysStuck||i.daysRaised||0);
+    map[k].days += (i.daysStuck||0);
     map[k].value += i.value;
     map[k].count++;
   });
@@ -2504,10 +2558,14 @@ function renderBubbleChart(){
     plugins:[{ id:'occBubLbl', afterDatasetsDraw:function(chart){
       const meta = chart.getDatasetMeta(0);
       const tc = getChartColors();
+      const placed = [];
       meta.data.forEach(function(pt, i){
         const p = points[i]; if(!p) return;
-        occDrawChartLabel(chart.ctx, p.stage.split(' ')[0], pt.x, pt.y-p.r-10, {align:'center', size:10, color:tc.text, bold:true});
-        occDrawChartLabel(chart.ctx, fmt(p.y), pt.x, pt.y, {align:'center', size:10, color:'#fff', bold:true});
+        const label = Math.round(p.x)+'d';
+        const y = pt.y - p.r - 12;
+        if(placed.some(function(q){ return Math.abs(q.x-pt.x)<36 && Math.abs(q.y-y)<14; })) return;
+        placed.push({x:pt.x,y:y});
+        occDrawChartLabel(chart.ctx, label, pt.x, y, {align:'center', size:10, color:tc.text, bold:true});
       });
     }}],
     data:{ datasets:[{ label:'Open exposure', data:points, backgroundColor:points.map(function(p,i){ return OCC_PALETTE[i%OCC_PALETTE.length]+'cc'; }), borderColor:points.map(function(p,i){ return OCC_PALETTE[i%OCC_PALETTE.length]; }), borderWidth:2 }] },
@@ -2515,34 +2573,44 @@ function renderBubbleChart(){
       if(!els.length) return;
       const p = points[els[0].index];
       applyChartFilter({ type:'stuckAt', value:p.stage, label:'Stuck: '+p.stage });
-    }, plugins:{legend:{display:false}, tooltip:{callbacks:{label:function(ctx){ const p=points[ctx.dataIndex]; return p? p.stage+' · '+fmtAed(p.y)+' · '+p.count+' OCCs · '+Math.round(p.x)+' avg days':''; } }}}, scales:{ x:{ title:{display:true,text:'Avg days stuck',color:c.text,font:{weight:'700'}}, ticks:{color:c.text}, grid:{color:c.grid} }, y:{ title:{display:true,text:'Open value',color:c.text,font:{weight:'700'}}, ticks:{color:c.text,callback:function(v){return fmt(v);}}, grid:{color:c.grid}, grace:'12%' } } }
+    }, plugins:{legend:{display:false}, tooltip:{callbacks:{label:function(ctx){ const p=points[ctx.dataIndex]; return p? p.stage+' · '+fmtAed(p.y)+' · '+p.count+' open · avg '+Math.round(p.x)+' days stuck':''; } }}}, scales:{ x:{ title:{display:true,text:'Avg days in current queue (open only)',color:c.text,font:{weight:'700'}}, ticks:{color:c.text}, grid:{color:c.grid} }, y:{ title:{display:true,text:'Open value',color:c.text,font:{weight:'700'}}, ticks:{color:c.text,callback:function(v){return fmt(v);}}, grid:{color:c.grid}, grace:'12%' } } }
   }, occChartLayoutPad()));
 }
 
-function renderRadarChart(){
-  destroyChart('radar');
-  const canvas = el('chartRadar'); if(!canvas) return;
-  const base = getScopeItems();
+function setReasonHandsetFilter(mode){
+  occReasonHandsetFilter = mode;
+  if(el('reasonHsAll')) el('reasonHsAll').classList.toggle('active', mode==='all');
+  if(el('reasonHsYes')) el('reasonHsYes').classList.toggle('active', mode==='yes');
+  if(el('reasonHsNo')) el('reasonHsNo').classList.toggle('active', mode==='no');
+  renderReasonChart();
+}
+
+function renderReasonChart(){
+  destroyChart('reason');
+  const canvas = el('chartReason'); if(!canvas) return;
+  let items = getScopeItems();
+  if(occReasonHandsetFilter==='yes') items = items.filter(isHandsetItem);
+  if(occReasonHandsetFilter==='no') items = items.filter(function(i){ return !isHandsetItem(i); });
   const map = {};
-  base.forEach(function(i){ map[i.reason]=(map[i.reason]||0)+i.value; });
-  const labels = Object.keys(map).sort(function(a,b){ return map[b]-map[a]; }).slice(0,6);
+  items.forEach(function(i){
+    const k = i.reason||'—';
+    if(!map[k]) map[k]={v:0,c:0};
+    map[k].v += i.value; map[k].c++;
+  });
+  const labels = Object.keys(map).sort(function(a,b){ return map[b].v-map[a].v; }).slice(0,10);
   const c = getChartColors();
-  const data = labels.map(function(l){ return map[l]; });
-  CHARTS.radar = new Chart(canvas, Object.assign({
-    type:'radar',
-    plugins:[{ id:'occRadarLbl', afterDatasetsDraw:function(chart){
-      const meta = chart.getDatasetMeta(0);
-      const tc = getChartColors();
-      meta.data.forEach(function(pt, i){
-        occDrawChartLabel(chart.ctx, fmt(data[i]), pt.x, pt.y-12, {align:'center', size:10, color:tc.text, bold:true});
-      });
-    }}],
-    data:{ labels:labels, datasets:[{ label:'OCC Value', data:data, backgroundColor:'rgba(124,58,237,.22)', borderColor:'#7c3aed', pointBackgroundColor:'#7c3aed', pointRadius:5, borderWidth:2 }] },
-    options:{ responsive:true, maintainAspectRatio:false, onClick:function(evt, els){
+  CHARTS.reason = new Chart(canvas, Object.assign({
+    type:'bar', plugins:[occBarValuePlugin({money:true})],
+    data:{ labels:labels, datasets:[{ label:'Value (AED)', data:labels.map(function(l){ return map[l].v; }), backgroundColor:labels.map(function(l,i){
+      const col = OCC_PALETTE[i%OCC_PALETTE.length];
+      if(selChartFilter && selChartFilter.type==='reason' && selChartFilter.value!==l) return col+'55';
+      return col;
+    }), borderRadius:8, borderSkipped:false }] },
+    options:{ indexAxis:'y', responsive:true, maintainAspectRatio:false, onClick:function(evt, els){
       if(!els.length) return;
       const r = labels[els[0].index];
       applyChartFilter({ type:'reason', value:r, label:'Reason: '+r });
-    }, plugins:{legend:{display:false}}, scales:{ r:{ ticks:{ display:false }, grid:{ color:c.grid }, pointLabels:{ color:c.text, font:{ size:11, weight:'700' } } } } }
+    }, plugins:{legend:{display:false}, tooltip:{callbacks:{afterLabel:function(ctx){ const k=labels[ctx.dataIndex]; return k? map[k].c+' OCCs':''; } }}}, scales:{ x:{ticks:{color:c.text,callback:function(v){return fmt(v);}},grid:{color:c.grid},grace:'22%'}, y:{ticks:{color:c.text,font:{size:11,weight:'700'}},grid:{display:false}} } }
   }, occChartLayoutPad()));
 }
 
@@ -3197,6 +3265,7 @@ window.selectHD=selectHD;
 window.selectDirector=selectDirector;
 window.selectAMTile=selectAMTile;
 window.setVertChartMode=setVertChartMode;
+window.setReasonHandsetFilter=setReasonHandsetFilter;
 window.occSetBridgePeriod=occSetBridgePeriod;
 window.occSetBridgeMode=occSetBridgeMode;
 window.applyChartFilter=applyChartFilter;
