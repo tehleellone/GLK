@@ -2084,16 +2084,27 @@ function spPostJson(url,body,digest,cb){
   xhr.send(JSON.stringify(body));
 }
 function spGetBinary(url,cb){
+  var done=false;
+  function finish(err,buf){
+    if(done) return;
+    done=true;
+    cb(err,buf);
+  }
   var xhr=new XMLHttpRequest();
   xhr.open('GET',url,true);
   xhr.responseType='arraybuffer';
+  xhr.timeout=45000;
   xhr.onreadystatechange=function(){
     if(xhr.readyState!==4) return;
-    if(xhr.status>=200&&xhr.status<300) cb(null,xhr.response);
-    else cb(new Error('HTTP '+xhr.status),null);
+    if(xhr.status>=200&&xhr.status<300) finish(null,xhr.response);
+    else finish(new Error('HTTP '+xhr.status+(xhr.status===500?' — SharePoint file error (locked or missing?)':'')));
   };
-  xhr.onerror=function(){ cb(new Error('Network error'),null); };
+  xhr.onerror=function(){ finish(new Error('Network error')); };
+  xhr.ontimeout=function(){ finish(new Error('Download timed out after 45s')); };
   xhr.send();
+  setTimeout(function(){
+    if(!done){ try{ xhr.abort(); }catch(e){} finish(new Error('Download timed out')); }
+  },48000);
 }
 function spUploadBinary(url,arrayBuffer,digest,cb){
   var xhr=new XMLHttpRequest();
@@ -2260,19 +2271,31 @@ function mqCacheLoadReport(cb){
 }
 function glkSpLoadMobileReport(cb){
   cb=cb||function(){};
+  var finished=false;
+  function done(err,parsed,meta){
+    if(finished) return;
+    finished=true;
+    cb(err,parsed,meta);
+  }
+  setTimeout(function(){
+    if(!finished){
+      console.warn('[GLK] Mobile report load timed out — using cache if available');
+      loadFromCache(new Error('Load timed out after 60s'));
+    }
+  },60000);
   function loadFromCache(spErr){
     mqCacheLoadReport(function(errC,bufferC,metaC){
       if(!errC&&bufferC&&bufferC.byteLength>0){
         glkParseAndSetMobileReport(bufferC,function(e,parsed){
           if(!e&&parsed){
             GLK_MOBILE_REPORT_META=Object.assign({},metaC||{},{storage:(metaC&&metaC.storage)||'local-cache',spError:spErr?spErr.message:null});
-            return cb(null,parsed,GLK_MOBILE_REPORT_META);
+            return done(null,parsed,GLK_MOBILE_REPORT_META);
           }
-          cb(spErr||errC||new Error('No mobile report found. Check SharePoint SiteAssets file or use Replace File.'),null,null);
+          done(spErr||errC||new Error('No mobile report found. Check SharePoint SiteAssets file or use Replace File.'),null,null);
         });
         return;
       }
-      cb(spErr||errC||new Error('No mobile report found at SharePoint SiteAssets. Upload the workbook once with Replace File.'),null,null);
+      done(spErr||errC||new Error('No mobile report found at SharePoint SiteAssets. Upload the workbook once with Replace File.'),null,null);
     });
   }
   spDownloadMobileReport(function(err,buffer){
@@ -2283,7 +2306,7 @@ function glkSpLoadMobileReport(cb){
           glkParseAndSetMobileReport(buffer,function(e3,parsed){
             if(e3) return loadFromCache(e3);
             GLK_MOBILE_REPORT_META=m;
-            cb(null,parsed,m);
+            done(null,parsed,m);
           });
         });
       });
@@ -2297,11 +2320,13 @@ window.glkMobileReportRefreshFromSharePoint=function(){
   var metaEl=el('mobileReportMeta');
   if(metaEl) metaEl.textContent='Refreshing from SharePoint…';
   glkShowLoader('Loading GLK report from SharePoint…');
+  var hideTimer=setTimeout(function(){ glkHideLoader(); },65000);
   glkSpLoadMobileReport(function(err){
+    clearTimeout(hideTimer);
     glkHideLoader();
     glkMobileQtdRefreshUI();
     if(mqGetActiveReport()) renderMobileQtdBridge();
-    if(err) alert('Could not load from SharePoint:\n'+err.message+'\n\nOpen this dashboard from the GKA SharePoint site while signed in, or use Replace File.');
+    if(err) alert('Could not load from SharePoint:\n'+err.message+'\n\nUsing browser cache if available. If the Excel file is locked, ask whoever has it open to close it, then Refresh again.');
   });
 };
 
@@ -2384,6 +2409,11 @@ function glkHideLoader(){var l=el('glkLoader');if(l)l.style.display='none';}
 function launchDashboard(){
   incVisit(); saveLastVisit();
   glkShowLoader('Loading your pipeline…');
+  var loaderSafety=setTimeout(function(){
+    glkHideLoader();
+    console.warn('[GLK] Loader safety timeout — dashboard should still be usable');
+  },120000);
+  window._glkClearLoaderSafety=function(){ clearTimeout(loaderSafety); };
 document.getElementById('landingPage').style.cssText='display:none!important';
 el('dashboardContent').style.display='flex';
 el('dashboardContent').style.flexDirection='column';
@@ -2651,6 +2681,7 @@ function loadData(){
         buildFilters();
         applyAll();
         glkHideLoader();
+        if(window._glkClearLoaderSafety) window._glkClearLoaderSafety();
         return;
       }
       allResults=allResults.concat(data.d.results);
@@ -2665,6 +2696,7 @@ function loadData(){
         buildFilters();
         applyAll();
         glkHideLoader();
+        if(window._glkClearLoaderSafety) window._glkClearLoaderSafety();
       }
     });
   }
@@ -9270,23 +9302,34 @@ function rrRefreshMeta(){
 }
 function rrTryLoadFromSharePoint(cb){
   cb=cb||function(){};
+  var finished=false;
+  function done(err){ if(finished) return; finished=true; cb(err); }
+  setTimeout(function(){ done(new Error('Trends SharePoint load timed out')); },50000);
   spDownloadTrendsReport(function(err,buffer){
-    if(err||!buffer) return cb(err||new Error('SharePoint trends file not found'));
+    if(err||!buffer||!buffer.byteLength) return done(err||new Error('Trends file not on SharePoint yet — upload Copy of dummy.xlsx once'));
     spGetTrendsReportMeta(function(err2,meta){
       var m=Object.assign({filename:SP_TRENDS_REPORT_FILE,storage:'sharepoint'},meta||{});
       rrCacheSave(buffer,m,function(){
-        rrParseBuffer(buffer,m,function(e){ cb(e); });
+        rrParseBuffer(buffer,m,function(e){ done(e); });
       });
     });
+  });
+}
+function rrTryLoadFromSharePointBackground(){
+  rrTryLoadFromSharePoint(function(err){
+    if(err) console.warn('[GLK] Trends SP background sync:',err.message);
+    else rrRefreshMeta();
   });
 }
 window.rrRefreshFromSharePoint=function(){
   var metaEl=el('rrReportMeta');
   if(metaEl) metaEl.textContent='Refreshing from SharePoint…';
   glkShowLoader('Loading trends workbook from SharePoint…');
+  var hideTimer=setTimeout(function(){ glkHideLoader(); },55000);
   rrTryLoadFromSharePoint(function(err){
+    clearTimeout(hideTimer);
     glkHideLoader();
-    if(err) alert('Could not load from SharePoint:\n'+err.message+'\n\nEnsure you are signed in on the GKA site.');
+    if(err) alert('Could not load trends from SharePoint:\n'+err.message+'\n\nUpload Copy of dummy.xlsx to SiteAssets once, or use browser cache.');
   });
 };
 function rrSetControlsPanelCollapsed(collapsed){
@@ -9560,21 +9603,36 @@ window.rrReportUpload=function(file){
   reader.onerror=function(){ alert('Could not read file.'); };
   reader.readAsArrayBuffer(file);
 };
-window.rrReloadFromCache=function(){ rrRefreshFromSharePoint(); };
+window.rrReloadFromCache=function(){
+  rrCacheLoad(function(err,buffer,meta){
+    if(err||!buffer){
+      alert('No cached trends file. Upload Copy of dummy.xlsx once.');
+      return;
+    }
+    glkShowLoader('Loading cached trends…');
+    rrParseBuffer(buffer,meta,function(e){
+      glkHideLoader();
+      if(e) alert('Cache load failed: '+e.message);
+    });
+  });
+};
 function rrInitView(deferRender){
   rrInitControlsPanel();
   if(RR_PARSED&&Object.keys(RR_PARSED).length){
     rrBuildChartTabs();
     if(!deferRender) rrRenderActiveChart();
+    rrTryLoadFromSharePointBackground();
     return;
   }
-  rrTryLoadFromSharePoint(function(spErr){
-    if(!spErr) return;
-    rrCacheLoad(function(err,buffer,meta){
-      if(!err&&buffer){
-        rrParseBuffer(buffer,meta,function(){});
-        return;
-      }
+  rrCacheLoad(function(err,buffer,meta){
+    if(!err&&buffer&&buffer.byteLength){
+      rrParseBuffer(buffer,meta,function(){
+        rrTryLoadFromSharePointBackground();
+      });
+      return;
+    }
+    rrTryLoadFromSharePoint(function(spErr){
+      if(!spErr) return;
       rrTryLoadBundledWorkbook(function(loadErr){
         if(!loadErr){
           if(!deferRender) rrRenderActiveChart();
