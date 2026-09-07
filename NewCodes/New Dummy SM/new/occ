@@ -159,7 +159,7 @@ body[data-theme="dark"] .status-dot,body[data-theme="magenta-dark"] .status-dot{
 .nav-item:hover{background:var(--bg-hover);color:var(--t1)}
 .nav-item.active{background:var(--nab);border-color:var(--nab2);color:var(--t1);font-weight:600}
 .nav-admin-only{display:none;}
-.content{flex:1;overflow-y:auto;min-width:0;background:var(--bg-content);padding:1.1rem 1.25rem}
+.content{flex:1;overflow-y:auto;min-width:0;background:var(--bg-content);padding:1.1rem 1.25rem 5.5rem}
 .dashboard-section{animation:fadeSection .25s ease;padding:.5rem 0}
 @keyframes fadeSection{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
 .section-title{font-size:1rem;font-weight:800;margin:.85rem 0!important;display:flex;align-items:center;gap:.45rem;color:var(--acc);}
@@ -246,7 +246,7 @@ body[data-theme="dark"] .status-dot,body[data-theme="magenta-dark"] .status-dot{
 .chart-card{background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:1rem;box-shadow:var(--cs)}
 .chart-title{font-size:.8rem;font-weight:700;color:var(--t2);margin-bottom:.65rem;display:flex;align-items:center;gap:.35rem;justify-content:space-between;}
 .chart-title svg{width:16px;height:16px;stroke:var(--acc);fill:none;stroke-width:2;flex-shrink:0}
-.chart-container{position:relative;height:300px;padding-top:10px}
+.chart-container{position:relative;height:300px;padding:12px 8px 18px}
 .chart-container.tall{height:360px}
 .chart-container.exec{height:420px}
 .chart-controls{display:flex;flex-wrap:wrap;gap:.35rem;align-items:center;margin-top:.65rem;padding-top:.55rem;border-top:1px solid var(--border)}
@@ -346,7 +346,7 @@ body[data-theme="dark"] .badge-warning,body[data-theme="magenta-dark"] .badge-wa
 .loading-bar-fill{height:100%;border-radius:99px;background:var(--grad);animation:loadBar 2s ease-in-out infinite;}
 @keyframes loadBar{0%{width:0%;margin-left:0}50%{width:70%;margin-left:0}100%{width:0%;margin-left:100%}}
 .loading-step{font-size:.76rem;color:var(--t3);min-height:1.2em;transition:opacity .3s}
-.dev-console{position:fixed;bottom:12px;right:12px;z-index:9999;background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:.65rem .9rem;display:flex;align-items:center;gap:.5rem;box-shadow:var(--cs);font-size:.75rem;}
+.dev-console{position:fixed;bottom:12px;right:12px;z-index:50;background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:.65rem .9rem;display:flex;align-items:center;gap:.5rem;box-shadow:var(--cs);font-size:.75rem;}
 .dev-console input{padding:.3rem .6rem;border-radius:6px;border:1px solid var(--border);background:var(--bg-input);color:var(--t1);font-size:.75rem;width:180px;}
 .dev-console select{padding:.3rem .6rem;border-radius:6px;border:1px solid var(--border);background:var(--bg-input);color:var(--t1);font-size:.75rem;}
 .dev-console button{padding:.3rem .7rem;border-radius:6px;background:var(--grad);color:#fff;border:none;font-size:.74rem;font-weight:700;cursor:pointer;}
@@ -517,7 +517,7 @@ body[data-theme="dark"] .badge-warning,body[data-theme="magenta-dark"] .badge-wa
       <h1 class="landing-brand-title">OCC<br><span>Portal</span></h1>
       <p class="landing-brand-subtitle">One-time Credit Charge tracking, approval workflow monitoring, and account manager performance across all verticals.</p>
       <div class="landing-features">
-        <div class="landing-feature"><div class="landing-feature-icon"><svg viewBox="0 0 24 24"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/></svg></div><div><div class="landing-feature-title">Live Approval Tracking</div><div class="landing-feature-desc">Monitor OCC status, stuck items, and SLA compliance in real time</div></div></div>
+        <div class="landing-feature"><div class="landing-feature-icon"><svg viewBox="0 0 24 24"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/></svg></div><div><div class="landing-feature-title">Live Approval Tracking</div><div class="landing-feature-desc">Monitor OCC status, pending items, and SLA compliance in real time</div></div></div>
         <div class="landing-feature"><div class="landing-feature-icon"><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div><div><div class="landing-feature-title">Role-Based Access</div><div class="landing-feature-desc">Admin, AM, Approver, and Viewer hierarchy via OCC_ACCESS</div></div></div>
         <div class="landing-feature"><div class="landing-feature-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4"/></svg></div><div><div class="landing-feature-title">Account History & Timeline</div><div class="landing-feature-desc">Full approval chain with timestamps and responsible parties</div></div></div>
       </div>
@@ -660,9 +660,9 @@ body[data-theme="dark"] .badge-warning,body[data-theme="magenta-dark"] .badge-wa
           </div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:.85rem;margin-bottom:.85rem;">
             <div class="chart-card">
-              <div class="chart-title"><span>Open Risk Map</span><span style="font-size:.68rem;font-weight:600;color:var(--t3)">Days stuck vs value · bubble size = case count</span></div>
+              <div class="chart-title"><span>Open Risk Map</span><span style="font-size:.68rem;font-weight:600;color:var(--t3)">Days pending vs value · bubble size = case count</span></div>
               <div class="chart-container exec" style="cursor:pointer"><canvas id="chartBubble"></canvas></div>
-              <div class="chart-hint">Click a bubble to see OCCs stuck at that stage.</div>
+              <div class="chart-hint">Open OCCs only. Click a bubble to see items pending at that stage.</div>
             </div>
             <div class="chart-card">
               <div class="chart-title"><span>Top Reasons</span><div>
@@ -1728,9 +1728,9 @@ function gridColDefs(){
     { field:'vertical', headerName:'Vertical', width:110, minWidth:100 },
     { field:'value', headerName:'Value (AED)', width:130, minWidth:120, type:'numericColumn', valueFormatter:p=>fmtAed(p.value) },
     { field:'portalStatus', headerName:'Status', width:145, minWidth:135, cellRenderer:p=>'<span class="status-badge '+badgeClass(p.value)+'">'+p.value+'</span>' },
-    { field:'stuckAt', headerName:'Stuck At', width:155, minWidth:140 },
+    { field:'stuckAt', headerName:'Pending At', width:155, minWidth:140, valueFormatter:function(p){ return (p.data && p.data.portalStatus==='Open') ? (p.value||'—') : '—'; } },
     { field:'daysRaised', headerName:'Days Raised', width:110, minWidth:100, type:'numericColumn' },
-    { field:'daysStuck', headerName:'Days Stuck', width:105, minWidth:95, type:'numericColumn' },
+    { field:'daysStuck', headerName:'Days Pending', width:120, minWidth:105, type:'numericColumn', valueFormatter:function(p){ return (p.data && p.data.portalStatus==='Open') ? p.value : '—'; } },
     { field:'reason', headerName:'Reason', width:145, minWidth:130 },
     { field:'am', headerName:'Sales Director', width:150, minWidth:130 },
     { field:'handset', headerName:'Handset', width:95, minWidth:85 },
@@ -1769,8 +1769,8 @@ function gridSearch(q){ if(GRID_API) GRID_API.setGridOption('quickFilterText', q
 function updateGridCounts(){ const n=getViewItems().length; set('recordCountBadge', n+' of '+SCOPED.length+' records'); set('gridCountLabel', '('+n+' shown)'); }
 
 function exportExcel(){
-  const rows = FILTERED.map(i=>[i.ref,i.accountCode,i.accountName,i.requestor,i.vertical,i.value,i.portalStatus,i.stuckAt,i.daysRaised,i.reason,i.am].join(','));
-  const csv = 'OCC Ref,Account,Account Name,Requestor,Vertical,Value,Portal Status,Stuck At,Days Raised,Reason,AM\n'+rows.join('\n');
+  const rows = FILTERED.map(i=>[i.ref,i.accountCode,i.accountName,i.requestor,i.vertical,i.value,i.portalStatus,(i.portalStatus==='Open'?i.stuckAt:'—'),i.daysRaised,(i.portalStatus==='Open'?i.daysStuck:'—'),i.reason,i.am].join(','));
+  const csv = 'OCC Ref,Account,Account Name,Requestor,Vertical,Value,Portal Status,Pending At,Days Raised,Days Pending,Reason,AM\n'+rows.join('\n');
   const a = document.createElement('a'); a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv); a.download='occ_export.csv'; a.click();
 }
 
@@ -1787,7 +1787,7 @@ function sendWeeklyReport(){
   const pending = SCOPED.filter(i=>i.portalStatus==='Open');
   const subject = 'Weekly OCC Report — '+pending.length+' pending items';
   let body = 'Weekly OCC Report for '+USER.name+'\nDate: '+new Date().toLocaleDateString('en-GB')+'\n\nPending OCCs ('+pending.length+'):\n\n';
-  pending.forEach(i=>{ body += '• '+i.ref+' | '+i.accountCode+' | AED '+i.value.toLocaleString()+' | Stuck: '+i.stuckAt+' | '+i.daysStuck+' days\n'; });
+  pending.forEach(i=>{ body += '• '+i.ref+' | '+i.accountCode+' | AED '+i.value.toLocaleString()+' | Pending at: '+i.stuckAt+' | '+i.daysStuck+' days\n'; });
   body += '\nTotal Value Pending: AED '+pending.reduce((s,i)=>s+i.value,0).toLocaleString()+'\n';
   window.location.href = 'mailto:?subject='+encodeURIComponent(subject)+'&body='+encodeURIComponent(body);
 }
@@ -1838,9 +1838,9 @@ function renderFormViewHtml(item){
   html += fv('Source', item.source);
   html += '<div class="form-view-section">Status</div>';
   html += fv('Portal Status', item.portalStatus);
-  html += fv('Stuck At', item.stuckAt);
+  html += fv('Pending At', item.portalStatus==='Open' ? item.stuckAt : '—');
   html += fv('Days Raised', item.daysRaised);
-  html += fv('Days Stuck', item.daysStuck);
+  html += fv('Days Pending', item.portalStatus==='Open' ? item.daysStuck : '—');
   html += fv('Created', fmtDate(item.created));
   html += fv('Posted Date', fmtDate(item.posted));
   html += fv('Sales Director', item.am);
@@ -2196,7 +2196,7 @@ function occDrawChartLabel(ctx, text, x, y, opts){
   ctx.restore();
 }
 
-function occChartLayoutPad(){ return { layout:{ padding:{ top:28, right:52, left:8, bottom:8 } }, clip:false }; }
+function occChartLayoutPad(){ return { layout:{ padding:{ top:32, right:56, left:10, bottom:22 } }, clip:false }; }
 
 function fmtChartLabel(val, opts){
   opts = opts || {};
@@ -2228,7 +2228,7 @@ function occBarValuePlugin(opts){
         const pos = bar.tooltipPosition();
         const x = isHorizontal ? pos.x + 8 : pos.x;
         const y = isHorizontal ? pos.y : pos.y - 14;
-        if(placed.some(function(p){ return Math.abs(p.x-x)<42 && Math.abs(p.y-y)<13; })) return;
+        if(placed.some(function(p){ return Math.abs(p.x-x)<52 && Math.abs(p.y-y)<16; })) return;
         placed.push({x:x,y:y});
         occDrawChartLabel(chart.ctx, label, x, y, {align: isHorizontal?'left':'center', size:11, color:c.text, bold:true});
       });
@@ -2266,12 +2266,15 @@ function occArcLabelPlugin(){
     meta.data.forEach(function(arc, i){
       const val = data[i];
       const pct = Math.round(val/total*100);
-      if(pct < 8) return;
+      if(pct < 12) return;
+      const sweep = Math.abs((arc.endAngle||0)-(arc.startAngle||0));
+      const r = arc.outerRadius || 0;
+      if(sweep * r < 52) return;
       const pos = arc.tooltipPosition();
-      if(placed.some(function(p){ return Math.abs(p.x-pos.x)<28 && Math.abs(p.y-pos.y)<18; })) return;
+      if(placed.some(function(p){ return Math.hypot(p.x-pos.x, p.y-pos.y) < 40; })) return;
       placed.push({x:pos.x,y:pos.y});
       ctx.save();
-      ctx.font='bold 12px Inter,sans-serif';
+      ctx.font='bold 11px Inter,sans-serif';
       ctx.fillStyle='#fff';
       ctx.textAlign='center'; ctx.textBaseline='middle';
       ctx.fillText(pct+'%', pos.x, pos.y);
@@ -2333,8 +2336,8 @@ function buildPptKeyInsights(items, reportId){
   }
   if(reportId==='sla'){
     const b={'0-9':0,'10-29':0,'30+':0};
-    items.forEach(function(i){ const d=i.daysRaised||0; if(d<=9)b['0-9']++; else if(d<=29)b['10-29']++; else b['30+']++; });
-    return 'Key Insight: <strong>'+items.length+' closed OCCs</strong> analysed for SLA · <strong>'+b['0-9']+'</strong> closed in 0–9 days · <strong>'+b['30+']+'</strong> took 30+ days. Total value: <strong>AED '+fmt(totalValue)+'</strong>.';
+    items.forEach(function(i){ const d=i.daysStuck||0; if(d<=9)b['0-9']++; else if(d<=29)b['10-29']++; else b['30+']++; });
+    return 'Key Insight: <strong>'+items.length+' open OCCs</strong> by days pending in queue · <strong>'+b['0-9']+'</strong> pending 0–9 days · <strong>'+b['30+']+'</strong> pending 30+ days. Open value: <strong>AED '+fmt(totalValue)+'</strong>.';
   }
   return 'Key Insight: '+items.length+' OCCs · AED '+fmt(totalValue)+' total value.';
 }
@@ -2399,7 +2402,7 @@ function renderOccBridge(){
       options:{ indexAxis:'y', responsive:true, maintainAspectRatio:false, onClick:function(evt, els){
         if(!els.length) return;
         const stage = labels[els[0].index];
-        applyChartFilter({ type:'stuckAt', value:stage, label:'Stuck: '+stage });
+        applyChartFilter({ type:'stuckAt', value:stage, label:'Pending at: '+stage });
       }, plugins:{legend:{display:false}}, scales:{ x:{ticks:{color:c.text,callback:function(v){return fmt(v);}},grid:{color:c.grid},grace:'18%'}, y:{ticks:{color:c.text,font:{size:11,weight:'700'}},grid:{display:false}} } }
     }, occChartLayoutPad()));
     return;
@@ -2495,7 +2498,7 @@ function renderVerticalChart(){
   const isVal = vertChartMode==='value';
   const data = labels.map(function(l){ return isVal ? map[l].value : map[l].count; });
   CHARTS.vertical = new Chart(canvas, Object.assign({
-    type:'polarArea', plugins:[occArcLabelPlugin()],
+    type:'polarArea',
     data:{ labels:labels, datasets:[{ data:data, backgroundColor:labels.map(function(l,i){
       const col = OCC_PALETTE[i%OCC_PALETTE.length];
       if(selChartFilter && selChartFilter.type==='vertical' && selChartFilter.value!==l) return col+'55';
@@ -2572,8 +2575,8 @@ function renderBubbleChart(){
     options:{ responsive:true, maintainAspectRatio:false, onClick:function(evt, els){
       if(!els.length) return;
       const p = points[els[0].index];
-      applyChartFilter({ type:'stuckAt', value:p.stage, label:'Stuck: '+p.stage });
-    }, plugins:{legend:{display:false}, tooltip:{callbacks:{label:function(ctx){ const p=points[ctx.dataIndex]; return p? p.stage+' · '+fmtAed(p.y)+' · '+p.count+' open · avg '+Math.round(p.x)+' days stuck':''; } }}}, scales:{ x:{ title:{display:true,text:'Avg days in current queue (open only)',color:c.text,font:{weight:'700'}}, ticks:{color:c.text}, grid:{color:c.grid} }, y:{ title:{display:true,text:'Open value',color:c.text,font:{weight:'700'}}, ticks:{color:c.text,callback:function(v){return fmt(v);}}, grid:{color:c.grid}, grace:'12%' } } }
+      applyChartFilter({ type:'stuckAt', value:p.stage, label:'Pending at: '+p.stage });
+    }, plugins:{legend:{display:false}, tooltip:{callbacks:{label:function(ctx){ const p=points[ctx.dataIndex]; return p? p.stage+' · '+fmtAed(p.y)+' · '+p.count+' open · avg '+Math.round(p.x)+' days pending':''; } }}}, scales:{ x:{ title:{display:true,text:'Avg days pending in current queue (Open only)',color:c.text,font:{weight:'700'}}, ticks:{color:c.text, padding:10}, grid:{color:c.grid} }, y:{ title:{display:true,text:'Open value',color:c.text,font:{weight:'700'}}, ticks:{color:c.text,callback:function(v){return fmt(v);}, padding:8}, grid:{color:c.grid}, grace:'12%' } } }
   }, occChartLayoutPad()));
 }
 
@@ -2626,7 +2629,7 @@ const PPT_REPORTS={
   posted:{ title:'Posted / Approved OCCs for 2026', sub:'Slide 4 · OCC Value & Count Per Reason & Vertical + Highlights' },
   pending:{ title:'Pending OCCs for 2026', sub:'Slide 5 & 9 · Pending charts + approval-level breakdown table' },
   approval:{ title:'OCCs Category as per Approval Level', sub:'Slide 6 · Mid-range (<250K) vs High-value (≥250K) · Abou & Marwan / Diego' },
-  sla:{ title:'OCCs Internal SLA', sub:'Slide 7 · 0–9 / 10–29 / 30+ days donut with SLA Compliance Summary' },
+  sla:{ title:'OCCs Internal SLA', sub:'Slide 7 · Open OCCs only · days pending in current queue (0–9 / 10–29 / 30+)' },
   handset:{ title:'OCC — Handset Journey', sub:'Slide 8 · Per Vertical & Per Account Manager · 1M budget / 900K alert' }
 };
 const HANDSET_BUDGET = 1000000;
@@ -2658,7 +2661,7 @@ function getReportItems(reportId){
   if(reportId==='pending') return base.filter(i=>i.portalStatus==='Open');
   if(reportId==='approval') return base;
   if(reportId==='handset') return base.filter(isHandsetItem);
-  if(reportId==='sla') return base.filter(i=>i.portalStatus!=='Open');
+  if(reportId==='sla') return base.filter(i=>i.portalStatus==='Open');
   return base;
 }
 
@@ -2772,12 +2775,19 @@ function occDonutPercentPlugin(){
     const total = data.reduce(function(a,b){ return a+b; }, 0);
     if(!total) return;
     const meta = chart.getDatasetMeta(0);
+    const placed = [];
     meta.data.forEach(function(arc, i){
       const val = data[i];
       const pct = Math.round(val/total*100);
+      if(pct < 8) return;
+      const sweep = Math.abs((arc.endAngle||0)-(arc.startAngle||0));
+      const r = ((arc.outerRadius||0)+(arc.innerRadius||0))/2;
+      if(sweep * r < 48) return;
       const pos = arc.tooltipPosition();
+      if(placed.some(function(p){ return Math.hypot(p.x-pos.x, p.y-pos.y) < 38; })) return;
+      placed.push({x:pos.x,y:pos.y});
       ctx.save();
-      ctx.font='bold 14px Inter';
+      ctx.font='bold 13px Inter';
       ctx.fillStyle='#fff';
       ctx.textAlign='center'; ctx.textBaseline='middle';
       ctx.fillText(pct+'%', pos.x, pos.y);
@@ -2935,7 +2945,7 @@ function renderCurrentReport(){
   if(currentReportId==='sla'){
     const buckets={'0-9 Days':0,'10-29 Days':0,'30+ Days':0};
     items.forEach(function(i){
-      const d = i.daysRaised||0;
+      const d = i.daysStuck||0;
       const key = d<=9?'0-9 Days':d<=29?'10-29 Days':'30+ Days';
       buckets[key]++;
     });
@@ -2944,13 +2954,13 @@ function renderCurrentReport(){
     const total = data.reduce(function(a,b){return a+b;},0);
     const pcts = data.map(function(v){ return total?Math.round(v/total*100):0; });
     kpi.innerHTML = labels.map(function(l,i){ return pptKpiCard(l, pcts[i]+'%', buckets[l]+' OCCs'); }).join('');
-    insights.innerHTML = 'Key Insights: SLA timeframes are distributed across all buckets — focus on closing OCCs within the shortest SLA.';
-    charts.innerHTML = '<div class="chart-card ppt-slide-full"><div class="chart-title">OCCs Internal SLA</div><div class="chart-container" style="height:380px"><canvas id="pptChartSLA"></canvas></div></div>';
-    extra.innerHTML = '<div class="ppt-highlights-panel ppt-slide-full"><div class="ppt-highlights-title">SLA Compliance Summary</div><ul>'+
-      '<li><strong>'+pcts[0]+'%</strong> of cases were closed within <strong>0–9 days</strong>, indicating strong adherence to SLAs.</li>'+
-      '<li><strong>'+pcts[1]+'%</strong> of cases were resolved between <strong>10–29 days</strong>, suggesting room for improvement.</li>'+
-      '<li><strong>'+pcts[2]+'%</strong> of cases exceeded <strong>30 days</strong>.</li>'+
-      '</ul><div class="takeaway"><strong>Key Takeaway:</strong> Timeframes are distributed across all buckets. Need to focus on closure of OCCs within the shortest SLA.</div></div>';
+    insights.innerHTML = 'Key Insights: Internal SLA is measured on <strong>open OCCs only</strong> — days pending in the current approval queue. Closed Approved / Closed Rejected are excluded.';
+    charts.innerHTML = '<div class="chart-card ppt-slide-full"><div class="chart-title">OCCs Internal SLA — Open / Pending</div><div class="chart-container" style="height:380px"><canvas id="pptChartSLA"></canvas></div></div>';
+    extra.innerHTML = '<div class="ppt-highlights-panel ppt-slide-full"><div class="ppt-highlights-title">SLA Queue Summary</div><ul>'+
+      '<li><strong>'+pcts[0]+'%</strong> of open cases are pending <strong>0–9 days</strong>.</li>'+
+      '<li><strong>'+pcts[1]+'%</strong> of open cases are pending <strong>10–29 days</strong>.</li>'+
+      '<li><strong>'+pcts[2]+'%</strong> of open cases have been pending <strong>30+ days</strong>.</li>'+
+      '</ul><div class="takeaway"><strong>Key Takeaway:</strong> Focus on clearing open OCCs that have been pending the longest in their current queue.</div></div>';
     setTimeout(function(){ pptDonutSLA('pptChartSLA', labels, data, String(total)); }, 60);
     return;
   }
@@ -3110,23 +3120,23 @@ async function exportOccPptPack(){
     const s7 = pptx.addSlide();
     const buckets = {'0-9 Days':0,'10-29 Days':0,'30+ Days':0};
     slaItems.forEach(function(i){
-      const d = i.daysRaised||0;
+      const d = i.daysStuck||0;
       const key = d<=9?'0-9 Days':d<=29?'10-29 Days':'30+ Days';
       buckets[key]++;
     });
     const slaTotal = Object.values(buckets).reduce(function(a,b){ return a+b; }, 0);
-    slideHeader(s7, 'OCCs Internal SLA', 'Closed OCCs analysed by days to complete · Total: '+slaTotal);
+    slideHeader(s7, 'OCCs Internal SLA', 'Open OCCs only · days pending in current queue · Total: '+slaTotal);
     if(slaTotal){
       s7.addChart(pptx.ChartType.doughnut, [
         { name:'SLA', labels:Object.keys(buckets), values:Object.values(buckets) }
-      ], { x:0.5, y:1.25, w:4.5, h:4.1, showLegend:true, legendPos:'b', showValue:true, dataLabelFormatCode:'0"%"', chartColors:[C.green, C.amber, C.red], holeSize:55 });
+      ], { x:0.5, y:1.25, w:4.5, h:4.1, showLegend:true, legendPos:'b', showValue:false, chartColors:[C.green, C.amber, C.red], holeSize:55 });
       const pctLines = Object.keys(buckets).map(function(k){
         const v = buckets[k]; const pct = slaTotal ? Math.round(v/slaTotal*100) : 0;
         return k+': '+v+' ('+pct+'%)';
       });
       s7.addText('SLA Compliance Summary', { x:5.2, y:1.35, w:4.3, h:0.35, fontSize:12, bold:true, color:C.deep, fontFace:'Arial' });
       s7.addText(pctLines.join('\n'), { x:5.2, y:1.75, w:4.3, h:1.5, fontSize:11, color:C.deep, fontFace:'Arial', bullet:true });
-      s7.addText('Key Takeaway: Monitor 30+ day cases for process improvement.', { x:5.2, y:3.4, w:4.3, h:0.8, fontSize:10, italic:true, color:C.muted, fontFace:'Arial' });
+      s7.addText('Key Takeaway: Monitor open cases pending 30+ days in the current queue.', { x:5.2, y:3.4, w:4.3, h:0.8, fontSize:10, italic:true, color:C.muted, fontFace:'Arial' });
     }
 
     // Slide 8 — Handset Journey
