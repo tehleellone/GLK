@@ -257,8 +257,19 @@ body[data-theme="dark"] .status-dot,body[data-theme="duralux-dark"] .status-dot{
 .rr-kpi-compact .rr-kpi-val{font-size:1.35rem;margin-top:.25rem}
 .rr-kpi-compact .rr-kpi-sub{margin-top:.35rem;line-height:1.45}
 .rr-kpi-divider{height:1px;background:var(--border);margin:.35rem 0 .15rem;opacity:.7}
-.rr-kpi-forecast{color:#7c3aed}
-.rr-kpi-upside{color:#059669}
+.rr-kpi-proj{margin-top:.55rem;padding:.6rem .7rem;border-radius:10px;border:2px solid var(--border-s)}
+.rr-kpi-proj-ml{border-color:#7c3aed;background:linear-gradient(135deg,rgba(124,58,237,.12),rgba(124,58,237,.04))}
+.rr-kpi-proj-up{border-color:#059669;background:linear-gradient(135deg,rgba(5,150,105,.12),rgba(5,150,105,.04))}
+.rr-kpi-proj-title{font-size:.72rem;font-weight:900;text-transform:uppercase;letter-spacing:.06em;margin-bottom:.4rem}
+.rr-kpi-proj-ml .rr-kpi-proj-title{color:#7c3aed}
+.rr-kpi-proj-up .rr-kpi-proj-title{color:#059669}
+.rr-kpi-calc-row{display:flex;justify-content:space-between;align-items:baseline;gap:.75rem;font-size:.76rem;line-height:1.45;padding:.1rem 0}
+.rr-kpi-calc-row span:first-child{color:var(--t2);font-weight:600}
+.rr-kpi-calc-row span:last-child{font-weight:800;color:var(--t1)}
+.rr-kpi-calc-minus span:last-child{color:#dc2626}
+.rr-kpi-calc-eq{display:flex;justify-content:space-between;align-items:baseline;margin-top:.35rem;padding-top:.4rem;border-top:2px solid rgba(0,0,0,.08);font-size:.88rem;font-weight:900}
+.rr-kpi-proj-ml .rr-kpi-calc-eq span:last-child{color:#7c3aed;font-size:1.05rem}
+.rr-kpi-proj-up .rr-kpi-calc-eq span:last-child{color:#059669;font-size:1.05rem}
 .rr-legend-row{display:flex;flex-wrap:wrap;gap:.5rem .75rem;margin-top:.55rem;padding:.55rem .65rem;background:var(--bg-secondary);border-radius:9px;border:1px solid var(--border)}
 .rr-legend-chip{display:inline-flex;align-items:center;gap:.35rem;font-size:.72rem;font-weight:700;color:var(--t2)}
 .rr-legend-dot{width:12px;height:12px;border-radius:50%;flex-shrink:0}
@@ -8775,11 +8786,22 @@ function rrApplyPipelineChurnToForecasts(data,chartId){
   var churnUp=rrTrendPipelineChurn(chartId,true);
   var mlShare=forwardIdx.length?churnMl/forwardIdx.length:0;
   var upShare=forwardIdx.length?churnUp/forwardIdx.length:0;
+  data._projByMonth={};
   forwardIdx.forEach(function(i){
-    if(fcMl&&fcMl.data[i]!=null&&!isNaN(fcMl.data[i])) fcMl.data[i]=num(fcMl.data[i])+mlShare;
-    if(fcUp&&fcUp.data[i]!=null&&!isNaN(fcUp.data[i])) fcUp.data[i]=num(fcUp.data[i])+upShare;
+    var rawMl=fcMl&&fcMl.data[i]!=null&&!isNaN(fcMl.data[i])?num(fcMl.data[i]):null;
+    var rawUp=fcUp&&fcUp.data[i]!=null&&!isNaN(fcUp.data[i])?num(fcUp.data[i]):null;
+    var netMl=rawMl!=null?rawMl+mlShare:null;
+    var netUp=rawUp!=null?rawUp+upShare:null;
+    if(fcMl&&rawMl!=null) fcMl.data[i]=netMl;
+    if(fcUp&&rawUp!=null) fcUp.data[i]=netUp;
+    data._projByMonth[i]={forwardMl:rawMl,churnMl:mlShare,netMl:netMl,forwardUp:rawUp,churnUp:upShare,netUp:netUp};
   });
-  data._pipelineChurn={ml:churnMl,up:churnUp};
+  data._pipelineChurn={ml:churnMl,up:churnUp,forwardMl:0,forwardUp:0};
+  forwardIdx.forEach(function(i){
+    var p=data._projByMonth[i];
+    if(p.forwardMl!=null) data._pipelineChurn.forwardMl+=p.forwardMl;
+    if(p.forwardUp!=null) data._pipelineChurn.forwardUp+=p.forwardUp;
+  });
   return data;
 }
 function rrBridgeForecastData(data){
@@ -8879,7 +8901,8 @@ function rrGradientFill(chart,colorTop,colorBottom){
   g.addColorStop(1,colorBottom);
   return g;
 }
-function rrDataLabelPlugin(metaList,fmt,chartId,projIdx,lastActIdx){
+function rrDataLabelPlugin(metaList,fmt,chartId,projIdx,lastActIdx,projByMonth){
+  projByMonth=projByMonth||{};
   return {id:'rrDataLabels',afterDatasetsDraw:function(chart){
     var ctx=chart.ctx, area=chart.chartArea;
     if(!area) return;
@@ -8896,6 +8919,7 @@ function rrDataLabelPlugin(metaList,fmt,chartId,projIdx,lastActIdx){
         if(!rrShouldLabelPoint(kind,i,projIdx,lastActIdx)) return;
         var lbl=rrFmtPointLabel(v,fmt,chartId);
         if(!lbl) return;
+        if(projByMonth[i]&&(kind==='forecast'||kind==='forecast-up')) lbl+=' net';
         candidates.push({di:di,i:i,pt:pt,v:v,ds:ds,kind:kind,lbl:lbl});
       });
     });
@@ -9247,78 +9271,98 @@ function rrSumQuarterFcRemainder(fcVals,q,lastActIdx){
 function rrCurrentCalendarQuarter(){
   return Math.floor(new Date().getMonth()/3);
 }
+function rrTrendRawData(chartId){
+  if(!RR_PARSED||!RR_PARSED[chartId]) return null;
+  var copy=rrCloneChartData(RR_PARSED[chartId]);
+  rrSanitizeCascadeForecasts(copy,chartId);
+  return copy;
+}
+function rrTrendProjectionParts(chartId){
+  var data=rrTrendRawData(chartId);
+  if(!data) return null;
+  var actual=data.series.find(function(s){return rrClassifySeries(s.label)==='actual';});
+  var fcMl=data.series.find(function(s){return rrClassifySeries(s.label)==='forecast';});
+  var fcUp=data.series.find(function(s){return rrClassifySeries(s.label)==='forecast-up';});
+  if(!actual) return null;
+  var vals=actual.data||[];
+  var lastActIdx=rrLastActualOnSeries(actual).idx;
+  var calQ=rrCurrentCalendarQuarter();
+  var qAct=rrSumQuarterActual(vals,calQ,lastActIdx);
+  var forwardMl=fcMl?rrSumQuarterFcRemainder(fcMl.data||[],calQ,lastActIdx):null;
+  var forwardUp=fcUp?rrSumQuarterFcRemainder(fcUp.data||[],calQ,lastActIdx):null;
+  var churnMl=rrTrendPipelineChurn(chartId,false);
+  var churnUp=rrTrendPipelineChurn(chartId,true);
+  var fmt=chartId==='fixedMrc'?'currency':'lines';
+  return {
+    calQ:calQ,
+    qLabel:['Q1','Q2','Q3','Q4'][calQ],
+    qAct:qAct,
+    forwardMl:forwardMl,
+    forwardUp:forwardUp,
+    churnMl:churnMl,
+    churnUp:churnUp,
+    totalMl:qAct!=null&&forwardMl!=null?qAct+forwardMl+churnMl:null,
+    totalUp:qAct!=null&&forwardUp!=null?qAct+forwardUp+churnUp:null,
+    fmt:fmt
+  };
+}
+function rrKpiCalcRow(label,val,fmt,prefix){
+  if(val==null||isNaN(val)) return '';
+  var unit=fmt==='lines'?' lines':'';
+  var disp=rrFmtShort(Math.abs(num(val)),fmt)+unit;
+  var p=prefix==='minus'?'− ':prefix==='plus'?'+ ':'';
+  var cls=prefix==='minus'?' rr-kpi-calc-minus':'';
+  return '<div class="rr-kpi-calc-row'+cls+'"><span>'+label+'</span><span>'+p+disp+'</span></div>';
+}
+function rrKpiProjBlock(title,cls,parts,fmt){
+  var unit=fmt==='lines'?' lines':'';
+  var h='<div class="rr-kpi-proj rr-kpi-proj-'+cls+'"><div class="rr-kpi-proj-title">'+title+'</div>';
+  h+=rrKpiCalcRow('Actual (quarter to date)',parts.qAct,fmt,'plain');
+  h+=rrKpiCalcRow('Forward (remaining months in quarter)',parts.forward,fmt,'plus');
+  h+=rrKpiCalcRow('Churn / downgrade (live pipeline)',parts.churn,fmt,'minus');
+  h+='<div class="rr-kpi-calc-eq"><span>= '+title+'</span><span>'+rrFmtShort(parts.total,fmt)+unit+'</span></div>';
+  h+='</div>';
+  return h;
+}
 function rrCeoTrendKpis(def,data){
   if(!data||!data.series) return [];
   var fmt=def.valueFmt;
   var unit=fmt==='lines'?' lines':'';
   var actual=data.series.find(function(s){return rrClassifySeries(s.label)==='actual';});
   var prior=data.series.find(function(s){return rrClassifySeries(s.label)==='prior';});
-  var fcMl=data.series.find(function(s){return rrClassifySeries(s.label)==='forecast';});
-  var fcUp=data.series.find(function(s){return rrClassifySeries(s.label)==='forecast-up';});
   if(!actual) return [];
   var vals=actual.data||[];
   var lastAct=rrLastActualOnSeries(actual);
   var lastActIdx=lastAct.idx;
   var calQ=rrCurrentCalendarQuarter();
+  var parts=rrTrendProjectionParts(def.id);
+  var rawData=rrTrendRawData(def.id)||data;
+  var fcMl=rawData.series.find(function(s){return rrClassifySeries(s.label)==='forecast';});
   var lines=[];
   var prevActual=null;
-  function qLine(qNum,amt,opts){
-    opts=opts||{};
-    if(amt==null||isNaN(amt)) return;
-    var qLbl='Q'+qNum;
-    if(opts.current) qLbl+=' <span class="rr-kpi-curr">Current</span>';
-    var html='<div class="rr-kpi-line"><span class="rr-kpi-q">'+qLbl+'</span>';
-    html+='<span class="rr-kpi-amt'+(opts.forecast?' rr-kpi-forecast':opts.upside?' rr-kpi-upside':'')+'">'+rrFmtShort(amt,fmt)+unit+'</span>';
-    html+='<span class="rr-kpi-note">'+(opts.note||'actual')+'</span>';
-    if(opts.chip) html+=opts.chip;
-    if(opts.extra) html+='<span class="rr-kpi-note">'+opts.extra+'</span>';
-    html+='</div>';
-    lines.push(html);
-  }
   for(var q=0;q<=calQ;q++){
     var isCurrent=(q===calQ);
     var qAct=isCurrent?rrSumQuarterActual(vals,q,lastActIdx):rrSumQuarter(vals,q);
     if(qAct==null) continue;
     var chip=prevActual!=null?rrFmtPctChip(rrPctChange(qAct,prevActual),'vs Q'+q):'';
-    var qPrior=prior?rrSumQuarter(prior.data||[],q):null;
     var yoyExtra='';
-    if(isCurrent&&qPrior!=null){
-      var yoy=rrPctChange(qAct,qPrior);
-      if(yoy!=null) yoyExtra=' · YoY '+((yoy>=0?'+':'')+yoy.toFixed(1)+'%');
+    if(isCurrent&&prior){
+      var qPrior=rrSumQuarter(prior.data||[],q);
+      if(qPrior!=null){
+        var yoy=rrPctChange(qAct,qPrior);
+        if(yoy!=null) yoyExtra=' · YoY '+((yoy>=0?'+':'')+yoy.toFixed(1)+'%');
+      }
     }
-    qLine(q+1,qAct,{
-      note:isCurrent?'actual (to date)':'actual',
-      chip:chip,
-      current:isCurrent,
-      extra:yoyExtra
-    });
+    var qLbl='Q'+(q+1)+(isCurrent?' <span class="rr-kpi-curr">Current quarter</span>':'');
+    lines.push('<div class="rr-kpi-line"><span class="rr-kpi-q">'+qLbl+'</span><span class="rr-kpi-amt">'+rrFmtShort(qAct,fmt)+unit+'</span><span class="rr-kpi-note">actual'+(isCurrent?' to date':'')+'</span>'+chip+(yoyExtra?'<span class="rr-kpi-note">'+yoyExtra+'</span>':'')+'</div>');
     prevActual=qAct;
-    if(isCurrent){
-      var mlRem=fcMl?rrSumQuarterFcRemainder(fcMl.data||[],q,lastActIdx):null;
-      var upRem=fcUp?rrSumQuarterFcRemainder(fcUp.data||[],q,lastActIdx):null;
-      var churnMl=rrTrendPipelineChurn(def.id,false);
-      var churnUp=rrTrendPipelineChurn(def.id,true);
-      if(mlRem!=null){
-        var mlTotal=qAct+mlRem+churnMl;
-        var churnNote=churnMl?(' · Churn '+((churnMl>=0?'+':'')+rrFmtShort(churnMl,fmt))):'';
-        lines.push('<div class="rr-kpi-divider"></div>');
-        qLine(q+1,mlTotal,{
-          note:'Most Likely (actual + forward − churn)',
-          forecast:true,
-          chip:rrFmtPctChip(rrPctChange(mlTotal,qAct),'vs QTD actual'),
-          extra:churnNote
-        });
-      }
-      if(upRem!=null){
-        var upTotal=qAct+upRem+churnUp;
-        var churnNoteUp=churnUp?(' · Churn '+((churnUp>=0?'+':'')+rrFmtShort(churnUp,fmt))):'';
-        qLine(q+1,upTotal,{
-          note:'Upside (actual + forward − churn)',
-          upside:true,
-          chip:rrFmtPctChip(rrPctChange(upTotal,qAct),'vs QTD actual'),
-          extra:churnNoteUp
-        });
-      }
+  }
+  if(parts&&parts.qAct!=null){
+    if(parts.forwardMl!=null&&parts.totalMl!=null){
+      lines.push(rrKpiProjBlock('Most Likely Projection','ml',{qAct:parts.qAct,forward:parts.forwardMl,churn:parts.churnMl,total:parts.totalMl},fmt));
+    }
+    if(parts.forwardUp!=null&&parts.totalUp!=null){
+      lines.push(rrKpiProjBlock('Upside Projection','up',{qAct:parts.qAct,forward:parts.forwardUp,churn:parts.churnUp,total:parts.totalUp},fmt));
     }
   }
   var tiles=[{kind:'hero',html:'<div class="rr-kpi-label">Quarterly Snapshot · '+['Q1','Q2','Q3','Q4'][calQ]+' live</div><div class="rr-kpi-lines">'+lines.join('')+'</div>'}];
@@ -9702,10 +9746,10 @@ function rrRenderActiveChart(){
     var churnNote='';
     if(raw&&raw._pipelineChurn&&(def.id==='netAddLines'||def.id==='fixedMrc')){
       var pc=raw._pipelineChurn;
-      churnNote=' · Pipeline churn applied to projection: ML '+rrFmtShort(pc.ml,def.valueFmt)+(pc.up!==pc.ml?' · Upside '+rrFmtShort(pc.up,def.valueFmt):'');
+      churnNote=' · Projection months show NET (Excel forward − pipeline churn). QTD churn: ML '+rrFmtShort(Math.abs(pc.ml),def.valueFmt)+(pc.up!==pc.ml?' · Upside '+rrFmtShort(Math.abs(pc.up),def.valueFmt):'');
     }
     noteEl.textContent=raw
-      ?('Excel '+raw.sheetRef+' · Header row '+raw.headerRow+' · Point labels = exact column values'+churnNote)
+      ?('Excel '+raw.sheetRef+' · Header row '+raw.headerRow+' · Hover projection points for forward/churn/net breakdown'+churnNote)
       :('Upload Copy of dummy.xlsx to load all 3 trend sheets.');
   }
   destroyChart('revenueRec');
@@ -9719,6 +9763,7 @@ function rrRenderActiveChart(){
     return;
   }
   var data=rrBridgeForecastData(raw);
+  var projByMonth=raw._projByMonth||{};
   var c=getChartColors();
   var projIdx=rrProjectionStartIdx(data.series);
   var lastAct=rrLastActualIdx(data.series);
@@ -9786,7 +9831,7 @@ function rrRenderActiveChart(){
         rrLineShadowPlugin(),
         rrPointHaloPlugin(),
         rrAxisFloorPlugin(yRange.floor,def.valueFmt,chartId),
-        rrDataLabelPlugin(dsMeta,def.valueFmt,chartId,projIdx,lastAct),
+        rrDataLabelPlugin(dsMeta,def.valueFmt,chartId,projIdx,lastAct,projByMonth),
         rrCrosshairPlugin()
       ],
       options:{
@@ -9806,6 +9851,21 @@ function rrRenderActiveChart(){
               label:function(ctx){
                 var s=data.series[ctx.datasetIndex];
                 if(!s||ctx.parsed.y==null) return null;
+                var kind=(dsMeta[ctx.datasetIndex]&&dsMeta[ctx.datasetIndex].kind)||'';
+                var idx=ctx.dataIndex;
+                var p=projByMonth[idx];
+                if(p&&(kind==='forecast'||kind==='forecast-up')){
+                  if(kind==='forecast'&&p.netMl!=null){
+                    return [' Net add (after churn): '+rrFmtFull(p.netMl,s.fmt||def.valueFmt),
+                      '   Excel forward: '+rrFmtFull(p.forwardMl,s.fmt||def.valueFmt),
+                      '   Churn share: '+rrFmtFull(p.churnMl,s.fmt||def.valueFmt)];
+                  }
+                  if(kind==='forecast-up'&&p.netUp!=null){
+                    return [' Net add (after churn): '+rrFmtFull(p.netUp,s.fmt||def.valueFmt),
+                      '   Excel forward: '+rrFmtFull(p.forwardUp,s.fmt||def.valueFmt),
+                      '   Churn share: '+rrFmtFull(p.churnUp,s.fmt||def.valueFmt)];
+                  }
+                }
                 return ' '+s.label+': '+rrFmtFull(ctx.parsed.y,s.fmt||def.valueFmt);
               },
               labelColor:function(ctx){
