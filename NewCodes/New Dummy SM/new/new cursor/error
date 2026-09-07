@@ -1340,6 +1340,7 @@ const SP_MOBILE_REPORT_WEB_URL=SP_SITE+'/SiteAssets/'+encodeURIComponent(SP_MOBI
 const SP_TRENDS_REPORT_FILE='Copy of dummy.xlsx';
 const SP_TRENDS_REPORT_PATH=SP_MOBILE_REPORT_FOLDER+'/'+SP_TRENDS_REPORT_FILE;
 const SP_TRENDS_REPORT_WEB_URL=SP_SITE+'/SiteAssets/'+encodeURIComponent(SP_TRENDS_REPORT_FILE);
+const MQ_IDB_NAME='GLKMobileQtdCache';
 const MQ_IDB_STORE='report';
 const MQ_LS_META_KEY='glk_mobile_qtd_meta';
 const MQ_LS_DATA_KEY='glk_mobile_qtd_b64';
@@ -2202,13 +2203,15 @@ function spGetMobileReportMeta(cb){
 }
 function mqIdbOpen(cb){
   if(typeof indexedDB==='undefined') return cb(new Error('IndexedDB unavailable'));
-  var req=indexedDB.open(MQ_IDB_NAME,1);
-  req.onerror=function(){ cb(req.error||new Error('IndexedDB open failed')); };
-  req.onupgradeneeded=function(e){
-    var db=e.target.result;
-    if(!db.objectStoreNames.contains(MQ_IDB_STORE)) db.createObjectStore(MQ_IDB_STORE);
-  };
-  req.onsuccess=function(){ cb(null,req.result); };
+  try{
+    var req=indexedDB.open(MQ_IDB_NAME,1);
+    req.onerror=function(){ cb(req.error||new Error('IndexedDB open failed')); };
+    req.onupgradeneeded=function(e){
+      var db=e.target.result;
+      if(!db.objectStoreNames.contains(MQ_IDB_STORE)) db.createObjectStore(MQ_IDB_STORE);
+    };
+    req.onsuccess=function(){ cb(null,req.result); };
+  }catch(e){ cb(e); }
 }
 function mqArrayBufferCopy(buf){
   if(!buf) return null;
@@ -2300,14 +2303,13 @@ function glkSpLoadMobileReport(cb){
   }
   spDownloadMobileReport(function(err,buffer){
     if(!err&&buffer&&buffer.byteLength>0){
-      spGetMobileReportMeta(function(e2,meta){
-        var m=Object.assign({},meta||{},{storage:'sharepoint',filename:SP_MOBILE_REPORT_FILE,spUrl:SP_MOBILE_REPORT_WEB_URL});
-        mqCacheSaveReport(buffer,m,function(){
-          glkParseAndSetMobileReport(buffer,function(e3,parsed){
-            if(e3) return loadFromCache(e3);
-            GLK_MOBILE_REPORT_META=m;
-            done(null,parsed,m);
-          });
+      glkParseAndSetMobileReport(buffer,function(e3,parsed){
+        if(e3) return loadFromCache(e3);
+        spGetMobileReportMeta(function(e2,meta){
+          var m=Object.assign({},meta||{},{storage:'sharepoint',filename:SP_MOBILE_REPORT_FILE,spUrl:SP_MOBILE_REPORT_WEB_URL});
+          GLK_MOBILE_REPORT_META=m;
+          mqCacheSaveReport(buffer,m,function(){});
+          done(null,parsed,m);
         });
       });
       return;
@@ -2317,17 +2319,28 @@ function glkSpLoadMobileReport(cb){
   });
 }
 window.glkMobileReportRefreshFromSharePoint=function(){
+  if(window._glkMobileSpRefreshing) return;
+  window._glkMobileSpRefreshing=true;
   var metaEl=el('mobileReportMeta');
+  var refreshBtn=el('mobileReportRefreshBtn');
   if(metaEl) metaEl.textContent='Refreshing from SharePoint…';
+  if(refreshBtn) refreshBtn.disabled=true;
   glkShowLoader('Loading GLK report from SharePoint…');
   var hideTimer=setTimeout(function(){ glkHideLoader(); },65000);
-  glkSpLoadMobileReport(function(err){
+  function finishRefresh(err){
     clearTimeout(hideTimer);
     glkHideLoader();
+    window._glkMobileSpRefreshing=false;
+    if(refreshBtn) refreshBtn.disabled=false;
     glkMobileQtdRefreshUI();
-    if(mqGetActiveReport()) renderMobileQtdBridge();
+    try{ if(mqGetActiveReport()) renderMobileQtdBridge(); }catch(e){ console.error('[GLK] Bridge render after refresh:',e); }
     if(err) alert('Could not load from SharePoint:\n'+err.message+'\n\nUsing browser cache if available. If the Excel file is locked, ask whoever has it open to close it, then Refresh again.');
-  });
+  }
+  try{
+    glkSpLoadMobileReport(finishRefresh);
+  }catch(e){
+    finishRefresh(e);
+  }
 };
 
 // ══════════════════════════════════════════════════════════════════
@@ -8602,6 +8615,43 @@ function rrProjectionStartIdx(seriesList){
   });
   return start===Infinity?-1:start;
 }
+function rrCloneChartData(data){
+  if(!data) return null;
+  return {
+    labels:(data.labels||[]).slice(),
+    sheetRef:data.sheetRef,
+    monthCol:data.monthCol,
+    headerRow:data.headerRow,
+    sheetName:data.sheetName,
+    series:(data.series||[]).map(function(s){
+      return {label:s.label,col:s.col,fmt:s.fmt,data:(s.data||[]).slice()};
+    })
+  };
+}
+function rrValuesEqual(a,b){
+  if(a==null||b==null||isNaN(a)||isNaN(b)) return false;
+  return num(a)===num(b);
+}
+function rrSanitizeCascadeForecasts(data,chartId){
+  if(!data||!data.series) return data;
+  if(chartId!=='netAddLines'&&chartId!=='fixedMrc') return data;
+  var actual=data.series.find(function(s){return rrClassifySeries(s.label)==='actual';});
+  var fcMl=data.series.find(function(s){return rrClassifySeries(s.label)==='forecast';});
+  var fcUp=data.series.find(function(s){return rrClassifySeries(s.label)==='forecast-up';});
+  if(!actual||(!fcMl&&!fcUp)) return data;
+  (actual.data||[]).forEach(function(act,i){
+    if(act==null||isNaN(act)||act<=0) return;
+    var ml=fcMl?fcMl.data[i]:null;
+    var up=fcUp?fcUp.data[i]:null;
+    var mlMatch=fcMl&&ml!=null&&!isNaN(ml)&&rrValuesEqual(ml,act);
+    var upMatch=fcUp&&up!=null&&!isNaN(up)&&rrValuesEqual(up,act);
+    if(mlMatch&&upMatch){
+      fcMl.data[i]=null;
+      fcUp.data[i]=null;
+    }
+  });
+  return data;
+}
 function rrBridgeForecastData(data){
   var labels=data.labels||[];
   var bridged=(data.series||[]).map(function(s){
@@ -9373,8 +9423,11 @@ window.rrSetActiveChart=function(id){
 };
 function rrFmtVal(v,fmt){ return rrFmtFull(v,fmt); }
 function rrChartDataFor(id){
-  if(RR_PARSED&&RR_PARSED[id]&&RR_PARSED[id].labels&&RR_PARSED[id].labels.length) return RR_PARSED[id];
-  return null;
+  if(!RR_PARSED||!RR_PARSED[id]||!RR_PARSED[id].labels||!RR_PARSED[id].labels.length) return null;
+  if(id!=='netAddLines'&&id!=='fixedMrc') return RR_PARSED[id];
+  var copy=rrCloneChartData(RR_PARSED[id]);
+  rrSanitizeCascadeForecasts(copy,id);
+  return copy;
 }
 function rrRenderLineExplain(def,data){
   var box=el('rrLineExplain');
