@@ -248,7 +248,7 @@ body[data-theme="dark"] .status-dot,body[data-theme="magenta-dark"] .status-dot{
 .chart-title svg{width:16px;height:16px;stroke:var(--acc);fill:none;stroke-width:2;flex-shrink:0}
 .chart-container{position:relative;height:300px;padding-top:10px}
 .chart-container.tall{height:360px}
-.chart-container.exec{height:380px}
+.chart-container.exec{height:420px}
 .chart-controls{display:flex;flex-wrap:wrap;gap:.35rem;align-items:center;margin-top:.65rem;padding-top:.55rem;border-top:1px solid var(--border)}
 .chart-controls-label{font-size:.68rem;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.04em;margin-right:.25rem}
 .chart-insight{font-size:.74rem;color:var(--t2);line-height:1.5;margin-top:.55rem;padding:.55rem .7rem;background:var(--bg-secondary);border-radius:8px;border-left:3px solid var(--acc)}
@@ -356,6 +356,13 @@ body[data-theme="dark"] .badge-warning,body[data-theme="magenta-dark"] .badge-wa
 .filter-chip button{background:none;border:none;cursor:pointer;color:var(--acc);font-size:.8rem;line-height:1;padding:0;margin-left:.15rem;}
 .modal-overlay{position:fixed;inset:0;z-index:99998;background:rgba(0,0,0,.55);backdrop-filter:blur(6px);display:none;align-items:center;justify-content:center;padding:1rem;}
 .modal-overlay.open{display:flex}
+#accountHistoryModal{z-index:99998}
+#formViewModal{z-index:100003}
+#historyModal{z-index:100004}
+.chart-hint{font-size:.72rem;color:var(--t3);font-weight:600;margin-top:.35rem}
+.chart-legend-row{display:flex;flex-wrap:wrap;gap:.55rem;margin-top:.45rem;font-size:.72rem;font-weight:700;color:var(--t2)}
+.chart-legend-row span{display:inline-flex;align-items:center;gap:.3rem}
+.chart-legend-dot{width:10px;height:10px;border-radius:99px;display:inline-block}
 .modal-box{background:var(--bg-card);border:1px solid var(--border-s);border-radius:16px;max-width:720px;width:100%;max-height:85vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 24px 80px rgba(0,0,0,.4);}
 .modal-header{padding:1rem 1.2rem;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;}
 .modal-header h3{font-size:1rem;font-weight:800;color:var(--t1)}
@@ -623,39 +630,44 @@ body[data-theme="dark"] .badge-warning,body[data-theme="magenta-dark"] .badge-wa
         <div id="chartsSection" style="margin-top:1rem;display:none;">
           <div style="display:grid;grid-template-columns:1fr;gap:.85rem;margin-bottom:.85rem;">
             <div class="chart-card">
-              <div class="chart-title"><span>OCC Value Bridge</span><span style="font-size:.68rem;font-weight:600;color:var(--t3)">Executive view · Approved → Pending → Rejected exposure</span></div>
-              <div class="chart-container exec"><canvas id="chartBridge"></canvas></div>
+              <div class="chart-title"><span>OCC Value Bridge</span><span style="font-size:.68rem;font-weight:600;color:var(--t3)">Click a bar to filter the grid below</span></div>
+              <div class="chart-container exec" style="cursor:pointer"><canvas id="chartBridge"></canvas></div>
               <div class="chart-controls" id="occBridgeControls"></div>
+              <div class="chart-hint">Approved builds posted value · Pending sits on top as open exposure · Rejected is leakage. Click again to clear.</div>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr;gap:.85rem;margin-bottom:.85rem;">
+            <div class="chart-card">
+              <div class="chart-title"><span>Monthly Posted Trend</span><span style="font-size:.68rem;font-weight:600;color:var(--t3)">Click a month to isolate those records</span></div>
+              <div class="chart-container exec" style="cursor:pointer"><canvas id="chartTrend"></canvas></div>
             </div>
           </div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:.85rem;margin-bottom:.85rem;">
             <div class="chart-card">
               <div class="chart-title"><span>Top 10 OCCs by Value</span></div>
-              <div class="chart-container tall"><canvas id="chartTop10"></canvas></div>
+              <div class="chart-container exec" style="cursor:pointer"><canvas id="chartTop10"></canvas></div>
+              <div class="chart-legend-row">
+                <span><i class="chart-legend-dot" style="background:#059669"></i>Closed Approved</span>
+                <span><i class="chart-legend-dot" style="background:#d97706"></i>Open</span>
+                <span><i class="chart-legend-dot" style="background:#dc2626"></i>Closed Rejected</span>
+              </div>
             </div>
             <div class="chart-card">
-              <div class="chart-title"><span>Pending Exposure by Stage</span></div>
-              <div class="chart-container tall"><canvas id="chartStuck"></canvas></div>
-            </div>
-          </div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:.85rem;margin-bottom:.85rem;">
-            <div class="chart-card">
-              <div class="chart-title"><span>Monthly Posted Trend</span></div>
-              <div class="chart-container tall"><canvas id="chartTrend"></canvas></div>
-            </div>
-            <div class="chart-card">
-              <div class="chart-title"><span>Portfolio by Vertical</span><div><button type="button" class="toggle-btn active" id="vertBtnValue" onclick="setVertChartMode('value')">Value</button><button type="button" class="toggle-btn" id="vertBtnCount" onclick="setVertChartMode('count')">Count</button></div></div>
-              <div class="chart-container tall"><canvas id="chartVertical"></canvas></div>
+              <div class="chart-title"><span>Portfolio Mix by Vertical</span><div><button type="button" class="toggle-btn active" id="vertBtnValue" onclick="setVertChartMode('value')">Value</button><button type="button" class="toggle-btn" id="vertBtnCount" onclick="setVertChartMode('count')">Count</button></div></div>
+              <div class="chart-container exec" style="cursor:pointer"><canvas id="chartVertical"></canvas></div>
+              <div class="chart-hint">Polar mix — click a petal to filter that vertical.</div>
             </div>
           </div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:.85rem;margin-bottom:.85rem;">
             <div class="chart-card">
-              <div class="chart-title"><span>Approval Tier (&lt;250K vs ≥250K CCCO)</span></div>
-              <div class="chart-container"><canvas id="chartTier"></canvas></div>
+              <div class="chart-title"><span>Open Risk Map</span><span style="font-size:.68rem;font-weight:600;color:var(--t3)">Days stuck vs value · bubble size = case count</span></div>
+              <div class="chart-container exec" style="cursor:pointer"><canvas id="chartBubble"></canvas></div>
+              <div class="chart-hint">Click a bubble to see OCCs stuck at that stage.</div>
             </div>
             <div class="chart-card">
-              <div class="chart-title"><span>SLA Risk — Days Stuck (Open)</span></div>
-              <div class="chart-container"><canvas id="chartSLA"></canvas></div>
+              <div class="chart-title"><span>Reason Concentration</span></div>
+              <div class="chart-container exec" style="cursor:pointer"><canvas id="chartRadar"></canvas></div>
+              <div class="chart-hint">Radar of top reasons by value. Click an axis point to filter.</div>
             </div>
           </div>
         </div>
@@ -790,9 +802,13 @@ const SP_EXPAND_SELECT = ['From/Title','From/EMail','Channel_x0020_Manager_x0020
 
 window.USER = { email:'', name:'', role:'', IsAdmin:false };
 let ALL_ITEMS=[], SCOPED=[], FILTERED=[], CHARTS={}, GRID_API=null;
+if(typeof Chart!=='undefined'){
+  Chart.defaults.font.family='Inter, sans-serif';
+  Chart.defaults.layout.padding={top:24,right:48,left:8,bottom:8};
+}
 let chartsVisible=false, selStatusTile=null, selHD=null, selDirector=null, selAMTile=null;
 let reasonChartMode='open', vertChartMode='value', usingMock=false;
-let occBridgePeriod='ytd', occBridgeMode='portfolio';
+let occBridgePeriod='ytd', occBridgeMode='portfolio', selChartFilter=null;
 let currentView='dashboard';
 
 const MS_STATE = { vertical:new Set(), portalStatus:new Set(), reason:new Set(), year:new Set(), handset:new Set() };
@@ -1320,7 +1336,7 @@ function updateMsTriggerLabel(key){
 
 function resetAll(){
   Object.keys(MS_STATE).forEach(k=>{ MS_STATE[k].clear(); updateMsTriggerLabel(k); document.querySelectorAll('#msd-'+k+' input').forEach(cb=>cb.checked=false); });
-  selStatusTile=null; selHD=null; selDirector=null; selAMTile=null; hideDirectorSection(); hideAMSection(); applyAll();
+  selStatusTile=null; selHD=null; selDirector=null; selAMTile=null; selChartFilter=null; hideDirectorSection(); hideAMSection(); applyAll();
 }
 
 function applyRoleHardScope(){
@@ -1358,11 +1374,34 @@ function applyAll(){
   if(currentView==='report'){ populatePptYearFilter(); renderCurrentReport(); }
 }
 
-function getViewItems(){
+function getScopeItems(){
   let items = FILTERED;
   if(selAMTile) items = items.filter(i=>i.headDirector===selHD && i.director===selDirector && i.requestor===selAMTile);
   else if(selDirector) items = items.filter(i=>i.headDirector===selHD && i.director===selDirector);
   else if(selHD) items = items.filter(i=>i.headDirector===selHD);
+  return items;
+}
+
+function getViewItems(){
+  let items = getScopeItems();
+  if(selChartFilter){
+    const f = selChartFilter;
+    if(f.type==='status'){
+      items = items.filter(function(i){ return i.portalStatus===f.value; });
+      if(f.period && f.value!=='Open') items = occFilterByPeriod(items, f.period);
+    } else if(f.type==='stuckAt') items = items.filter(function(i){ return i.portalStatus==='Open' && (i.stuckAt||'Unknown')===f.value; });
+    else if(f.type==='vertical') items = items.filter(function(i){ return i.vertical===f.value; });
+    else if(f.type==='reason') items = items.filter(function(i){ return i.reason===f.value; });
+    else if(f.type==='ref') items = items.filter(function(i){ return i.ref===f.value; });
+    else if(f.type==='month'){
+      items = items.filter(function(i){
+        const d = new Date(i.posted || i.created); if(isNaN(d)) return false;
+        return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')===f.value;
+      });
+    } else if(f.type==='tier'){
+      items = items.filter(function(i){ return f.value==='high' ? i.value>=CCO_THRESHOLD : i.value<CCO_THRESHOLD; });
+    }
+  }
   return items;
 }
 
@@ -1382,6 +1421,7 @@ function renderActiveChips(){
   if(selDirector){ const chip=document.createElement('div'); chip.className='filter-chip'; chip.innerHTML='Director: <strong>'+selDirector+'</strong><button type="button" onclick="selectDirector(\''+String(selDirector).replace(/'/g,"\\'")+'\')">×</button>'; c.appendChild(chip); }
   if(selAMTile){ const chip=document.createElement('div'); chip.className='filter-chip'; chip.innerHTML='AM: <strong>'+selAMTile+'</strong><button type="button" onclick="selectAMTile(\''+String(selAMTile).replace(/'/g,"\\'")+'\')">×</button>'; c.appendChild(chip); }
   if(selStatusTile){ const chip=document.createElement('div'); chip.className='filter-chip'; chip.innerHTML='Status: <strong>'+selStatusTile+'</strong><button type="button" onclick="selStatusTile=null;applyAll()">×</button>'; c.appendChild(chip); }
+  if(selChartFilter){ const chip=document.createElement('div'); chip.className='filter-chip'; chip.innerHTML='Chart: <strong>'+(selChartFilter.label||selChartFilter.value)+'</strong><button type="button" onclick="clearChartFilter()">×</button>'; c.appendChild(chip); }
 }
 
 function buildOccTileStats(items, pool){
@@ -1775,9 +1815,10 @@ function openFormView(id){
   _formViewItemId = id;
   el('formViewTitle').textContent = item.ref+' · '+item.accountCode;
   el('formViewBody').innerHTML = renderFormViewHtml(item);
+  el('formViewModal').style.zIndex = '100003';
   el('formViewModal').classList.add('open');
 }
-function closeFormView(){ el('formViewModal').classList.remove('open'); _formViewItemId=null; }
+function closeFormView(){ el('formViewModal').classList.remove('open'); el('formViewModal').style.zIndex=''; _formViewItemId=null; }
 function openTimelineFromForm(){
   if(_formViewItemId){
     openHistoryModal(_formViewItemId);
@@ -2098,46 +2139,32 @@ function occCenterPlugin(mainVal, subText, isMoney){
 
 function occDrawChartLabel(ctx, text, x, y, opts){
   opts = opts || {};
-  const dark = (document.body.getAttribute('data-theme')||'').includes('dark');
+  const c = getChartColors();
   ctx.save();
-  ctx.font = (opts.bold===false?'600':'bold')+' '+(opts.size||11)+'px Inter';
-  const m = ctx.measureText(text);
-  const pad = 4;
-  const w = m.width + pad*2;
-  const h = (opts.size||11) + 8;
-  const align = opts.align || 'center';
-  const lx = align==='center' ? x-w/2 : align==='left' ? x : x-w;
-  const ly = y - h + 2;
-  ctx.fillStyle = dark ? 'rgba(13,22,48,.94)' : 'rgba(255,255,255,.94)';
-  ctx.strokeStyle = dark ? 'rgba(96,165,250,.35)' : 'rgba(37,99,235,.25)';
-  ctx.lineWidth = 1;
-  if(ctx.roundRect){ ctx.beginPath(); ctx.roundRect(lx, ly, w, h, 4); ctx.fill(); ctx.stroke(); }
-  else { ctx.fillRect(lx, ly, w, h); }
-  ctx.fillStyle = opts.color || getChartColors().text;
-  ctx.textAlign = align;
+  ctx.font = (opts.bold===false?'600':'bold')+' '+(opts.size||11)+'px Inter,sans-serif';
+  ctx.fillStyle = opts.color || c.text;
+  ctx.textAlign = opts.align || 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillText(text, x, ly + h/2);
+  ctx.fillText(String(text), x, y);
   ctx.restore();
 }
 
-function occChartLayoutPad(){ return { layout:{ padding:{ top:36, right:16, left:8, bottom:8 } } }; }
+function occChartLayoutPad(){ return { layout:{ padding:{ top:28, right:52, left:8, bottom:8 } }, clip:false }; }
 
 function fmtChartLabel(val, opts){
   opts = opts || {};
+  if(Array.isArray(val)) val = Math.abs(num(val[1])-num(val[0]));
   const n = num(val);
   if(n === 0) return '0';
-  if(opts.money || opts.isValue){
-    if(n >= 1e6) return (n/1e6).toFixed(2)+'M';
-    if(n >= 10000) return fmt(n);
-    return n.toLocaleString('en-US',{maximumFractionDigits:0});
-  }
+  if(opts.money || opts.isValue) return fmt(n);
   return Number.isInteger(n) ? String(n) : n.toFixed(1);
 }
 
 function occBarValuePlugin(opts){
   opts = opts || {};
-  const pid = 'occBarVals_'+(opts.datasetIndex!=null?opts.datasetIndex:'x')+'_'+Math.random().toString(36).slice(2,7);
+  const pid = 'occBarVals_'+(opts.datasetIndex!=null?opts.datasetIndex:'x');
   return { id:pid, afterDatasetsDraw:function(chart){
+    const c = getChartColors();
     const dsCount = chart.data.datasets.length;
     chart.data.datasets.forEach(function(ds, di){
       if(opts.datasetIndex!==undefined && di!==opts.datasetIndex) return;
@@ -2146,21 +2173,15 @@ function occBarValuePlugin(opts){
       const isHorizontal = chart.options.indexAxis==='y';
       const isMoney = opts.money || /value|aed|\(m\)/i.test(String(ds.label||''));
       meta.data.forEach(function(bar, i){
-        const val = ds.data[i];
-        if(val===null||val===undefined || (typeof val==='number' && isNaN(val))) return;
+        let val = ds.data[i];
+        if(Array.isArray(val)) val = Math.abs(num(val[1])-num(val[0]));
+        if(val===null||val===undefined || (typeof val==='number' && (isNaN(val)||val===0))) return;
         const label = fmtChartLabel(val, { money:isMoney, isValue:isMoney });
+        const pos = bar.tooltipPosition();
         if(isHorizontal){
-          const w = Math.abs(bar.width||0);
-          if(w >= 40){
-            occDrawChartLabel(chart.ctx, label, bar.x - w/2, bar.y, {align:'center', color:'#fff', size:10, bold:true});
-          } else {
-            occDrawChartLabel(chart.ctx, label, bar.x + 8, bar.y, {align:'left', size:10});
-          }
+          occDrawChartLabel(chart.ctx, label, pos.x + 8, pos.y, {align:'left', size:11, color:c.text, bold:true});
         } else {
-          const h = Math.abs(bar.height||0);
-          const inside = h >= 22;
-          const yPos = inside ? bar.y - 8 : bar.y - h - 12;
-          occDrawChartLabel(chart.ctx, label, bar.x, yPos, {align:'center', size:10, color: inside && h >= 28 ? '#fff' : undefined, bold:true});
+          occDrawChartLabel(chart.ctx, label, pos.x, pos.y - 14, {align:'center', size:11, color:c.text, bold:true});
         }
       });
     });
@@ -2168,7 +2189,8 @@ function occBarValuePlugin(opts){
 }
 
 function occLineValuePlugin(){
-  return { id:'occLineVals_'+Math.random().toString(36).slice(2,7), afterDatasetsDraw:function(chart){
+  return { id:'occLineVals', afterDatasetsDraw:function(chart){
+    const c = getChartColors();
     chart.data.datasets.forEach(function(ds, di){
       const meta = chart.getDatasetMeta(di); if(meta.hidden) return;
       const isMoney = /value|aed|\(m\)/i.test(String(ds.label||''));
@@ -2176,10 +2198,64 @@ function occLineValuePlugin(){
         const val = ds.data[i];
         if(val===null||val===undefined) return;
         const label = isMoney ? fmtChartLabel(val, {money:true}) : fmtChartLabel(val, {});
-        occDrawChartLabel(chart.ctx, label, pt.x, pt.y - (di===0?16:14), {align:'center', size:10, bold:true});
+        occDrawChartLabel(chart.ctx, label, pt.x, pt.y - (di===0?16:-14), {align:'center', size:10, color:c.text, bold:true});
       });
     });
   }};
+}
+
+function occArcLabelPlugin(){
+  return { id:'occArcLbl', afterDatasetsDraw:function(chart){
+    const ctx = chart.ctx;
+    const data = chart.data.datasets[0].data;
+    const total = data.reduce(function(a,b){ return a+b; }, 0);
+    if(!total) return;
+    const meta = chart.getDatasetMeta(0);
+    meta.data.forEach(function(arc, i){
+      const val = data[i];
+      const pct = Math.round(val/total*100);
+      if(pct < 5) return;
+      const pos = arc.tooltipPosition();
+      ctx.save();
+      ctx.font='bold 12px Inter,sans-serif';
+      ctx.fillStyle='#fff';
+      ctx.textAlign='center'; ctx.textBaseline='middle';
+      ctx.fillText(pct+'%', pos.x, pos.y-7);
+      ctx.font='600 10px Inter,sans-serif';
+      ctx.fillText(fmt(val), pos.x, pos.y+8);
+      ctx.restore();
+    });
+  }};
+}
+
+const OCC_PALETTE = ['#0f766e','#2563eb','#7c3aed','#db2777','#ea580c','#0891b2','#65a30d','#4f46e5','#be185d','#0369a1'];
+
+function occStatusColor(status){
+  if(status==='Closed Approved') return '#059669';
+  if(status==='Closed Rejected') return '#dc2626';
+  return '#d97706';
+}
+
+function occFilterSame(a, b){
+  return a && b && a.type===b.type && String(a.value)===String(b.value);
+}
+
+function applyChartFilter(next){
+  selChartFilter = occFilterSame(selChartFilter, next) ? null : next;
+  renderGrid();
+  updateGridCounts();
+  renderActiveChips();
+  if(chartsVisible) renderCharts();
+  const grid = el('myGrid');
+  if(grid) setTimeout(function(){ grid.scrollIntoView({behavior:'smooth', block:'start'}); }, 50);
+}
+
+function clearChartFilter(){
+  selChartFilter = null;
+  renderGrid();
+  updateGridCounts();
+  renderActiveChips();
+  if(chartsVisible) renderCharts();
 }
 function buildPptKeyInsights(items, reportId){
   if(!items.length) return 'Key Insight: No OCC records match the current filters for this report view.';
@@ -2252,7 +2328,11 @@ function renderOccBridge(){
   const canvas = el('chartBridge');
   if(!canvas) return;
   const c = getChartColors();
-  const base = getViewItems();
+  const base = getScopeItems();
+  const dim = function(color, key, type){
+    if(!selChartFilter) return color;
+    return (selChartFilter.type===type && selChartFilter.value===key) ? color : color+'55';
+  };
 
   if(occBridgeMode==='pending'){
     const open = base.filter(function(i){ return i.portalStatus==='Open'; });
@@ -2260,12 +2340,15 @@ function renderOccBridge(){
     open.forEach(function(i){ const k = i.stuckAt||'Unknown'; if(!map[k]) map[k]={v:0,c:0}; map[k].v+=i.value; map[k].c++; });
     const labels = Object.keys(map).sort(function(a,b){ return map[b].v-map[a].v; });
     CHARTS.bridge = new Chart(canvas, Object.assign({
-      type:'bar', plugins:[occBarValuePlugin({money:true}), occBarValuePlugin({datasetIndex:1})],
+      type:'bar', plugins:[occBarValuePlugin({money:true})],
       data:{ labels:labels, datasets:[
-        { label:'Value (AED)', data:labels.map(function(l){ return map[l].v; }), backgroundColor:c.amber, borderRadius:8, yAxisID:'y' },
-        { label:'Count', data:labels.map(function(l){ return map[l].c; }), backgroundColor:c.acc2, borderRadius:8, yAxisID:'y1' }
+        { label:'Value (AED)', data:labels.map(function(l){ return map[l].v; }), backgroundColor:labels.map(function(l){ return dim('#d97706', l, 'stuckAt'); }), borderRadius:8 }
       ]},
-      options:{ indexAxis:'y', responsive:true, maintainAspectRatio:false, plugins:{legend:{labels:{color:c.text,usePointStyle:true}}}, scales:{ x:{position:'top',ticks:{color:c.text,callback:function(v){return fmt(v);}},grid:{color:c.grid},grace:'15%'}, y:{ticks:{color:c.text,font:{size:10}},grid:{display:false}}, y1:{display:false} } }
+      options:{ indexAxis:'y', responsive:true, maintainAspectRatio:false, onClick:function(evt, els){
+        if(!els.length) return;
+        const stage = labels[els[0].index];
+        applyChartFilter({ type:'stuckAt', value:stage, label:'Stuck: '+stage });
+      }, plugins:{legend:{display:false}}, scales:{ x:{ticks:{color:c.text,callback:function(v){return fmt(v);}},grid:{color:c.grid},grace:'18%'}, y:{ticks:{color:c.text,font:{size:11,weight:'700'}},grid:{display:false}} } }
     }, occChartLayoutPad()));
     return;
   }
@@ -2278,62 +2361,37 @@ function renderOccBridge(){
   const pendV = pending.reduce(function(s,i){ return s+i.value; }, 0);
   const rejV = rejected.reduce(function(s,i){ return s+i.value; }, 0);
   const bars = [
-    { label:'Approved', value:apprV, start:0, end:apprV, color:c.green, meta:fmtAed(apprV)+' · '+approved.length+' OCCs' },
-    { label:'Pending', value:pendV, start:apprV, end:apprV+pendV, color:c.amber, meta:fmtAed(pendV)+' · '+pending.length+' open' },
-    { label:'Rejected', value:rejV, start:apprV+pendV, end:apprV+pendV+rejV, color:c.red, meta:fmtAed(rejV)+' · '+rejected.length+' OCCs' }
+    { label:'Approved', status:'Closed Approved', value:apprV, start:0, end:apprV, color:'#059669', meta:fmtAed(apprV)+' · '+approved.length+' OCCs' },
+    { label:'Pending', status:'Open', value:pendV, start:apprV, end:apprV+pendV, color:'#d97706', meta:fmtAed(pendV)+' · '+pending.length+' open' },
+    { label:'Rejected', status:'Closed Rejected', value:rejV, start:apprV+pendV, end:apprV+pendV+rejV, color:'#dc2626', meta:fmtAed(rejV)+' · '+rejected.length+' OCCs' }
   ];
   const bridgeLabelPlugin = { id:'occBridgeLbl', afterDatasetsDraw:function(chart){
     const meta = chart.getDatasetMeta(0);
+    const tc = getChartColors();
     meta.data.forEach(function(bar, i){
       const b = bars[i]; if(!b) return;
-      occDrawChartLabel(chart.ctx, fmt(b.value), bar.x, bar.y-10, {align:'center', size:10, bold:true});
-      occDrawChartLabel(chart.ctx, b.label, bar.x, bar.y+14, {align:'center', size:9, bold:false});
+      const pos = bar.tooltipPosition();
+      occDrawChartLabel(chart.ctx, fmt(b.value), pos.x, pos.y - 16, {align:'center', size:12, color:tc.text, bold:true});
+      occDrawChartLabel(chart.ctx, b.meta, pos.x, pos.y + 16, {align:'center', size:10, color:tc.text, bold:false});
     });
   }};
   CHARTS.bridge = new Chart(canvas, Object.assign({
     type:'bar',
     plugins:[bridgeLabelPlugin],
-    data:{ labels:bars.map(function(b){ return b.label; }), datasets:[{ label:'Value (AED)', data:bars.map(occBridgeFloatBar), backgroundColor:bars.map(function(b){ return b.color; }), borderRadius:6, borderSkipped:false }] },
-    options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}, tooltip:{callbacks:{label:function(ctx){ var b=bars[ctx.dataIndex]; return b?b.meta:''; } }}}, scales:{ x:{ticks:{color:c.text},grid:{display:false}}, y:{ticks:{color:c.text,callback:function(v){ return fmt(v); }},grid:{color:c.grid},grace:'15%'} } }
-  }, occChartLayoutPad()));
-}
-
-function renderStuckChart(){
-  destroyChart('stuck');
-  const open = getViewItems().filter(function(i){ return i.portalStatus==='Open'; });
-  const map = {};
-  open.forEach(function(i){ const k=i.stuckAt||'Unknown'; if(!map[k]) map[k]={v:0,c:0}; map[k].v+=i.value; map[k].c++; });
-  const labels = Object.keys(map).sort(function(a,b){ return map[b].v-map[a].v; });
-  const c = getChartColors();
-  CHARTS.stuck = new Chart(el('chartStuck'), Object.assign({
-    type:'bar', plugins:[occBarValuePlugin({money:true}), occBarValuePlugin({datasetIndex:1})],
-    data:{ labels:labels, datasets:[
-      { label:'Value (AED)', data:labels.map(function(l){ return map[l].v; }), backgroundColor:c.amber, borderRadius:8, yAxisID:'y' },
-      { label:'Count', data:labels.map(function(l){ return map[l].c; }), backgroundColor:c.acc2, borderRadius:8, yAxisID:'y1' }
-    ]},
-    options:{ indexAxis:'y', responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'top',labels:{color:c.text,usePointStyle:true,font:{size:10}}}}, scales:{ x:{ticks:{color:c.text,callback:function(v){return fmt(v);}},grid:{color:c.grid},grace:'18%'}, y:{ticks:{color:c.text,font:{size:10}},grid:{display:false}}, y1:{display:false} } }
-  }, occChartLayoutPad()));
-}
-
-function renderTierChart(){
-  destroyChart('tier');
-  const base = getViewItems(); let low={c:0,v:0}, high={c:0,v:0};
-  base.forEach(function(i){ if(i.value>=CCO_THRESHOLD){high.c++;high.v+=i.value;}else{low.c++;low.v+=i.value;} });
-  const c = getChartColors();
-  CHARTS.tier = new Chart(el('chartTier'), Object.assign({
-    type:'bar', plugins:[occBarValuePlugin({datasetIndex:0}), occBarValuePlugin({datasetIndex:1, money:true})],
-    data:{ labels:['Mid (<250K)','High (≥250K)'], datasets:[
-      { label:'Count', data:[low.c,high.c], backgroundColor:c.acc2, borderRadius:8, yAxisID:'y' },
-      { label:'Value (AED)', data:[low.v,high.v], backgroundColor:c.acc, borderRadius:8, yAxisID:'y1' }
-    ]},
-    options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{labels:{color:c.text,usePointStyle:true}}}, scales:{ y:{position:'left',ticks:{color:c.text},grid:{color:c.grid},grace:'18%'}, y1:{position:'right',grid:{drawOnChartArea:false},ticks:{color:c.text,callback:function(v){return fmt(v);}},grace:'18%'} } }
+    data:{ labels:bars.map(function(b){ return b.label; }), datasets:[{ label:'Value (AED)', data:bars.map(occBridgeFloatBar), backgroundColor:bars.map(function(b){ return dim(b.color, b.status, 'status'); }), borderRadius:8, borderSkipped:false }] },
+    options:{ responsive:true, maintainAspectRatio:false, onClick:function(evt, els){
+      if(!els.length) return;
+      const b = bars[els[0].index];
+      applyChartFilter({ type:'status', value:b.status, period: b.status==='Open' ? null : occBridgePeriod, label:b.label+' · '+occBridgePeriod.toUpperCase() });
+    }, plugins:{legend:{display:false}, tooltip:{callbacks:{label:function(ctx){ var b=bars[ctx.dataIndex]; return b?b.meta:''; } }}}, scales:{ x:{ticks:{color:c.text,font:{weight:'700'}},grid:{display:false}}, y:{ticks:{color:c.text,callback:function(v){ return fmt(v); }},grid:{color:c.grid},grace:'18%'} } }
   }, occChartLayoutPad()));
 }
 
 function renderTrendChart(){
   destroyChart('trend');
+  const canvas = el('chartTrend'); if(!canvas) return;
   const map = {};
-  getViewItems().filter(function(i){ return i.portalStatus==='Closed Approved'; }).forEach(function(i){
+  getScopeItems().filter(function(i){ return i.portalStatus==='Closed Approved'; }).forEach(function(i){
     const d = i.posted || i.created; if(!d) return;
     const dt = new Date(d); if(isNaN(dt)) return;
     const k = dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0');
@@ -2343,24 +2401,27 @@ function renderTrendChart(){
   });
   const keys = Object.keys(map).sort().slice(-12);
   const c = getChartColors();
-  CHARTS.trend = new Chart(el('chartTrend'), Object.assign({
+  CHARTS.trend = new Chart(canvas, Object.assign({
     type:'line', plugins:[occLineValuePlugin()],
     data:{ labels:keys.map(function(k){ return map[k].label; }), datasets:[
-      { label:'Posted Value (AED)', data:keys.map(function(k){ return map[k].v; }), borderColor:c.acc, backgroundColor:'rgba(37,99,235,.12)', fill:true, tension:.35, pointRadius:5, pointBackgroundColor:c.acc, borderWidth:2.5, yAxisID:'y' },
-      { label:'Count', data:keys.map(function(k){ return map[k].c; }), borderColor:c.acc2, backgroundColor:'transparent', fill:false, tension:.35, pointRadius:4, pointBackgroundColor:c.acc2, borderWidth:2, yAxisID:'y1' }
+      { label:'Posted Value (AED)', data:keys.map(function(k){ return map[k].v; }), borderColor:'#2563eb', backgroundColor:'rgba(37,99,235,.18)', fill:true, tension:.4, pointRadius:6, pointHoverRadius:8, pointBackgroundColor:'#2563eb', borderWidth:3, yAxisID:'y' },
+      { label:'Count', data:keys.map(function(k){ return map[k].c; }), borderColor:'#0f766e', backgroundColor:'transparent', fill:false, tension:.4, pointRadius:5, pointBackgroundColor:'#0f766e', borderWidth:2, yAxisID:'y1' }
     ]},
-    options:{ responsive:true, maintainAspectRatio:false, interaction:{mode:'index',intersect:false}, plugins:{legend:{labels:{color:c.text,usePointStyle:true}}}, scales:{ x:{ticks:{color:c.text},grid:{color:c.grid}}, y:{position:'left',ticks:{color:c.text,callback:function(v){return fmt(v);}},grid:{color:c.grid},grace:'15%'}, y1:{position:'right',grid:{drawOnChartArea:false},ticks:{color:c.text,stepSize:1},grace:'15%'} } }
+    options:{ responsive:true, maintainAspectRatio:false, interaction:{mode:'index',intersect:false}, onClick:function(evt, els){
+      if(!els.length) return;
+      const k = keys[els[0].index];
+      applyChartFilter({ type:'month', value:k, label:'Month '+map[k].label });
+    }, plugins:{legend:{labels:{color:c.text,usePointStyle:true,font:{weight:'700'}}}}, scales:{ x:{ticks:{color:c.text},grid:{color:c.grid}}, y:{position:'left',ticks:{color:c.text,callback:function(v){return fmt(v);}},grid:{color:c.grid},grace:'18%'}, y1:{position:'right',grid:{drawOnChartArea:false},ticks:{color:c.text,stepSize:1},grace:'18%'} } }
   }, occChartLayoutPad()));
 }
 
 function renderCharts(){
   renderOccBridge();
-  renderTop10Chart();
-  renderStuckChart();
   renderTrendChart();
+  renderTop10Chart();
   renderVerticalChart();
-  renderTierChart();
-  renderSLAChart();
+  renderBubbleChart();
+  renderRadarChart();
 }
 
 function setVertChartMode(mode){
@@ -2372,41 +2433,116 @@ function setVertChartMode(mode){
 
 function renderVerticalChart(){
   destroyChart('vertical');
-  const base = getViewItems(); const map = {};
+  const canvas = el('chartVertical'); if(!canvas) return;
+  const base = getScopeItems(); const map = {};
   base.forEach(function(i){ map[i.vertical]=(map[i.vertical]||{count:0,value:0}); map[i.vertical].count++; map[i.vertical].value+=i.value; });
   const labels = Object.keys(map).sort(function(a,b){ return map[b].value-map[a].value; }).slice(0,8);
   const c = getChartColors();
   const isVal = vertChartMode==='value';
   const data = labels.map(function(l){ return isVal ? map[l].value : map[l].count; });
-  const total = data.reduce(function(a,b){ return a+b; }, 0);
-  CHARTS.vertical = new Chart(el('chartVertical'), Object.assign({
-    type:'bar', plugins:[occBarValuePlugin({money:isVal})],
-    data:{ labels:labels, datasets:[{ label:isVal?'Value (AED)':'Count', data:data, backgroundColor:c.acc, borderRadius:8 }] },
-    options:{ indexAxis:'y', responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}, title:{display:true,text:(isVal?'Total ':'Count ')+fmt(total, {decimals:0}), color:c.text, font:{size:11,weight:'700'}}}, scales:{ x:{ticks:{color:c.text,callback:function(v){ return isVal?fmt(v):v; }},grid:{color:c.grid},grace:'15%'}, y:{ticks:{color:c.text},grid:{display:false}} } }
-  }, occChartLayoutPad()));
-}
-
-function renderSLAChart(){
-  destroyChart('sla');
-  const base = getViewItems().filter(function(i){ return i.portalStatus==='Open'; });
-  const buckets = { '0-9 days':0, '10-29 days':0, '30+ days':0 };
-  base.forEach(function(i){ const d=i.daysStuck||i.daysRaised; if(d<=9) buckets['0-9 days']++; else if(d<=29) buckets['10-29 days']++; else buckets['30+ days']++; });
-  const c = getChartColors(); const total = Object.values(buckets).reduce(function(a,b){ return a+b; }, 0);
-  CHARTS.sla = new Chart(el('chartSLA'), Object.assign({
-    type:'doughnut', plugins:[occCenterPlugin(total,'Open at Risk', false), occDonutPercentPlugin()],
-    data:{ labels:Object.keys(buckets), datasets:[{ data:Object.values(buckets), backgroundColor:[c.green,c.amber,c.red], borderWidth:4, borderColor:'var(--bg-card)', hoverOffset:10 }] },
-    options:{ responsive:true, maintainAspectRatio:false, cutout:'62%', plugins:{ legend:{ position:'bottom', labels:{color:c.text,usePointStyle:true,font:{size:10,weight:'600'}} } } }
+  CHARTS.vertical = new Chart(canvas, Object.assign({
+    type:'polarArea', plugins:[occArcLabelPlugin()],
+    data:{ labels:labels, datasets:[{ data:data, backgroundColor:labels.map(function(l,i){
+      const col = OCC_PALETTE[i%OCC_PALETTE.length];
+      if(selChartFilter && selChartFilter.type==='vertical' && selChartFilter.value!==l) return col+'55';
+      return col;
+    }), borderWidth:0 }] },
+    options:{ responsive:true, maintainAspectRatio:false, onClick:function(evt, els){
+      if(!els.length) return;
+      const v = labels[els[0].index];
+      applyChartFilter({ type:'vertical', value:v, label:'Vertical: '+v });
+    }, plugins:{ legend:{ position:'right', labels:{color:c.text,usePointStyle:true,font:{size:11,weight:'600'}, generateLabels:function(chart){
+      return labels.map(function(l,i){
+        const v = isVal ? map[l].value : map[l].count;
+        return { text: l+'  '+fmt(v), fillStyle: OCC_PALETTE[i%OCC_PALETTE.length], hidden:false, index:i };
+      });
+    }} } }, scales:{ r:{ ticks:{ display:false }, grid:{ color:c.grid } } } }
   }, occChartLayoutPad()));
 }
 
 function renderTop10Chart(){
   destroyChart('top10');
-  const top = getViewItems().slice().sort(function(a,b){ return b.value-a.value; }).slice(0,10);
+  const canvas = el('chartTop10'); if(!canvas) return;
+  const top = getScopeItems().slice().sort(function(a,b){ return b.value-a.value; }).slice(0,10);
   const c = getChartColors();
-  CHARTS.top10 = new Chart(el('chartTop10'), Object.assign({
+  const colors = top.map(function(i){
+    const col = occStatusColor(i.portalStatus);
+    if(selChartFilter && selChartFilter.type==='ref' && selChartFilter.value!==i.ref) return col+'55';
+    return col;
+  });
+  CHARTS.top10 = new Chart(canvas, Object.assign({
     type:'bar', plugins:[occBarValuePlugin({money:true})],
-    data:{ labels:top.map(function(i){ return (i.accountName||i.ref).slice(0,22); }), datasets:[{ label:'Value (AED)', data:top.map(function(i){ return i.value; }), backgroundColor:c.acc, borderRadius:8 }] },
-    options:{ indexAxis:'y', responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}, tooltip:{callbacks:{afterLabel:function(ctx){ var i=top[ctx.dataIndex]; return i?i.ref+' · '+i.vertical:''; } }}}, scales:{ x:{ticks:{color:c.text,callback:function(v){return fmt(v);}},grid:{color:c.grid},grace:'18%'}, y:{ticks:{color:c.text,font:{size:10}},grid:{display:false}} } }
+    data:{ labels:top.map(function(i){ return (i.accountName||i.ref).slice(0,26); }), datasets:[{ label:'Value (AED)', data:top.map(function(i){ return i.value; }), backgroundColor:colors, borderRadius:8, borderSkipped:false, barThickness:22 }] },
+    options:{ indexAxis:'y', responsive:true, maintainAspectRatio:false, onClick:function(evt, els){
+      if(!els.length) return;
+      const item = top[els[0].index];
+      applyChartFilter({ type:'ref', value:item.ref, label:item.ref });
+    }, plugins:{legend:{display:false}, tooltip:{callbacks:{afterLabel:function(ctx){ var i=top[ctx.dataIndex]; return i?i.ref+' · '+i.portalStatus+' · '+i.vertical:''; } }}}, scales:{ x:{ticks:{color:c.text,callback:function(v){return fmt(v);}},grid:{color:c.grid},grace:'22%'}, y:{ticks:{color:c.text,font:{size:11,weight:'700'}},grid:{display:false}} } }
+  }, occChartLayoutPad()));
+}
+
+function renderBubbleChart(){
+  destroyChart('bubble');
+  const canvas = el('chartBubble'); if(!canvas) return;
+  const open = getScopeItems().filter(function(i){ return i.portalStatus==='Open'; });
+  const map = {};
+  open.forEach(function(i){
+    const k = i.stuckAt||'Unknown';
+    if(!map[k]) map[k]={stage:k, days:0, value:0, count:0};
+    map[k].days += (i.daysStuck||i.daysRaised||0);
+    map[k].value += i.value;
+    map[k].count++;
+  });
+  const stages = Object.values(map);
+  const c = getChartColors();
+  const maxV = Math.max.apply(null, stages.map(function(s){ return s.value; }).concat([1]));
+  const points = stages.map(function(s, i){
+    return { x: s.count ? s.days/s.count : 0, y: s.value, r: Math.max(10, Math.min(36, 8 + (s.value/maxV)*28)), stage:s.stage, count:s.count };
+  });
+  CHARTS.bubble = new Chart(canvas, Object.assign({
+    type:'bubble',
+    plugins:[{ id:'occBubLbl', afterDatasetsDraw:function(chart){
+      const meta = chart.getDatasetMeta(0);
+      const tc = getChartColors();
+      meta.data.forEach(function(pt, i){
+        const p = points[i]; if(!p) return;
+        occDrawChartLabel(chart.ctx, p.stage.split(' ')[0], pt.x, pt.y-p.r-10, {align:'center', size:10, color:tc.text, bold:true});
+        occDrawChartLabel(chart.ctx, fmt(p.y), pt.x, pt.y, {align:'center', size:10, color:'#fff', bold:true});
+      });
+    }}],
+    data:{ datasets:[{ label:'Open exposure', data:points, backgroundColor:points.map(function(p,i){ return OCC_PALETTE[i%OCC_PALETTE.length]+'cc'; }), borderColor:points.map(function(p,i){ return OCC_PALETTE[i%OCC_PALETTE.length]; }), borderWidth:2 }] },
+    options:{ responsive:true, maintainAspectRatio:false, onClick:function(evt, els){
+      if(!els.length) return;
+      const p = points[els[0].index];
+      applyChartFilter({ type:'stuckAt', value:p.stage, label:'Stuck: '+p.stage });
+    }, plugins:{legend:{display:false}, tooltip:{callbacks:{label:function(ctx){ const p=points[ctx.dataIndex]; return p? p.stage+' · '+fmtAed(p.y)+' · '+p.count+' OCCs · '+Math.round(p.x)+' avg days':''; } }}}, scales:{ x:{ title:{display:true,text:'Avg days stuck',color:c.text,font:{weight:'700'}}, ticks:{color:c.text}, grid:{color:c.grid} }, y:{ title:{display:true,text:'Open value',color:c.text,font:{weight:'700'}}, ticks:{color:c.text,callback:function(v){return fmt(v);}}, grid:{color:c.grid}, grace:'12%' } } }
+  }, occChartLayoutPad()));
+}
+
+function renderRadarChart(){
+  destroyChart('radar');
+  const canvas = el('chartRadar'); if(!canvas) return;
+  const base = getScopeItems();
+  const map = {};
+  base.forEach(function(i){ map[i.reason]=(map[i.reason]||0)+i.value; });
+  const labels = Object.keys(map).sort(function(a,b){ return map[b]-map[a]; }).slice(0,6);
+  const c = getChartColors();
+  const data = labels.map(function(l){ return map[l]; });
+  CHARTS.radar = new Chart(canvas, Object.assign({
+    type:'radar',
+    plugins:[{ id:'occRadarLbl', afterDatasetsDraw:function(chart){
+      const meta = chart.getDatasetMeta(0);
+      const tc = getChartColors();
+      meta.data.forEach(function(pt, i){
+        occDrawChartLabel(chart.ctx, fmt(data[i]), pt.x, pt.y-12, {align:'center', size:10, color:tc.text, bold:true});
+      });
+    }}],
+    data:{ labels:labels, datasets:[{ label:'OCC Value', data:data, backgroundColor:'rgba(124,58,237,.22)', borderColor:'#7c3aed', pointBackgroundColor:'#7c3aed', pointRadius:5, borderWidth:2 }] },
+    options:{ responsive:true, maintainAspectRatio:false, onClick:function(evt, els){
+      if(!els.length) return;
+      const r = labels[els[0].index];
+      applyChartFilter({ type:'reason', value:r, label:'Reason: '+r });
+    }, plugins:{legend:{display:false}}, scales:{ r:{ ticks:{ display:false }, grid:{ color:c.grid }, pointLabels:{ color:c.text, font:{ size:11, weight:'700' } } } } }
   }, occChartLayoutPad()));
 }
 
@@ -3063,6 +3199,8 @@ window.selectAMTile=selectAMTile;
 window.setVertChartMode=setVertChartMode;
 window.occSetBridgePeriod=occSetBridgePeriod;
 window.occSetBridgeMode=occSetBridgeMode;
+window.applyChartFilter=applyChartFilter;
+window.clearChartFilter=clearChartFilter;
 window.gridSearch=gridSearch;
 window.exportExcel=exportExcel;
 window.openFormView=openFormView;
