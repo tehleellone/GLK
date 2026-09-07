@@ -7488,7 +7488,8 @@ function glkMobileQtdCalc(){
   var quarter=report?report.quarter:Math.floor(new Date().getMonth()/3)+1;
   var activeLevels=mqGetActiveReportLevels();
   var scope=mqResolveReportScope(report,activeLevels);
-  var actualsQtd=isForward?0:scope.actualsQtd;
+  var actualsRaw=isForward?0:num(scope.actualsQtd);
+  var actualsQtd=isForward?0:Math.abs(actualsRaw);
   var target=isForward?0:scope.target;
   var actualsByVertical=null;
   if(!isForward&&!activeLevels.length&&report&&report.verticals){
@@ -7543,7 +7544,7 @@ function glkMobileQtdCalc(){
   var calc={
     report:report,year:year,quarter:quarter,isBest:isBest,isForward:isForward,
     bridgePeriod:mqPeriod,
-    actualsQtd:actualsQtd,target:target,actualsByVertical:actualsByVertical,
+    actualsQtd:actualsQtd,actualsRaw:actualsRaw,target:target,actualsByVertical:actualsByVertical,
     gross100:g100.total,gross100Bids:g100.bids,wonExcluded:g100.excluded||[],grossPool:grossPool,churnPool:churnPool,
     bridgeGetVal:getVal,bridgeGetChurnVal:getChurnVal,bridgeActivationFn:activationFn,
     inflightGross:inflightGross,inflightChurn:inflightChurn,hasChurn:hasChurn,
@@ -7697,11 +7698,11 @@ function mqRenderBridgeLegend(calc){
   }).join('');
   var hdLeg=el('mqHdLegend');
   if(hdLeg){
-    hdLeg.innerHTML='<span class="mq-hd-legend-title">Top 5 account colour</span>'+
-      MQ_HD_LEGEND.map(function(x){
-        return '<span class="mq-leg-chip"><span class="mq-leg-dot" style="background:'+x.c+';"></span>'+x.l+'</span>';
-      }).join('')+
-      '<span class="mq-leg-chip" style="color:var(--t3);">Gold / pink / teal are only for Top 5 Gross and Top 5 Churn — not Actuals, Won, Others, Target, or Forecast.</span>';
+    hdLeg.innerHTML='<span class="mq-hd-legend-title">Top 5 bar colours</span>'+
+      '<span class="mq-leg-chip"><span class="mq-leg-dot" style="background:'+MQ_CLR_INFLIGHT[0]+';"></span>In-flight Top 5 — blue shades</span>'+
+      '<span class="mq-leg-chip"><span class="mq-leg-dot" style="background:'+MQ_CLR_CHURN[0]+';"></span>Churn Top 5 — red shades</span>'+
+      '<span class="mq-leg-chip"><span class="mq-leg-dot" style="background:'+MQ_CLR_INFLIGHT_OTHERS+';"></span>Others Gross</span>'+
+      '<span class="mq-leg-chip"><span class="mq-leg-dot" style="background:'+MQ_CLR_CHURN_OTHERS+';"></span>Others Churn</span>';
   }
 }
 function glkMobileQtdSectionPlugin(bars){
@@ -7838,9 +7839,56 @@ function mqDetailFilterOptions(groups){
   });
   return {statuses:Object.keys(statuses).sort(),verts:Object.keys(verts).sort()};
 }
+function mqBuildForecastBreakdownHtml(calc){
+  if(!calc||calc.isForward) return '';
+  var h='<div class="mq-calc-box" style="margin:.2rem 0 .55rem;">';
+  h+='<div style="font-weight:800;font-size:.82rem;margin-bottom:.4rem;color:var(--acc);">Net Forecast breakdown</div>';
+  var rows=[];
+  rows.push({sign:'+',label:mqActualsBarLabel(),val:calc.actualsQtd});
+  rows.push({sign:'+',label:mqWonBarLabel(calc),val:calc.gross100||0});
+  (calc.grossPool&&calc.grossPool.top||[]).forEach(function(p){
+    if(p.value) rows.push({sign:'+',label:'Top 5 Gross · '+p.name,val:p.value});
+  });
+  if(calc.grossPool&&calc.grossPool.others) rows.push({sign:'+',label:mqInflightOthersLabel(),val:calc.grossPool.others});
+  (calc.churnPool&&calc.churnPool.top||[]).forEach(function(p){
+    if(p.value) rows.push({sign:'−',label:'Top 5 Churn · '+p.name,val:Math.abs(p.value)});
+  });
+  if(calc.churnPool&&calc.churnPool.others) rows.push({sign:'−',label:'Others Churn',val:Math.abs(calc.churnPool.others)});
+  var sum=0;
+  rows.forEach(function(r){
+    var v=num(r.val);
+    if(r.sign==='−') sum-=v; else sum+=v;
+    h+='<div style="display:flex;justify-content:space-between;gap:.5rem;padding:.18rem 0;font-size:.78rem;">';
+    h+='<span>'+r.sign+' '+mqEscHtml(r.label)+'</span>';
+    h+='<strong>'+fmtLines(v)+'</strong></div>';
+  });
+  h+='<div style="display:flex;justify-content:space-between;gap:.5rem;margin-top:.35rem;padding-top:.4rem;border-top:2px solid var(--border);font-weight:800;font-size:.84rem;">';
+  h+='<span>= Net Forecast</span><span style="color:var(--acc);">'+fmtLines(calc.forecast)+'</span></div>';
+  if(Math.abs(sum-num(calc.forecast))>0.5){
+    h+='<div style="font-size:.66rem;color:var(--t3);margin-top:.25rem;">Components sum '+fmtLines(sum)+' · rounded display '+fmtLines(calc.forecast)+'</div>';
+  }
+  if(calc.actualsRaw!=null&&calc.actualsRaw<0){
+    h+='<div style="font-size:.66rem;color:#92400e;margin-top:.25rem;">Excel actual for this scope is '+fmtLines(calc.actualsRaw)+' — bridge uses '+fmtLines(calc.actualsQtd)+' magnitude to match the chart bar.</div>';
+  }
+  if(calc.target>0){
+    h+='<div style="margin-top:.35rem;font-size:.74rem;color:var(--t3);">Target: <strong>'+fmtLines(calc.target)+'</strong>';
+    if(calc.gap>0) h+=' · Gap: <strong style="color:'+MQ_CLR_GAP+';">'+fmtLines(calc.gap)+'</strong>';
+    else if(calc.growth>0) h+=' · Ahead: <strong style="color:'+MQ_CLR_GROWTH+';">+'+fmtLines(calc.growth)+'</strong>';
+    h+='</div>';
+  }
+  h+='</div>';
+  return h;
+}
 function mqBuildBarDetailHtml(b,metaLabel,barIdx){
   if(!b) return '';
   var calc=GLK_MQ_CALC_LAST||{};
+  if((b.type==='total'||b.forecastBreakdown)&&calc&&!calc.isForward){
+    var h='<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:.75rem;margin-bottom:.45rem;">';
+    h+='<strong style="color:var(--acc);font-size:.78rem;">'+(metaLabel||'Net Forecast')+'</strong>';
+    h+='<button type="button" onclick="mqCloseBarDetail()" style="border:none;background:transparent;color:var(--t3);cursor:pointer;font-size:.85rem;padding:0 .25rem;">✕</button></div>';
+    h+=mqBuildForecastBreakdownHtml(calc);
+    return h;
+  }
   var isChurn=b.type==='decrease';
   var h='<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:.75rem;margin-bottom:.45rem;">';
   h+='<strong style="color:var(--acc);font-size:.78rem;">'+(metaLabel||b.custName||b.groupLabel||'Bar')+'</strong>';
@@ -8200,7 +8248,7 @@ function renderMobileQtdBridge(){
     var top5Lbl=mqInflightTop5Label();
     pushBar({
       value:p.value,trueCum:trueCum,displayStart:ds,displayEnd:de,
-      color:mqPoolBarColor(p.bids),type:'increase',
+      color:mqInflightBarColor(i),type:'increase',
       custName:p.name,section:'gross',bids:p.bids||[],bracketGroup:'top5gross',bracketLabel:top5Lbl,groupLabel:top5Lbl,
       verticalHint:vHint
     },'Top · '+p.name+' · '+fmtLines(p.value));
@@ -8228,7 +8276,7 @@ function renderMobileQtdBridge(){
       var cs=dispTop,ce=dispTop-dispH(Math.abs(p.value)); dispTop=ce;
       var vHintC=mqBridgeShowsVertical(calc)?mqVerticalDisplayHint(p.bids):'';
       pushBar({
-        value:p.value,trueCum:trueCum,displayStart:cs,displayEnd:ce,color:mqPoolBarColor(p.bids),type:'decrease',
+        value:p.value,trueCum:trueCum,displayStart:cs,displayEnd:ce,color:mqChurnBarColor(i),type:'decrease',
         custName:p.name,section:'churn',bids:p.bids||[],bracketGroup:'top5churn',bracketLabel:'Top 5 Churn',groupLabel:'Top 5 Churn',
         verticalHint:vHintC
       },'Top Churn · '+p.name+' · '+fmtLines(p.value));
@@ -8247,7 +8295,7 @@ function renderMobileQtdBridge(){
   var netMinH=Math.max(minTileH*2,scaleMax*0.04);
   var netStart=fc>=0?0:Math.min(fc,-netMinH);
   var netEnd=fc>=0?Math.max(fc,netMinH):0;
-  pushBar({value:fc,trueCum:fc,displayStart:netStart,displayEnd:netEnd,color:MQ_CLR_NET,type:'total',custName:netLbl,section:'outcome',minLabel:true},netLbl+' · '+fmtLines(fc));
+  pushBar({value:fc,trueCum:fc,displayStart:netStart,displayEnd:netEnd,color:MQ_CLR_NET,type:'total',custName:netLbl,section:'outcome',minLabel:true,forecastBreakdown:true},netLbl+' · '+fmtLines(fc));
   if(!isForward){
     var tgtDisp=calc.target;
     pushBar({value:calc.target,trueCum:calc.target,displayStart:0,displayEnd:tgtDisp,color:MQ_CLR_TARGET,type:'target',custName:'Target',section:'outcome'},'Target · '+fmtLines(calc.target));
@@ -9144,6 +9192,17 @@ function rrLastActualOnSeries(series){
   });
   return {idx:idx,val:val};
 }
+function rrSumQuarterFcRemainder(fcVals,q,lastActIdx){
+  var sum=0, n=0, start=q*3, end=Math.min(start+3,(fcVals||[]).length);
+  for(var i=start;i<end;i++){
+    if(lastActIdx>=0&&i<=lastActIdx) continue;
+    if(fcVals[i]!=null&&!isNaN(fcVals[i])){ sum+=fcVals[i]; n++; }
+  }
+  return n?sum:null;
+}
+function rrCurrentCalendarQuarter(){
+  return Math.floor(new Date().getMonth()/3);
+}
 function rrCeoTrendKpis(def,data){
   if(!data||!data.series) return [];
   var fmt=def.valueFmt;
@@ -9156,54 +9215,63 @@ function rrCeoTrendKpis(def,data){
   var vals=actual.data||[];
   var lastAct=rrLastActualOnSeries(actual);
   var lastActIdx=lastAct.idx;
-  var curQ=lastActIdx>=0?Math.floor(lastActIdx/3):-1;
-  var q1=rrSumQuarter(vals,0);
-  var q2=rrSumQuarter(vals,1);
-  var q3Act=rrSumQuarterActual(vals,2,lastActIdx);
-  var q3Ml=fcMl?rrSumQuarter(fcMl.data||[],2):null;
-  var q3Up=fcUp?rrSumQuarter(fcUp.data||[],2):null;
-  var q3Prior=prior?rrSumQuarter(prior.data||[],2):null;
+  var calQ=rrCurrentCalendarQuarter();
   var lines=[];
+  var prevActual=null;
   function qLine(qNum,amt,opts){
     opts=opts||{};
-    if(amt==null) return;
+    if(amt==null||isNaN(amt)) return;
     var qLbl='Q'+qNum;
     if(opts.current) qLbl+=' <span class="rr-kpi-curr">Current</span>';
     var html='<div class="rr-kpi-line"><span class="rr-kpi-q">'+qLbl+'</span>';
-    html+='<span class="rr-kpi-amt">'+rrFmtShort(amt,fmt)+unit+'</span>';
+    html+='<span class="rr-kpi-amt'+(opts.forecast?' rr-kpi-forecast':opts.upside?' rr-kpi-upside':'')+'">'+rrFmtShort(amt,fmt)+unit+'</span>';
     html+='<span class="rr-kpi-note">'+(opts.note||'actual')+'</span>';
     if(opts.chip) html+=opts.chip;
     if(opts.extra) html+='<span class="rr-kpi-note">'+opts.extra+'</span>';
     html+='</div>';
     lines.push(html);
   }
-  if(q1!=null) qLine(1,q1,{note:'actual'});
-  if(q2!=null){
-    qLine(2,q2,{note:'actual',chip:rrFmtPctChip(rrPctChange(q2,q1),'vs Q1')});
-  }
-  if(q3Act!=null){
-    var q3Extra='';
-    if(q3Prior!=null){
-      var yoy=rrPctChange(q3Act,q3Prior);
-      if(yoy!=null) q3Extra=' · YoY '+((yoy>=0?'+':'')+yoy.toFixed(1)+'%');
+  for(var q=0;q<=calQ;q++){
+    var isCurrent=(q===calQ);
+    var qAct=isCurrent?rrSumQuarterActual(vals,q,lastActIdx):rrSumQuarter(vals,q);
+    if(qAct==null) continue;
+    var chip=prevActual!=null?rrFmtPctChip(rrPctChange(qAct,prevActual),'vs Q'+q):'';
+    var qPrior=prior?rrSumQuarter(prior.data||[],q):null;
+    var yoyExtra='';
+    if(isCurrent&&qPrior!=null){
+      var yoy=rrPctChange(qAct,qPrior);
+      if(yoy!=null) yoyExtra=' · YoY '+((yoy>=0?'+':'')+yoy.toFixed(1)+'%');
     }
-    qLine(3,q3Act,{
-      note:'actual'+(curQ===2?' (to date)':''),
-      chip:rrFmtPctChip(rrPctChange(q3Act,q2),'vs Q2'),
-      current:curQ===2,
-      extra:q3Extra
+    qLine(q+1,qAct,{
+      note:isCurrent?'actual (to date)':'actual',
+      chip:chip,
+      current:isCurrent,
+      extra:yoyExtra
     });
+    prevActual=qAct;
+    if(isCurrent){
+      var mlRem=fcMl?rrSumQuarterFcRemainder(fcMl.data||[],q,lastActIdx):null;
+      var upRem=fcUp?rrSumQuarterFcRemainder(fcUp.data||[],q,lastActIdx):null;
+      if(mlRem!=null){
+        var mlTotal=qAct+mlRem;
+        lines.push('<div class="rr-kpi-divider"></div>');
+        qLine(q+1,mlTotal,{
+          note:'Most Likely (actual + forward)',
+          forecast:true,
+          chip:rrFmtPctChip(rrPctChange(mlTotal,qAct),'vs QTD actual')
+        });
+      }
+      if(upRem!=null){
+        var upTotal=qAct+upRem;
+        qLine(q+1,upTotal,{
+          note:'Upside (actual + forward)',
+          upside:true,
+          chip:rrFmtPctChip(rrPctChange(upTotal,qAct),'vs QTD actual')
+        });
+      }
+    }
   }
-  if(q3Ml!=null){
-    var mlChip=q3Act!=null?rrFmtPctChip(rrPctChange(q3Ml,q3Act),'vs Q3 actual'):rrFmtPctChip(rrPctChange(q3Ml,q2),'vs Q2');
-    lines.push('<div class="rr-kpi-divider"></div>');
-    lines.push('<div class="rr-kpi-line"><span class="rr-kpi-q">Q3</span><span class="rr-kpi-amt rr-kpi-forecast">'+rrFmtShort(q3Ml,fmt)+unit+'</span><span class="rr-kpi-note">Most Likely</span>'+mlChip+'</div>');
-  }
-  if(q3Up!=null){
-    var upChip=q3Act!=null?rrFmtPctChip(rrPctChange(q3Up,q3Act),'vs Q3 actual'):rrFmtPctChip(rrPctChange(q3Up,q3Ml),'vs ML');
-    lines.push('<div class="rr-kpi-line"><span class="rr-kpi-q">Q3</span><span class="rr-kpi-amt rr-kpi-upside">'+rrFmtShort(q3Up,fmt)+unit+'</span><span class="rr-kpi-note">Upside</span>'+upChip+'</div>');
-  }
-  var tiles=[{kind:'hero',html:'<div class="rr-kpi-label">Quarterly Snapshot</div><div class="rr-kpi-lines">'+lines.join('')+'</div>'}];
+  var tiles=[{kind:'hero',html:'<div class="rr-kpi-label">Quarterly Snapshot · '+['Q1','Q2','Q3','Q4'][calQ]+' live</div><div class="rr-kpi-lines">'+lines.join('')+'</div>'}];
   if(lastActIdx>=0&&lastAct.val!=null){
     var monthLbl=(data.labels&&data.labels[lastActIdx])||('Month '+(lastActIdx+1));
     var prevVal=lastActIdx>0?vals[lastActIdx-1]:null;
