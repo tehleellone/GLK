@@ -1,0 +1,9 @@
+{
+    "error": {
+        "code": "-2147018887, Microsoft.SharePoint.SPFileLockException",
+        "message": {
+            "lang": "en-US",
+            "value": "The file http://sharedspaces:8086/sites/GKA/SiteAssets/Copy of WorkCell Dashboard (22-Aug-2026 GLK).xlsx is locked for exclusive use by ducorp\\cdhbmpgm."
+        }
+    }
+}
