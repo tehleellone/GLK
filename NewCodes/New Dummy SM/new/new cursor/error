@@ -5315,10 +5315,10 @@ function mqMetricShort(){
   return mqProductFamily==='fixed'?'MRC':'Lines';
 }
 function mqInflightTop5Label(){
-  return mqProductFamily==='fixed'?'Top 5 MRC':'Top 5 Gross Adds';
+  return 'Top 5 Opportunities';
 }
 function mqInflightOthersLabel(){
-  return mqProductFamily==='fixed'?'Others MRC':'Others Gross Adds';
+  return mqProductFamily==='fixed'?'Others MRC':'Others Opportunities';
 }
 function mqBidMatchesPf(b){
   var pf=String(b.productFamily||'').trim().toLowerCase();
@@ -7415,7 +7415,7 @@ function mqClassifyBidForBridge(bid,calc){
   for(gi=0;gi<(gp.top||[]).length;gi++){
     g=gp.top[gi];
     if(mqBidInPool(g.bids,bid)){
-      out.placement='Top 5 In-flight Gross'; out.section='inflight';
+      out.placement='Top 5 Opportunities'; out.section='inflight';
       out.detail='#'+(gi+1)+' '+g.name+(g.bids.length>1?' ('+g.bids.length+' bids clubbed)':'');
       out.value=mqBridgeBidValue(bid,calc,false);
       return out;
@@ -7847,7 +7847,7 @@ function mqBuildForecastBreakdownHtml(calc){
   rows.push({sign:'+',label:mqActualsBarLabel(),val:calc.actualsQtd});
   rows.push({sign:'+',label:mqWonBarLabel(calc),val:calc.gross100||0});
   (calc.grossPool&&calc.grossPool.top||[]).forEach(function(p){
-    if(p.value) rows.push({sign:'+',label:'Top 5 Gross · '+p.name,val:p.value});
+    if(p.value) rows.push({sign:'+',label:'Top 5 Opportunities · '+p.name,val:p.value});
   });
   if(calc.grossPool&&calc.grossPool.others) rows.push({sign:'+',label:mqInflightOthersLabel(),val:calc.grossPool.others});
   (calc.churnPool&&calc.churnPool.top||[]).forEach(function(p){
@@ -8602,14 +8602,14 @@ const RR_SERIES_HELP={
   },
   netAddLines:{
     'GLK Net Add Lines':'<strong>Column C — GLK Net Add Lines</strong> · Actual net add lines reported each month (includes negatives e.g. Mar).',
-    'Forecast - Most Likely':'<strong>Column D — Forecast Most Likely</strong> · Forward-looking most-likely forecast from current month onward.',
-    'Forecast - Upside':'<strong>Column E — Forecast Upside</strong> · Upside scenario forecast — higher pipeline assumption.'
+    'Forecast - Most Likely':'<strong>Column D — Forecast Most Likely</strong> · Forward months from Excel, minus live pipeline churn/downgrade (Proposed only).',
+    'Forecast - Upside':'<strong>Column E — Forecast Upside</strong> · Forward months from Excel, minus live pipeline churn/downgrade (Proposed + Opportunity).'
   },
   fixedMrc:{
     '2025 Fixed Net MRC':'<strong>Column B — 2025 Fixed Net MRC</strong> · Prior-year monthly fixed net MRC actuals (reference baseline).',
     '2026 Fixed Net MRC':'<strong>Column C — 2026 Fixed Net MRC</strong> · Current-year fixed net MRC actuals month by month.',
-    'Forecast - Most Likely':'<strong>Column D — Forecast Most Likely</strong> · Forward MRC forecast — most likely case.',
-    'Forecast - Upside':'<strong>Column E — Forecast Upside</strong> · Forward MRC forecast — upside case.'
+    'Forecast - Most Likely':'<strong>Column D — Forecast Most Likely</strong> · Forward MRC from Excel minus pipeline churn (Most Likely rules).',
+    'Forecast - Upside':'<strong>Column E — Forecast Upside</strong> · Forward MRC from Excel minus pipeline churn (Upside rules).'
   }
 };
 const RR_SERIES_STYLE={
@@ -8736,6 +8736,50 @@ function rrSanitizeCascadeForecasts(data,chartId){
       fcUp.data[i]=null;
     }
   });
+  return data;
+}
+function rrTrendPipelineChurn(chartId,isBest){
+  if(typeof ALL_BIDS==='undefined'||!ALL_BIDS||!ALL_BIDS.length) return 0;
+  var savedPf=mqProductFamily;
+  mqProductFamily=chartId==='fixedMrc'?'fixed':'mobile';
+  var report=GLK_QTD_REPORT&&GLK_QTD_REPORT[mqProductFamily];
+  var year=report?report.year:new Date().getFullYear();
+  var quarter=report?report.quarter:Math.floor(new Date().getMonth()/3)+1;
+  var base=mqApplyBridgeBaseFilters();
+  var getChurnVal=mqBidMetric;
+  var activationFn=mqActivationQtdForward;
+  if(mqProductFamily==='fixed'&&mqIsYtdBridge()){
+    getChurnVal=function(b){return mqBidQtgMrc(b,year,quarter);};
+  }
+  var pool=mqInflightChurnPools(base,year,quarter,!!isBest,getChurnVal,activationFn);
+  mqProductFamily=savedPf;
+  return num(pool.total)||0;
+}
+function rrApplyPipelineChurnToForecasts(data,chartId){
+  if(!data||!data.series) return data;
+  if(chartId!=='netAddLines'&&chartId!=='fixedMrc') return data;
+  var actual=data.series.find(function(s){return rrClassifySeries(s.label)==='actual';});
+  var fcMl=data.series.find(function(s){return rrClassifySeries(s.label)==='forecast';});
+  var fcUp=data.series.find(function(s){return rrClassifySeries(s.label)==='forecast-up';});
+  if(!actual) return data;
+  var lastActIdx=rrLastActualOnSeries(actual).idx;
+  var calQ=rrCurrentCalendarQuarter();
+  var start=calQ*3, end=Math.min(start+3,(data.labels||[]).length);
+  var forwardIdx=[];
+  for(var i=start;i<end;i++){
+    if(lastActIdx>=0&&i<=lastActIdx) continue;
+    if((fcMl&&fcMl.data[i]!=null&&!isNaN(fcMl.data[i]))||(fcUp&&fcUp.data[i]!=null&&!isNaN(fcUp.data[i]))) forwardIdx.push(i);
+  }
+  if(!forwardIdx.length) return data;
+  var churnMl=rrTrendPipelineChurn(chartId,false);
+  var churnUp=rrTrendPipelineChurn(chartId,true);
+  var mlShare=forwardIdx.length?churnMl/forwardIdx.length:0;
+  var upShare=forwardIdx.length?churnUp/forwardIdx.length:0;
+  forwardIdx.forEach(function(i){
+    if(fcMl&&fcMl.data[i]!=null&&!isNaN(fcMl.data[i])) fcMl.data[i]=num(fcMl.data[i])+mlShare;
+    if(fcUp&&fcUp.data[i]!=null&&!isNaN(fcUp.data[i])) fcUp.data[i]=num(fcUp.data[i])+upShare;
+  });
+  data._pipelineChurn={ml:churnMl,up:churnUp};
   return data;
 }
 function rrBridgeForecastData(data){
@@ -9252,21 +9296,27 @@ function rrCeoTrendKpis(def,data){
     if(isCurrent){
       var mlRem=fcMl?rrSumQuarterFcRemainder(fcMl.data||[],q,lastActIdx):null;
       var upRem=fcUp?rrSumQuarterFcRemainder(fcUp.data||[],q,lastActIdx):null;
+      var churnMl=rrTrendPipelineChurn(def.id,false);
+      var churnUp=rrTrendPipelineChurn(def.id,true);
       if(mlRem!=null){
-        var mlTotal=qAct+mlRem;
+        var mlTotal=qAct+mlRem+churnMl;
+        var churnNote=churnMl?(' · Churn '+((churnMl>=0?'+':'')+rrFmtShort(churnMl,fmt))):'';
         lines.push('<div class="rr-kpi-divider"></div>');
         qLine(q+1,mlTotal,{
-          note:'Most Likely (actual + forward)',
+          note:'Most Likely (actual + forward − churn)',
           forecast:true,
-          chip:rrFmtPctChip(rrPctChange(mlTotal,qAct),'vs QTD actual')
+          chip:rrFmtPctChip(rrPctChange(mlTotal,qAct),'vs QTD actual'),
+          extra:churnNote
         });
       }
       if(upRem!=null){
-        var upTotal=qAct+upRem;
+        var upTotal=qAct+upRem+churnUp;
+        var churnNoteUp=churnUp?(' · Churn '+((churnUp>=0?'+':'')+rrFmtShort(churnUp,fmt))):'';
         qLine(q+1,upTotal,{
-          note:'Upside (actual + forward)',
+          note:'Upside (actual + forward − churn)',
           upside:true,
-          chip:rrFmtPctChip(rrPctChange(upTotal,qAct),'vs QTD actual')
+          chip:rrFmtPctChip(rrPctChange(upTotal,qAct),'vs QTD actual'),
+          extra:churnNoteUp
         });
       }
     }
@@ -9617,6 +9667,7 @@ function rrChartDataFor(id){
   if(id!=='netAddLines'&&id!=='fixedMrc') return RR_PARSED[id];
   var copy=rrCloneChartData(RR_PARSED[id]);
   rrSanitizeCascadeForecasts(copy,id);
+  rrApplyPipelineChurnToForecasts(copy,id);
   return copy;
 }
 function rrRenderLineExplain(def,data){
@@ -9648,8 +9699,13 @@ function rrRenderActiveChart(){
   rrRenderLineExplain(def,raw);
   rrRenderKpis(def,raw);
   if(noteEl){
+    var churnNote='';
+    if(raw&&raw._pipelineChurn&&(def.id==='netAddLines'||def.id==='fixedMrc')){
+      var pc=raw._pipelineChurn;
+      churnNote=' · Pipeline churn applied to projection: ML '+rrFmtShort(pc.ml,def.valueFmt)+(pc.up!==pc.ml?' · Upside '+rrFmtShort(pc.up,def.valueFmt):'');
+    }
     noteEl.textContent=raw
-      ?('Excel '+raw.sheetRef+' · Header row '+raw.headerRow+' · Point labels = exact column values')
+      ?('Excel '+raw.sheetRef+' · Header row '+raw.headerRow+' · Point labels = exact column values'+churnNote)
       :('Upload Copy of dummy.xlsx to load all 3 trend sheets.');
   }
   destroyChart('revenueRec');
