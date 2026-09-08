@@ -237,39 +237,45 @@ body[data-theme="dark"] .status-dot,body[data-theme="duralux-dark"] .status-dot{
 .rr-chart-tab{padding:.55rem 1.15rem;border-radius:10px;font-size:.88rem;font-weight:800;border:1px solid var(--border);background:var(--bg-secondary);color:var(--t2);cursor:pointer;transition:all .15s;line-height:1.25}
 .rr-chart-tab:hover{color:var(--t1);border-color:var(--border-s);background:var(--bg-hover)}
 .rr-chart-tab.active{background:var(--nab);border-color:var(--nab2);color:var(--acc);box-shadow:0 2px 12px rgba(168,85,247,.22)}
-.rr-kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:.5rem;margin-bottom:.85rem}
-.rr-kpi-row-ceo{grid-template-columns:1fr minmax(220px,300px);align-items:stretch}
-@media(max-width:860px){.rr-kpi-row-ceo{grid-template-columns:1fr}}
-.rr-kpi-label{font-size:.62rem;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);font-weight:700}
-.rr-kpi-sub{font-size:.62rem;color:var(--t3);margin-top:.15rem;font-weight:600}
-.rr-kpi-hero .rr-kpi-label{font-size:.68rem;margin-bottom:.1rem}
-.rr-kpi-lines{display:flex;flex-direction:column;gap:.42rem;margin-top:.45rem}
-.rr-kpi-line{display:flex;align-items:baseline;flex-wrap:wrap;gap:.35rem .5rem;line-height:1.35}
-.rr-kpi-q{font-weight:800;color:var(--t1);font-size:.78rem;min-width:1.75rem}
-.rr-kpi-amt{font-weight:900;font-size:1.02rem;color:var(--acc);letter-spacing:-.01em}
-.rr-kpi-amt-sm{font-weight:800;font-size:.88rem;color:var(--t1)}
-.rr-kpi-note{font-size:.68rem;font-weight:600;color:var(--t3)}
-.rr-kpi-chip{font-size:.66rem;font-weight:700;padding:.14rem .42rem;border-radius:5px;white-space:nowrap}
+.rr-kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:.4rem;margin-bottom:.55rem}
+.rr-kpi-row-ceo{grid-template-columns:minmax(0,1fr) minmax(0,1.35fr) minmax(160px,200px);align-items:start;gap:.4rem}
+@media(max-width:960px){.rr-kpi-row-ceo{grid-template-columns:1fr 1fr}}
+@media(max-width:640px){.rr-kpi-row-ceo{grid-template-columns:1fr}}
+.rr-kpi-label{font-size:.58rem;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);font-weight:700}
+.rr-kpi-sub{font-size:.58rem;color:var(--t3);margin-top:.1rem;font-weight:600;line-height:1.35}
+.rr-kpi-hero .rr-kpi-label{font-size:.62rem;margin-bottom:.05rem}
+.rr-kpi-lines{display:flex;flex-direction:column;gap:.28rem;margin-top:.3rem}
+.rr-kpi-line{display:flex;align-items:baseline;flex-wrap:wrap;gap:.25rem .4rem;line-height:1.25}
+.rr-kpi-q{font-weight:800;color:var(--t1);font-size:.72rem;min-width:1.5rem}
+.rr-kpi-amt{font-weight:900;font-size:.92rem;color:var(--acc);letter-spacing:-.01em}
+.rr-kpi-amt-sm{font-weight:800;font-size:.82rem;color:var(--t1)}
+.rr-kpi-note{font-size:.62rem;font-weight:600;color:var(--t3)}
+.rr-kpi-chip{font-size:.6rem;font-weight:700;padding:.1rem .34rem;border-radius:4px;white-space:nowrap}
 .rr-kpi-up{background:rgba(34,197,94,.13);color:#16a34a}
 .rr-kpi-down{background:rgba(239,68,68,.13);color:#dc2626}
 .rr-kpi-neu{background:rgba(100,116,139,.12);color:var(--t2)}
-.rr-kpi-curr{font-size:.58rem;font-weight:800;padding:.12rem .38rem;border-radius:4px;text-transform:uppercase;letter-spacing:.04em;background:rgba(168,85,247,.14);color:var(--acc);vertical-align:middle}
-.rr-kpi-compact .rr-kpi-val{font-size:1.35rem;margin-top:.25rem}
-.rr-kpi-compact .rr-kpi-sub{margin-top:.35rem;line-height:1.45}
-.rr-kpi-divider{height:1px;background:var(--border);margin:.35rem 0 .15rem;opacity:.7}
-.rr-kpi-proj{margin-top:.55rem;padding:.6rem .7rem;border-radius:10px;border:2px solid var(--border-s)}
-.rr-kpi-proj-ml{border-color:#7c3aed;background:linear-gradient(135deg,rgba(124,58,237,.12),rgba(124,58,237,.04))}
-.rr-kpi-proj-up{border-color:#059669;background:linear-gradient(135deg,rgba(5,150,105,.12),rgba(5,150,105,.04))}
-.rr-kpi-proj-title{font-size:.72rem;font-weight:900;text-transform:uppercase;letter-spacing:.06em;margin-bottom:.4rem}
+.rr-kpi-curr{font-size:.54rem;font-weight:800;padding:.08rem .3rem;border-radius:4px;text-transform:uppercase;letter-spacing:.04em;background:rgba(168,85,247,.14);color:var(--acc);vertical-align:middle}
+.rr-kpi-compact .rr-kpi-val{font-size:1.05rem;margin-top:.15rem}
+.rr-kpi-compact .rr-kpi-sub{margin-top:.2rem;line-height:1.35}
+.rr-kpi-divider{height:1px;background:var(--border);margin:.25rem 0 .1rem;opacity:.7}
+.rr-kpi-proj-grid{display:grid;grid-template-columns:1fr 1fr;gap:.35rem;height:100%}
+@media(max-width:640px){.rr-kpi-proj-grid{grid-template-columns:1fr}}
+.rr-kpi-proj-wrap{padding:.45rem .55rem;border-radius:10px;background:linear-gradient(135deg,var(--bg-card) 0%,var(--bg-secondary) 100%);border:1px solid var(--border-s);border-left:4px solid var(--acc);box-shadow:var(--cs),0 2px 8px rgba(0,0,0,.04)}
+.rr-kpi-proj{margin-top:0;padding:.32rem .4rem;border-radius:7px;border:1.5px solid var(--border-s)}
+.rr-kpi-proj-ml{border-color:#7c3aed;background:linear-gradient(135deg,rgba(124,58,237,.1),rgba(124,58,237,.03))}
+.rr-kpi-proj-up{border-color:#16a34a;background:linear-gradient(135deg,rgba(22,163,74,.1),rgba(22,163,74,.03))}
+.rr-kpi-proj-title{font-size:.58rem;font-weight:900;text-transform:uppercase;letter-spacing:.05em;margin-bottom:.18rem}
 .rr-kpi-proj-ml .rr-kpi-proj-title{color:#7c3aed}
-.rr-kpi-proj-up .rr-kpi-proj-title{color:#059669}
-.rr-kpi-calc-row{display:flex;justify-content:space-between;align-items:baseline;gap:.75rem;font-size:.76rem;line-height:1.45;padding:.1rem 0}
+.rr-kpi-proj-up .rr-kpi-proj-title{color:#16a34a}
+.rr-kpi-proj-hdr{font-size:.58rem;font-weight:800;color:var(--t2);margin:.15rem 0 .08rem}
+.rr-kpi-calc-row{display:flex;justify-content:space-between;align-items:baseline;gap:.5rem;font-size:.64rem;line-height:1.3;padding:.02rem 0}
 .rr-kpi-calc-row span:first-child{color:var(--t2);font-weight:600}
 .rr-kpi-calc-row span:last-child{font-weight:800;color:var(--t1)}
 .rr-kpi-calc-minus span:last-child{color:#dc2626}
-.rr-kpi-calc-eq{display:flex;justify-content:space-between;align-items:baseline;margin-top:.35rem;padding-top:.4rem;border-top:2px solid rgba(0,0,0,.08);font-size:.88rem;font-weight:900}
-.rr-kpi-proj-ml .rr-kpi-calc-eq span:last-child{color:#7c3aed;font-size:1.05rem}
-.rr-kpi-proj-up .rr-kpi-calc-eq span:last-child{color:#059669;font-size:1.05rem}
+.rr-kpi-calc-eq{display:flex;justify-content:space-between;align-items:baseline;margin-top:.15rem;padding-top:.2rem;border-top:1.5px solid rgba(0,0,0,.07);font-size:.72rem;font-weight:900}
+.rr-kpi-proj-ml .rr-kpi-calc-eq span:last-child{color:#7c3aed;font-size:.82rem}
+.rr-kpi-proj-up .rr-kpi-calc-eq span:last-child{color:#16a34a;font-size:.82rem}
+.rr-kpi-proj-foot{font-size:.56rem;color:var(--t3);margin-top:.15rem;line-height:1.25}
 .rr-legend-row{display:flex;flex-wrap:wrap;gap:.5rem .75rem;margin-top:.55rem;padding:.55rem .65rem;background:var(--bg-secondary);border-radius:9px;border:1px solid var(--border)}
 .rr-legend-chip{display:inline-flex;align-items:center;gap:.35rem;font-size:.72rem;font-weight:700;color:var(--t2)}
 .rr-legend-dot{width:12px;height:12px;border-radius:50%;flex-shrink:0}
@@ -278,8 +284,8 @@ body[data-theme="dark"] .status-dot,body[data-theme="duralux-dark"] .status-dot{
 #rrChartWrap{position:relative;background:linear-gradient(145deg,rgba(99,102,241,.06) 0%,var(--bg-card) 35%,var(--bg-secondary) 100%);border-radius:14px;padding:.75rem .65rem .35rem;border:1px solid var(--border-s);box-shadow:var(--cs),inset 0 1px 0 rgba(255,255,255,.06)}
 #rrChartWrap::before{content:'';position:absolute;inset:0;border-radius:14px;background:radial-gradient(ellipse 80% 50% at 50% 0%,rgba(168,85,247,.08),transparent 70%);pointer-events:none}
 #rrChartWrap .chart-container{height:560px;position:relative;z-index:1}
-.rr-kpi{padding:.7rem .85rem;border-radius:12px;background:linear-gradient(135deg,var(--bg-card) 0%,var(--bg-secondary) 100%);border:1px solid var(--border-s);border-left:4px solid var(--acc);box-shadow:var(--cs),0 4px 14px rgba(0,0,0,.06)}
-.rr-kpi-val{font-size:1.15rem;font-weight:900;color:var(--acc);margin-top:.2rem;line-height:1.2;letter-spacing:-.01em}
+.rr-kpi{padding:.45rem .55rem;border-radius:10px;background:linear-gradient(135deg,var(--bg-card) 0%,var(--bg-secondary) 100%);border:1px solid var(--border-s);border-left:4px solid var(--acc);box-shadow:var(--cs),0 2px 8px rgba(0,0,0,.04)}
+.rr-kpi-val{font-size:1rem;font-weight:900;color:var(--acc);margin-top:.12rem;line-height:1.15;letter-spacing:-.01em}
 .rr-chart-title{font-size:1.08rem;font-weight:800;color:var(--t1);margin-bottom:.5rem;display:flex;align-items:center;gap:.4rem;line-height:1.3}
 .rr-chart-title svg{width:18px;height:18px;stroke:var(--acc);fill:none;stroke-width:2;flex-shrink:0}
 .rr-chart-subtitle{font-size:.78rem;font-weight:600;color:var(--t3);margin-bottom:.55rem;line-height:1.45}
@@ -8670,22 +8676,31 @@ const RR_SERIES_STYLE={
   '2025 Fixed Net MRC':{color:'#0284c7',dash:[8,4],fill:false,kind:'prior',lw:3.5,pt:6},
   '2026 Fixed Net MRC':{color:'#ea580c',dash:[],fill:true,kind:'actual',lw:4,pt:7}
 };
+function rrSeriesKindFor(s,chartId){
+  if((chartId==='fixedMrc'||chartId==='netAddLines')&&s&&s.col){
+    if(s.col==='D') return 'forecast';
+    if(s.col==='E') return 'forecast-up';
+    if(s.col==='C') return 'actual';
+    if(s.col==='B') return chartId==='fixedMrc'?'prior':'actual';
+  }
+  return rrClassifySeries(s&&s.label);
+}
+function rrKindLineColor(kind,chartId){
+  if(kind==='forecast') return '#7c3aed';
+  if(kind==='forecast-up') return '#16a34a';
+  if(kind==='prior') return chartId==='fixedMrc'?'#0284c7':'#6366f1';
+  if(kind==='actual') return chartId==='fixedMrc'?'#ea580c':(chartId==='netAddLines'?'#2563eb':'#ea580c');
+  return '#6366f1';
+}
 function rrSeriesStyleForChart(label,idx,chartId,col){
-  var kind=rrClassifySeries(label);
+  var kind=rrSeriesKindFor({label:label,col:col},chartId);
   if(chartId==='fixedMrc'){
-    if(col==='D') kind='forecast';
-    else if(col==='E') kind='forecast-up';
-    else if(col==='B') kind='prior';
-    else if(col==='C') kind='actual';
     if(kind==='prior') return {color:'#0284c7',dash:[8,4],fill:false,kind:'prior',lw:3.5,pt:6};
     if(kind==='actual') return {color:'#ea580c',dash:[],fill:true,kind:'actual',lw:4,pt:7};
     if(kind==='forecast') return {color:'#7c3aed',dash:[10,5],fill:false,kind:'forecast',lw:3,pt:5};
     if(kind==='forecast-up') return {color:'#16a34a',dash:[10,5],fill:false,kind:'forecast-up',lw:3,pt:5};
   }
   if(chartId==='netAddLines'){
-    if(col==='D') kind='forecast';
-    else if(col==='E') kind='forecast-up';
-    else if(col==='C') kind='actual';
     if(kind==='actual') return Object.assign({},rrSeriesStyle(label,idx),{color:'#2563eb',lw:4,pt:7,kind:'actual'});
     if(kind==='forecast') return {color:'#7c3aed',dash:[10,5],fill:false,kind:'forecast',lw:3,pt:5};
     if(kind==='forecast-up') return {color:'#16a34a',dash:[10,5],fill:false,kind:'forecast-up',lw:3,pt:5};
@@ -8957,6 +8972,33 @@ function rrLabelKindOffset(kind){
   if(kind==='forecast-up') return 52;
   return -34;
 }
+function rrLabelPreferSide(chartId,fmt,value){
+  return chartId==='fixedMrc'&&fmt==='currency'&&value!=null&&!isNaN(value)&&Math.abs(num(value))<1e6;
+}
+function rrLabelSlotCandidates(x,y,tw,th,kind,sidePreferred){
+  if(sidePreferred){
+    var pad=10;
+    return [
+      {bx:x+pad,by:y-th/2},
+      {bx:x-tw-pad,by:y-th/2},
+      {bx:x-tw/2,by:y-th-pad},
+      {bx:x-tw/2,by:y+pad}
+    ];
+  }
+  var baseDy=rrLabelKindOffset(kind);
+  var slots=[
+    {dx:0,dy:baseDy},
+    {dx:0,dy:-baseDy},
+    {dx:0,dy:baseDy+(baseDy>0?16:-16)},
+    {dx:-38,dy:baseDy},
+    {dx:38,dy:baseDy},
+    {dx:-38,dy:-baseDy},
+    {dx:38,dy:-baseDy}
+  ];
+  return slots.map(function(s){
+    return {bx:x-tw/2+s.dx,by:y+s.dy-(s.dy<0?th:0)};
+  });
+}
 function rrRectsOverlap(a,b){
   return !(a.x+a.w<b.x||b.x+b.w<a.x||a.y+a.h<b.y||b.y+b.h<a.y);
 }
@@ -8990,7 +9032,9 @@ function rrDataLabelPlugin(metaList,fmt,chartId,projIdx,lastActIdx,projByMonth,t
     var placed=[];
     var candidates=[];
     chart.data.datasets.forEach(function(ds,di){
-      var kind=(metaList[di]&&metaList[di].kind)||'actual';
+      var meta=metaList[di]||{};
+      var kind=meta.kind||'actual';
+      var labelColor=meta.color||rrKindLineColor(kind,chartId)||ds._rrColor||ds.borderColor;
       var m=chart.getDatasetMeta(di);
       if(!m||m.hidden) return;
       m.data.forEach(function(pt,i){
@@ -9000,7 +9044,7 @@ function rrDataLabelPlugin(metaList,fmt,chartId,projIdx,lastActIdx,projByMonth,t
         var lbl=rrFmtPointLabel(v,fmt,chartId);
         if(!lbl) return;
         if(projByMonth[i]&&(kind==='forecast'||kind==='forecast-up')&&!projByMonth[i].excelOnly) lbl+=' net';
-        candidates.push({di:di,i:i,pt:pt,v:v,ds:ds,kind:kind,lbl:lbl});
+        candidates.push({di:di,i:i,pt:pt,v:v,kind:kind,lbl:lbl,color:labelColor});
       });
     });
     var pri={prior:0,actual:1,forecast:2,'forecast-up':3};
@@ -9010,28 +9054,19 @@ function rrDataLabelPlugin(metaList,fmt,chartId,projIdx,lastActIdx,projByMonth,t
     });
     var seenKey={};
     candidates.forEach(function(c){
-      var dedupeKey=c.i+'|'+c.lbl+'|'+Math.round(c.pt.x)+'|'+Math.round(c.pt.y);
+      var dedupeKey=c.i+'|'+c.di+'|'+c.lbl;
       if(seenKey[dedupeKey]) return;
       seenKey[dedupeKey]=1;
       var x=c.pt.x, y=c.pt.y;
-      var baseDy=rrLabelKindOffset(c.kind);
-        ctx.font='800 12px Inter';
-        var tw=ctx.measureText(c.lbl).width+14;
-        var th=24;
-      var slots=[
-        {dx:0,dy:baseDy},
-        {dx:0,dy:-baseDy},
-        {dx:0,dy:baseDy+(baseDy>0?18:-18)},
-        {dx:-42,dy:baseDy},
-        {dx:42,dy:baseDy},
-        {dx:-42,dy:-baseDy},
-        {dx:42,dy:-baseDy}
-      ];
+      var sidePreferred=rrLabelPreferSide(chartId,fmt,c.v);
+      ctx.font='800 11px Inter';
+      var tw=ctx.measureText(c.lbl).width+12;
+      var th=20;
+      var slotRects=rrLabelSlotCandidates(x,y,tw,th,c.kind,sidePreferred);
       var placedOk=false, bx, by;
-      for(var si=0;si<slots.length;si++){
-        var dy=slots[si].dy, dx=slots[si].dx;
-        bx=x-tw/2+dx;
-        by=y+dy-(baseDy<0?th:0);
+      for(var si=0;si<slotRects.length;si++){
+        bx=slotRects[si].bx;
+        by=slotRects[si].by;
         if(by<area.top+4) by=area.top+4;
         if(by+th>area.bottom-4) by=area.bottom-th-4;
         if(bx<area.left+2) bx=area.left+2;
@@ -9044,21 +9079,29 @@ function rrDataLabelPlugin(metaList,fmt,chartId,projIdx,lastActIdx,projByMonth,t
         if(!hit){ placed.push(rect); placedOk=true; break; }
       }
       if(!placedOk){
-        bx=x-tw/2;
-        by=baseDy<0?y-28-th:y+28;
+        if(sidePreferred){
+          bx=x+10;
+          by=Math.max(area.top+4,Math.min(y-th/2,area.bottom-th-4));
+        }else{
+          var baseDy=rrLabelKindOffset(c.kind);
+          bx=x-tw/2;
+          by=baseDy<0?y-24-th:y+24;
+        }
+        if(bx+tw>area.right-2) bx=area.right-tw-2;
+        if(bx<area.left+2) bx=area.left+2;
         placed.push({x:bx,y:by,w:tw,h:th});
       }
       ctx.save();
-      ctx.font='800 12px Inter';
+      ctx.font='800 11px Inter';
       ctx.fillStyle=isDark?'rgba(8,6,20,.97)':'rgba(255,255,255,.99)';
-      ctx.strokeStyle=c.ds.borderColor;
+      ctx.strokeStyle=c.color;
       ctx.lineWidth=2;
       ctx.beginPath();
-      if(ctx.roundRect) ctx.roundRect(bx,by,tw,th,5);
+      if(ctx.roundRect) ctx.roundRect(bx,by,tw,th,4);
       else ctx.rect(bx,by,tw,th);
       ctx.fill();
       ctx.stroke();
-      ctx.fillStyle=c.ds.borderColor;
+      ctx.fillStyle=c.color;
       ctx.textAlign='center';
       ctx.textBaseline='middle';
       ctx.fillText(c.lbl,bx+tw/2,by+th/2);
@@ -9459,18 +9502,18 @@ function rrKpiFixedExcelProj(title,cls,monthLbl,qLbl,parts,addonKey,qAddonKey,to
   var qTotal=parts[totalKey];
   var h='<div class="rr-kpi-proj rr-kpi-proj-'+cls+'"><div class="rr-kpi-proj-title">'+title+'</div>';
   if(monthTotal!=null){
-    h+='<div style="font-size:.68rem;font-weight:800;color:var(--t2);margin:.3rem 0 .15rem;">This month'+(monthLbl?' · '+monthLbl:'')+'</div>';
-    h+=rrKpiCalcRow('Actual (Col C)',parts.curAct,fmt,'plain');
-    h+=rrKpiCalcRow(colLabel,addon,fmt,'plus');
-    h+='<div class="rr-kpi-calc-eq"><span>= Month projection</span><span>'+rrFmtShort(monthTotal,fmt)+unit+'</span></div>';
+    h+='<div class="rr-kpi-proj-hdr">Month'+(monthLbl?' · '+monthLbl:'')+'</div>';
+    h+=rrKpiCalcRow('Col C',parts.curAct,fmt,'plain');
+    h+=rrKpiCalcRow('Col '+(cls==='ml'?'D':'E'),addon,fmt,'plus');
+    h+='<div class="rr-kpi-calc-eq"><span>Month</span><span>'+rrFmtShort(monthTotal,fmt)+unit+'</span></div>';
   }
   if(qTotal!=null){
-    h+='<div style="font-size:.68rem;font-weight:800;color:var(--t2);margin:.5rem 0 .15rem;">This quarter · '+qLbl+'</div>';
-    h+=rrKpiCalcRow('Actual QTD (Col C)',parts.qActFull,fmt,'plain');
-    h+=rrKpiCalcRow(colLabel+' (in quarter)',qAddon,fmt,'plus');
-    h+='<div class="rr-kpi-calc-eq"><span>= Quarter projection</span><span>'+rrFmtShort(qTotal,fmt)+unit+'</span></div>';
+    h+='<div class="rr-kpi-proj-hdr">Quarter · '+qLbl+'</div>';
+    h+=rrKpiCalcRow('QTD C',parts.qActFull,fmt,'plain');
+    h+=rrKpiCalcRow('Col '+(cls==='ml'?'D':'E'),qAddon,fmt,'plus');
+    h+='<div class="rr-kpi-calc-eq"><span>Quarter</span><span>'+rrFmtShort(qTotal,fmt)+unit+'</span></div>';
   }
-  h+='<div style="font-size:.64rem;color:var(--t3);margin-top:.35rem;">Excel only · Col C actual + Col D/E</div></div>';
+  h+='<div class="rr-kpi-proj-foot">Excel · C + '+(cls==='ml'?'D':'E')+'</div></div>';
   return h;
 }
 function rrKpiProjBlock(title,cls,parts,fmt){
@@ -9522,14 +9565,17 @@ function rrCeoTrendKpis(def,data){
     lines.push('<div class="rr-kpi-line"><span class="rr-kpi-q">'+qLbl+'</span><span class="rr-kpi-amt">'+rrFmtShort(qAct,fmt)+unit+'</span><span class="rr-kpi-note">'+qNote+'</span>'+chip+(yoyExtra?'<span class="rr-kpi-note">'+yoyExtra+'</span>':'')+'</div>');
     prevActual=qAct;
   }
+  var projTile=null;
   if(parts&&parts.excelOnly&&(def.id==='fixedMrc'||def.id==='netAddLines')){
-    var qLbl=parts.qLabel||('Q'+(parts.calQ+1));
+    var qLblProj=parts.qLabel||('Q'+(parts.calQ+1));
+    var projHtml='';
     if(parts.monthMl!=null||parts.quarterMl!=null){
-      lines.push(rrKpiFixedExcelProj('Most Likely','ml',parts.monthLbl,qLbl,parts,'mlAddon','qMlAddon','quarterMl','Most Likely (Col D)',fmt));
+      projHtml+=rrKpiFixedExcelProj('Most Likely','ml',parts.monthLbl,qLblProj,parts,'mlAddon','qMlAddon','quarterMl','Most Likely (Col D)',fmt);
     }
     if(parts.monthUp!=null||parts.quarterUp!=null){
-      lines.push(rrKpiFixedExcelProj('Upside','up',parts.monthLbl,qLbl,parts,'upAddon','qUpAddon','quarterUp','Upside (Col E)',fmt));
+      projHtml+=rrKpiFixedExcelProj('Upside','up',parts.monthLbl,qLblProj,parts,'upAddon','qUpAddon','quarterUp','Upside (Col E)',fmt);
     }
+    if(projHtml) projTile={kind:'proj-grid',html:'<div class="rr-kpi-proj-grid">'+projHtml+'</div>'};
   }else if(parts&&parts.qAct!=null){
     if(parts.totalMl!=null){
       lines.push(rrKpiProjBlock('Most Likely Projection','ml',{qAct:parts.qAct,forward:parts.forwardMl,churn:parts.churnMl,total:parts.totalMl,actLabel:parts.actLabel,fwdLabel:parts.fwdLabelMl||parts.fwdLabel,excelOnly:parts.excelOnly},fmt));
@@ -9539,6 +9585,7 @@ function rrCeoTrendKpis(def,data){
     }
   }
   var tiles=[{kind:'hero',html:'<div class="rr-kpi-label">Quarterly Snapshot · '+['Q1','Q2','Q3','Q4'][calQ]+' live</div><div class="rr-kpi-lines">'+lines.join('')+'</div>'}];
+  if(projTile) tiles.push(projTile);
   if(lastActIdx>=0&&lastAct.val!=null){
     var monthLbl=(data.labels&&data.labels[lastActIdx])||('Month '+(lastActIdx+1));
     var prevVal=lastActIdx>0?vals[lastActIdx-1]:null;
@@ -9629,6 +9676,7 @@ function rrRenderKpis(def,data){
   row.className='rr-kpi-row'+(isCeo?' rr-kpi-row-ceo':'');
   row.innerHTML=kpis.map(function(k){
     if(k.kind==='hero') return '<div class="rr-kpi rr-kpi-hero">'+k.html+'</div>';
+    if(k.kind==='proj-grid') return '<div class="rr-kpi-proj-wrap">'+k.html+'</div>';
     if(k.kind==='compact') return '<div class="rr-kpi rr-kpi-compact">'+k.html+'</div>';
     return '<div class="rr-kpi"><div class="rr-kpi-label">'+k.label+'</div><div class="rr-kpi-val">'+k.val+'</div>'+(k.sub?'<div class="rr-kpi-sub">'+k.sub+'</div>':'')+'</div>';
   }).join('');
@@ -9966,8 +10014,9 @@ function rrRenderActiveChart(){
   };
   var datasets=(data.series||[]).map(function(s,i){
     var st=rrSeriesStyleForChart(s.label,i,chartId,s.col);
+    var kind=rrSeriesKindFor(s,chartId);
     var isFc=st.kind==='forecast'||st.kind==='forecast-up';
-    dsMeta.push({kind:st.kind,fmt:s.fmt,label:s.label});
+    dsMeta.push({kind:kind,fmt:s.fmt,label:s.label,color:st.color,col:s.col});
     var fillTop=(colorFills[s.label]||['rgba(99,102,241,.2)','rgba(99,102,241,.01)'])[0];
     var fillBot=(colorFills[s.label]||['rgba(99,102,241,.2)','rgba(99,102,241,.01)'])[1];
     return {
