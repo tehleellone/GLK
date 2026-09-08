@@ -8651,8 +8651,8 @@ const RR_SERIES_HELP={
   },
   netAddLines:{
     'GLK Net Add Lines':'<strong>Column C — GLK Net Add Lines</strong> · Actual net add lines reported each month (includes negatives e.g. Mar).',
-    'Forecast - Most Likely':'<strong>Column D — Forecast Most Likely</strong> · Forward months from Excel, minus live pipeline churn/downgrade (Proposed only).',
-    'Forecast - Upside':'<strong>Column E — Forecast Upside</strong> · Forward months from Excel, minus live pipeline churn/downgrade (Proposed + Opportunity).'
+    'Forecast - Most Likely':'<strong>Column D — Forecast Most Likely</strong> · Excel add-on for current/forward month. Chart = Col C actual + Col D (already calculated in Excel).',
+    'Forecast - Upside':'<strong>Column E — Forecast Upside</strong> · Excel add-on for current/forward month. Chart = Col C actual + Col E (already calculated in Excel).'
   },
   fixedMrc:{
     '2025 Fixed Net MRC':'<strong>Column B — 2025 Fixed Net MRC</strong> · Prior-year monthly fixed net MRC actuals (reference baseline).',
@@ -8683,9 +8683,12 @@ function rrSeriesStyleForChart(label,idx,chartId,col){
     if(kind==='forecast-up') return {color:'#16a34a',dash:[10,5],fill:false,kind:'forecast-up',lw:3,pt:5};
   }
   if(chartId==='netAddLines'){
+    if(col==='D') kind='forecast';
+    else if(col==='E') kind='forecast-up';
+    else if(col==='C') kind='actual';
     if(kind==='actual') return Object.assign({},rrSeriesStyle(label,idx),{color:'#2563eb',lw:4,pt:7,kind:'actual'});
-    if(kind==='forecast') return Object.assign({},rrSeriesStyle(label,idx),{color:'#d97706',dash:[10,5],lw:3,pt:5,kind:'forecast'});
-    if(kind==='forecast-up') return Object.assign({},rrSeriesStyle(label,idx),{color:'#059669',dash:[10,5],lw:3,pt:5,kind:'forecast-up'});
+    if(kind==='forecast') return {color:'#7c3aed',dash:[10,5],fill:false,kind:'forecast',lw:3,pt:5};
+    if(kind==='forecast-up') return {color:'#16a34a',dash:[10,5],fill:false,kind:'forecast-up',lw:3,pt:5};
   }
   return rrSeriesStyle(label,idx);
 }
@@ -8817,10 +8820,19 @@ function rrTrendPipelineChurn(chartId,isBest){
   mqProductFamily=savedPf;
   return num(pool.total)||0;
 }
-function rrApplyFixedMrcExcelProjections(data){
+function rrTrendExcelSeries(data,chartId){
+  var series=(data&&data.series)||[];
+  if(chartId==='fixedMrc') return rrFixedMrcSeries(data);
+  return {
+    actual:series.find(function(s){return s.col==='C';})||series.find(function(s){return rrClassifySeries(s.label)==='actual';}),
+    fcMl:series.find(function(s){return s.col==='D';})||series.find(function(s){return rrClassifySeries(s.label)==='forecast';}),
+    fcUp:series.find(function(s){return s.col==='E';})||series.find(function(s){return rrClassifySeries(s.label)==='forecast-up';})
+  };
+}
+function rrApplyTrendExcelProjections(data,chartId){
   if(!data||!data.series) return data;
-  var fm=rrFixedMrcSeries(data);
-  var actual=fm.actual, fcMl=fm.fcMl, fcUp=fm.fcUp;
+  var ts=rrTrendExcelSeries(data,chartId);
+  var actual=ts.actual, fcMl=ts.fcMl, fcUp=ts.fcUp;
   if(!actual) return data;
   var lastActIdx=rrLastActualOnSeries(actual).idx;
   if(lastActIdx<0) return data;
@@ -8861,69 +8873,8 @@ function rrApplyFixedMrcExcelProjections(data){
   data._excelProjectionsOnly=true;
   return data;
 }
-function rrApplyPipelineChurnToForecasts(data,chartId){
-  if(!data||!data.series) return data;
-  if(chartId!=='netAddLines') return data;
-  var actual=data.series.find(function(s){return rrClassifySeries(s.label)==='actual';});
-  var fcMl=data.series.find(function(s){return rrClassifySeries(s.label)==='forecast';});
-  var fcUp=data.series.find(function(s){return rrClassifySeries(s.label)==='forecast-up';});
-  if(!actual) return data;
-  var lastActIdx=rrLastActualOnSeries(actual).idx;
-  var calQ=rrCurrentCalendarQuarter();
-  var start=calQ*3, end=Math.min(start+3,(data.labels||[]).length);
-  var forwardIdx=[];
-  for(var i=start;i<end;i++){
-    if(lastActIdx>=0&&i<lastActIdx) continue;
-    var hasFc=(fcMl&&fcMl.data[i]!=null&&!isNaN(fcMl.data[i]))||(fcUp&&fcUp.data[i]!=null&&!isNaN(fcUp.data[i]));
-    if(!hasFc) continue;
-    forwardIdx.push(i);
-  }
-  if(!forwardIdx.length) return data;
-  var churnMl=rrTrendPipelineChurn(chartId,false);
-  var churnUp=rrTrendPipelineChurn(chartId,true);
-  var mlShare=forwardIdx.length?churnMl/forwardIdx.length:0;
-  var upShare=forwardIdx.length?churnUp/forwardIdx.length:0;
-  var hasCurProj=lastActIdx>=0&&actual.data[lastActIdx]!=null&&!isNaN(actual.data[lastActIdx])&&(
-    (fcMl&&fcMl.data[lastActIdx]!=null&&!isNaN(fcMl.data[lastActIdx]))||
-    (fcUp&&fcUp.data[lastActIdx]!=null&&!isNaN(fcUp.data[lastActIdx]))
-  );
-  data._projByMonth={};
-  forwardIdx.forEach(function(i){
-    var curAct=(actual.data[i]!=null&&!isNaN(actual.data[i]))?num(actual.data[i]):null;
-    var rawMl=fcMl&&fcMl.data[i]!=null&&!isNaN(fcMl.data[i])?num(fcMl.data[i]):null;
-    var rawUp=fcUp&&fcUp.data[i]!=null&&!isNaN(fcUp.data[i])?num(fcUp.data[i]):null;
-    var baseMl=rawMl, baseUp=rawUp;
-    if(i===lastActIdx&&curAct!=null){
-      if(rawMl!=null) baseMl=curAct+rawMl;
-      if(rawUp!=null) baseUp=curAct+rawUp;
-    }
-    var netMl=baseMl!=null?baseMl+mlShare:null;
-    var netUp=baseUp!=null?baseUp+upShare:null;
-    if(netMl!=null&&netMl<0){ netMl=null; if(fcMl) fcMl.data[i]=null; }
-    else if(fcMl&&netMl!=null) fcMl.data[i]=netMl;
-    else if(fcMl&&rawMl==null) fcMl.data[i]=null;
-    if(netUp!=null&&netUp<0){ netUp=null; if(fcUp) fcUp.data[i]=null; }
-    else if(fcUp&&netUp!=null) fcUp.data[i]=netUp;
-    else if(fcUp&&rawUp==null) fcUp.data[i]=null;
-    data._projByMonth[i]={
-      curAct:i===lastActIdx?curAct:null,
-      forwardMl:rawMl,additiveMl:baseMl,churnMl:mlShare,netMl:netMl,
-      forwardUp:rawUp,additiveUp:baseUp,churnUp:upShare,netUp:netUp,
-      hidden:(netMl==null&&rawMl!=null)||(netUp==null&&rawUp!=null)
-    };
-  });
-  if(hasCurProj){
-    data._truncateActualIdx=lastActIdx;
-    data._origActualAtProj=num(actual.data[lastActIdx]);
-    actual.data[lastActIdx]=null;
-  }
-  data._pipelineChurn={ml:churnMl,up:churnUp,forwardMl:0,forwardUp:0};
-  forwardIdx.forEach(function(i){
-    var p=data._projByMonth[i];
-    if(p&&p.forwardMl!=null) data._pipelineChurn.forwardMl+=p.forwardMl;
-    if(p&&p.forwardUp!=null) data._pipelineChurn.forwardUp+=p.forwardUp;
-  });
-  return data;
+function rrApplyFixedMrcExcelProjections(data){
+  return rrApplyTrendExcelProjections(data,'fixedMrc');
 }
 function rrBridgeForecastData(data,chartId){
   chartId=chartId||'';
@@ -9429,11 +9380,11 @@ function rrTrendProjectionParts(chartId){
   var calQ=rrCurrentCalendarQuarter();
   var fmt=chartId==='fixedMrc'?'currency':'lines';
   var monthLbl=(data.labels&&lastActIdx>=0&&data.labels[lastActIdx])||'';
-  if(chartId==='fixedMrc'){
-    var fm=rrFixedMrcSeries(data);
-    actual=fm.actual||actual;
-    fcMl=fm.fcMl||fcMl;
-    fcUp=fm.fcUp||fcUp;
+  if(chartId==='fixedMrc'||chartId==='netAddLines'){
+    var ts=rrTrendExcelSeries(data,chartId);
+    actual=ts.actual||actual;
+    fcMl=ts.fcMl||fcMl;
+    fcUp=ts.fcUp||fcUp;
     vals=(actual&&actual.data)||[];
     lastActIdx=actual?rrLastActualOnSeries(actual).idx:-1;
     monthLbl=(data.labels&&lastActIdx>=0&&data.labels[lastActIdx])||'';
@@ -9548,9 +9499,9 @@ function rrCeoTrendKpis(def,data){
   var calQ=rrCurrentCalendarQuarter();
   var parts=rrTrendProjectionParts(def.id);
   var rawData=rrTrendRawData(def.id)||data;
-  var fmFixed=def.id==='fixedMrc'?rrFixedMrcSeries(rawData):null;
-  var fcMl=fmFixed?fmFixed.fcMl:rawData.series.find(function(s){return rrClassifySeries(s.label)==='forecast';});
-  var fcUp=fmFixed?fmFixed.fcUp:rawData.series.find(function(s){return rrClassifySeries(s.label)==='forecast-up';});
+  var tsExcel=(def.id==='fixedMrc'||def.id==='netAddLines')?rrTrendExcelSeries(rawData,def.id):null;
+  var fcMl=tsExcel?tsExcel.fcMl:rawData.series.find(function(s){return rrClassifySeries(s.label)==='forecast';});
+  var fcUp=tsExcel?tsExcel.fcUp:rawData.series.find(function(s){return rrClassifySeries(s.label)==='forecast-up';});
   var lines=[];
   var prevActual=null;
   for(var q=0;q<=calQ;q++){
@@ -9571,7 +9522,7 @@ function rrCeoTrendKpis(def,data){
     lines.push('<div class="rr-kpi-line"><span class="rr-kpi-q">'+qLbl+'</span><span class="rr-kpi-amt">'+rrFmtShort(qAct,fmt)+unit+'</span><span class="rr-kpi-note">'+qNote+'</span>'+chip+(yoyExtra?'<span class="rr-kpi-note">'+yoyExtra+'</span>':'')+'</div>');
     prevActual=qAct;
   }
-  if(parts&&parts.excelOnly&&def.id==='fixedMrc'){
+  if(parts&&parts.excelOnly&&(def.id==='fixedMrc'||def.id==='netAddLines')){
     var qLbl=parts.qLabel||('Q'+(parts.calQ+1));
     if(parts.monthMl!=null||parts.quarterMl!=null){
       lines.push(rrKpiFixedExcelProj('Most Likely','ml',parts.monthLbl,qLbl,parts,'mlAddon','qMlAddon','quarterMl','Most Likely (Col D)',fmt));
@@ -9593,7 +9544,7 @@ function rrCeoTrendKpis(def,data){
     var prevVal=lastActIdx>0?vals[lastActIdx-1]:null;
     var momChip=prevVal!=null?rrFmtPctChip(rrPctChange(lastAct.val,prevVal),'MoM'):'';
     var mlMonth='';
-    if(def.id==='fixedMrc'&&parts&&parts.excelOnly){
+    if(parts&&parts.excelOnly&&(def.id==='fixedMrc'||def.id==='netAddLines')){
       if(parts.monthMl!=null) mlMonth+=' · ML: <strong style="color:#7c3aed">'+rrFmtShort(parts.monthMl,fmt)+'</strong>';
       if(parts.monthUp!=null) mlMonth+=' · Upside: <strong style="color:#16a34a">'+rrFmtShort(parts.monthUp,fmt)+'</strong>';
       if(parts.quarterMl!=null||parts.quarterUp!=null){
@@ -9945,8 +9896,7 @@ function rrChartDataFor(id){
   if(id!=='netAddLines'&&id!=='fixedMrc') return RR_PARSED[id];
   var copy=rrCloneChartData(RR_PARSED[id]);
   rrSanitizeCascadeForecasts(copy,id);
-  if(id==='fixedMrc') rrApplyFixedMrcExcelProjections(copy);
-  else rrApplyPipelineChurnToForecasts(copy,id);
+  if(id==='fixedMrc'||id==='netAddLines') rrApplyTrendExcelProjections(copy,id);
   return copy;
 }
 function rrRenderLineExplain(def,data){
@@ -9979,11 +9929,9 @@ function rrRenderActiveChart(){
   rrRenderKpis(def,rrTrendRawData(def.id)||raw);
   if(noteEl){
     var churnNote='';
-    if(raw&&raw._excelProjectionsOnly&&def.id==='fixedMrc'){
-      churnNote=' · Fixed MRC: Col C actual + Col D/E from Excel. Current month projects from prior month on chart.';
-    }else if(raw&&raw._pipelineChurn&&def.id==='netAddLines'){
-      var pc=raw._pipelineChurn;
-      churnNote=' · Net Add Lines: projection months show Excel forward − live pipeline churn. QTD churn: ML '+rrFmtShort(Math.abs(pc.ml),def.valueFmt)+(pc.up!==pc.ml?' · Upside '+rrFmtShort(Math.abs(pc.up),def.valueFmt):'');
+    if(raw&&raw._excelProjectionsOnly){
+      if(def.id==='fixedMrc') churnNote=' · Fixed MRC: Col C actual + Col D/E from Excel. Current month projects from prior month on chart.';
+      else if(def.id==='netAddLines') churnNote=' · Net Add Lines: Col C actual + Col D/E from Excel. No pipeline churn applied.';
     }
     noteEl.textContent=raw
       ?('Excel '+raw.sheetRef+' · Header row '+raw.headerRow+' · Hover points for value breakdown'+churnNote)
