@@ -476,8 +476,11 @@ body[data-theme="dark"] .status-dot,body[data-theme="duralux-dark"] .status-dot{
 .mq-v-onbar .mq-v-stack{display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:0;line-height:1;background:#fff;border:1px solid rgba(15,23,42,.35);border-radius:5px;padding:3px 5px;box-shadow:0 1px 4px rgba(15,23,42,.25)}
 .mq-v-onbar .mq-v-ch{display:block;font-size:10px;font-weight:800;font-family:Inter,system-ui,-apple-system,sans-serif;color:#0f172a;line-height:1.05;letter-spacing:.04em}
 #mqHdLegend{display:none}
-#mqBracketRow{display:none}
-#mqXAxisStrip{position:relative;height:52px;margin-top:6px;padding-bottom:4px;min-height:52px}
+#mqBracketRow{position:relative;height:20px;margin-top:2px;min-height:18px;flex-shrink:0}
+.mq-bracket-abs{position:absolute;top:0;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;height:20px;pointer-events:none}
+.mq-bracket-line{display:block;width:calc(100% - 4px);height:0;border-top:1.5px solid rgba(100,116,139,.55);margin-top:10px}
+.mq-bracket-label{font-size:10px;font-weight:700;color:#475569;line-height:1.2;text-align:center;padding:0 3px;white-space:nowrap}
+#mqXAxisStrip{position:relative;height:52px;margin-top:4px;padding-bottom:2px;min-height:48px;flex-shrink:0}
 .mq-x-abs{position:absolute;top:0;text-align:center;font-size:11px;font-weight:600;color:var(--t2);line-height:1.4;padding:0 5px;word-break:break-word;hyphens:auto;cursor:pointer;transition:color .15s,background .15s;box-sizing:border-box}
 .mq-v-onbar.sel .mq-v-ch{color:#4338ca}
 .mq-v-onbar.sel .mq-v-stack{border-color:rgba(99,102,241,.55);background:rgba(238,242,255,.97)}
@@ -487,7 +490,6 @@ body[data-theme="dark"] .status-dot,body[data-theme="duralux-dark"] .status-dot{
 .mq-x-abs.gap-lbl{color:#ef4444;font-weight:700}
 #mqBridgeLegend{display:flex;flex-wrap:wrap;gap:.4rem .75rem;margin-top:.55rem;padding:.55rem .7rem;border-top:1px solid var(--border);background:var(--bg-secondary);border-radius:8px}
 .mq-leg-chip{display:inline-flex;align-items:center;gap:.35rem;font-size:.72rem;font-weight:600;color:var(--t2)}
-.mq-leg-sep{width:100%;height:0;flex-basis:100%;border-top:1px dashed var(--border);margin:.15rem 0 .05rem;padding-top:.15rem}
 .mq-leg-dot{width:10px;height:10px;border-radius:3px;flex-shrink:0}
 #mqBarDetailHint{font-size:.82rem;color:var(--t2);font-weight:500;margin-top:.45rem;line-height:1.5}
 #mobileQtdSummaryWrap{font-size:.84rem;color:var(--t2);font-weight:600;line-height:1.65;margin-top:.55rem;padding:.55rem .75rem;background:var(--bg-secondary);border:1px solid var(--border);border-radius:8px}
@@ -1279,7 +1281,6 @@ body[data-theme="dark"] .badge-warning,body[data-theme="duralux-dark"] .badge-wa
             </div>
           </div>
           <div id="mqBridgeLegend"></div>
-          <div id="mqHdLegend"></div>
           <div id="mqBarDetailHint">Click a bar → accounts sorted by value (largest first) · clubbed customers show all bid refs · click row for full detail</div>
           <div id="mqBarDetailPanel" style="display:none;margin-top:.55rem;padding:.75rem 1rem;background:var(--bg-secondary);border:1px solid var(--border);border-radius:10px;font-size:.72rem;color:var(--t2);line-height:1.55;overflow-y:auto;"></div>
           <div id="mqBridgeInfoPanel" style="display:none;margin-top:.65rem;padding:.85rem 1rem;background:var(--bg-secondary);border:1px solid var(--border);border-radius:10px;font-size:.72rem;color:var(--t2);line-height:1.65;max-height:420px;overflow-y:auto;"></div>
@@ -7621,7 +7622,30 @@ function mqSyncChartLabels(chart,bars){
   var cw=canvas?canvas.clientWidth:0;
   if(!cw) return;
   var brow=el('mqBracketRow');
-  if(brow) brow.innerHTML='';
+  if(brow){
+    brow.style.width=cw+'px';
+    brow.style.minWidth=cw+'px';
+    brow.innerHTML='';
+    var groups=[];
+    bars.forEach(function(b,i){
+      if(!b.bracketGroup||!b.bracketLabel) return;
+      var g=groups.find(function(x){return x.id===b.bracketGroup;});
+      if(!g) groups.push(g={id:b.bracketGroup,label:b.bracketLabel||'',start:i,end:i});
+      else g.end=i;
+    });
+    groups.forEach(function(g){
+      var b0=meta.data[g.start], b1=meta.data[g.end];
+      if(!b0||!b1) return;
+      var cell=document.createElement('div');
+      cell.className='mq-bracket-abs';
+      var x1=b0.x-(b0.width||14)/2-2;
+      var w=b1.x+(b1.width||14)/2+2-x1;
+      cell.style.left=x1+'px';
+      cell.style.width=Math.max(w,24)+'px';
+      cell.innerHTML='<span class="mq-bracket-label">'+mqEscHtml(g.label)+'</span><span class="mq-bracket-line"></span>';
+      brow.appendChild(cell);
+    });
+  }
   var strip=el('mqXAxisStrip');
   var overlay=el('mqVertOnChart');
   if(overlay){
@@ -7705,15 +7729,7 @@ function mqRenderBridgeLegend(calc){
   }
   leg.innerHTML=chips.map(function(x){
     return '<span class="mq-leg-chip"><span class="mq-leg-dot" style="background:'+x.c+';"></span>'+x.l+'</span>';
-  }).join('')+
-    '<span class="mq-leg-sep"></span>'+
-    '<span class="mq-leg-chip" style="font-weight:800;color:var(--t1);">Ranked account shades</span>'+
-    '<span class="mq-leg-chip"><span class="mq-leg-dot" style="background:'+MQ_CLR_INFLIGHT[0]+';"></span>In-flight — blue shades (largest → smallest)</span>'+
-    '<span class="mq-leg-chip"><span class="mq-leg-dot" style="background:'+MQ_CLR_CHURN[0]+';"></span>Churn — red shades (largest → smallest)</span>'+
-    '<span class="mq-leg-chip"><span class="mq-leg-dot" style="background:'+MQ_CLR_INFLIGHT_OTHERS+';"></span>Others Gross</span>'+
-    '<span class="mq-leg-chip"><span class="mq-leg-dot" style="background:'+MQ_CLR_CHURN_OTHERS+';"></span>Others Churn</span>';
-  var hdLeg=el('mqHdLegend');
-  if(hdLeg) hdLeg.innerHTML='';
+  }).join('');
 }
 function glkMobileQtdSectionPlugin(bars){
   return {id:'mqSections',beforeDatasetsDraw:function(chart){
@@ -7735,15 +7751,16 @@ function glkMobileQtdSectionPlugin(bars){
       ctx.fillRect(x1,area.top,x2-x1,area.bottom-area.top);
       if(MQ_SECTION_TITLES[sp.key]){
         var alignRight=(sp.key==='churn'||sp.key==='empty');
-        ctx.fillStyle='rgba(100,116,139,.72)';
-        ctx.font='700 10px Inter';
-        ctx.textBaseline='top';
+        ctx.fillStyle='rgba(30,41,59,.88)';
+        ctx.font='800 11px Inter';
+        ctx.textBaseline='bottom';
+        var titleY=area.bottom-6;
         if(alignRight){
           ctx.textAlign='right';
-          ctx.fillText(MQ_SECTION_TITLES[sp.key],x2-8,area.top+6);
+          ctx.fillText(MQ_SECTION_TITLES[sp.key],x2-8,titleY);
         }else{
           ctx.textAlign='left';
-          ctx.fillText(MQ_SECTION_TITLES[sp.key],x1+8,area.top+6);
+          ctx.fillText(MQ_SECTION_TITLES[sp.key],x1+8,titleY);
         }
       }
     });
@@ -8088,31 +8105,6 @@ function mqBarTooltipLines(b){
   else if(b.vertBreakdown&&b.vertBreakdown.length) lines.push('Click bar for vertical split');
   return lines;
 }
-function glkMobileQtdTopBracketPlugin(bars){
-  return {id:'mqTopBrackets',afterDatasetsDraw:function(chart){
-    var meta=chart.getDatasetMeta(0), ctx=chart.ctx, area=chart.chartArea;
-    if(!meta||!meta.data) return;
-    var groups=[];
-    bars.forEach(function(b,i){
-      if(!b.bracketGroup||!b.bracketLabel) return;
-      var g=groups.find(function(x){return x.id===b.bracketGroup;});
-      if(!g) groups.push(g={id:b.bracketGroup,label:b.bracketLabel,start:i,end:i});
-      else g.end=i;
-    });
-    groups.forEach(function(g){
-      var b0=meta.data[g.start], b1=meta.data[g.end];
-      if(!b0||!b1) return;
-      var x1=b0.x-(b0.width||16)/2-4, x2=b1.x+(b1.width||16)/2+4;
-      var yLine=area.top+24, yLbl=area.top+10;
-      ctx.save();
-      ctx.strokeStyle='rgba(100,116,139,.55)'; ctx.lineWidth=1.2; ctx.fillStyle='#475569';
-      ctx.font='700 9px Inter'; ctx.textAlign='center'; ctx.textBaseline='bottom';
-      ctx.beginPath(); ctx.moveTo(x1,yLine); ctx.lineTo(x1,yLine+5); ctx.lineTo(x2,yLine+5); ctx.lineTo(x2,yLine); ctx.stroke();
-      ctx.fillText(g.label,(x1+x2)/2,yLbl);
-      ctx.restore();
-    });
-  }};
-}
 function glkMobileQtdBracketPlugin(bars){
   return {id:'mqBrackets',afterDatasetsDraw:function(chart){
     var meta=chart.getDatasetMeta(0), ctx=chart.ctx, area=chart.chartArea;
@@ -8139,8 +8131,8 @@ function glkMobileQtdBracketPlugin(bars){
 }
 function glkMobileQtdLabelPlugin(bars){
   return {id:'mqLabels',afterDatasetsDraw:function(chart){
-    var ctx=chart.ctx,meta=chart.getDatasetMeta(0);
-    if(!meta||!meta.data) return;
+    var ctx=chart.ctx,meta=chart.getDatasetMeta(0), area=chart.chartArea;
+    if(!meta||!meta.data||!area) return;
     meta.data.forEach(function(bar,i){
       var b=bars[i]; if(!b) return;
       var val=b.value, top=Math.min(bar.y,bar.base), bot=Math.max(bar.y,bar.base), h=bot-top;
@@ -8150,8 +8142,6 @@ function glkMobileQtdLabelPlugin(bars){
       if(b.type==='decrease') lbl='-'+lbl;
       else if(b.type==='increase'||b.type==='base') lbl='+'+lbl.replace(/^\+/,'');
       else if(b.type==='total'||b.type==='target'||b.type==='gap'||b.type==='growth') lbl=(val<0?'-':'')+fmtLines(Math.abs(val));
-      ctx.textAlign='center';
-      var putAbove=!!b.verticalHint||b.type==='decrease'||h<18||b.type==='empty'||b.section==='won'||b.isPlaceholder||b.type==='total'||b.type==='target';
       if(b.type==='empty'){
         ctx.fillStyle='#64748b';
         ctx.font='bold 11px Inter';
@@ -8159,17 +8149,28 @@ function glkMobileQtdLabelPlugin(bars){
         ctx.fillText('0',bar.x,top-4);
         ctx.restore(); return;
       }
-      if(putAbove){
-        ctx.fillStyle=b.color||MQ_CLR_INFLIGHT[0];
-        ctx.font='bold 12px Inter';
-        ctx.textBaseline='bottom';
-        ctx.fillText(lbl,bar.x,top-4);
-      }else{
-        ctx.fillStyle='#fff';
-        ctx.font='bold 12px Inter';
-        ctx.textBaseline='middle';
-        ctx.fillText(lbl,bar.x,top+h/2);
-      }
+      ctx.font='bold 12px Inter';
+      ctx.textAlign='center';
+      ctx.textBaseline='bottom';
+      var tw=ctx.measureText(lbl).width+10;
+      var th=18;
+      var lx=bar.x, ly=top-6;
+      if(ly-th<area.top+2) ly=area.top+2+th;
+      var pillColor=b.color||MQ_CLR_INFLIGHT[0];
+      if(b.type==='base') pillColor=MQ_CLR_ACTUALS;
+      else if(b.section==='won') pillColor=MQ_CLR_WON;
+      else if(b.type==='total') pillColor=MQ_CLR_NET;
+      else if(b.type==='target') pillColor=MQ_CLR_TARGET;
+      ctx.fillStyle='rgba(255,255,255,.96)';
+      ctx.strokeStyle=pillColor;
+      ctx.lineWidth=1.5;
+      ctx.beginPath();
+      if(ctx.roundRect) ctx.roundRect(lx-tw/2,ly-th,tw,th,4);
+      else ctx.rect(lx-tw/2,ly-th,tw,th);
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle=pillColor;
+      ctx.fillText(lbl,lx,ly-3);
       if(GLK_MQ_DETAIL_IDX===i){
         ctx.strokeStyle='rgba(99,102,241,.9)'; ctx.lineWidth=2.5;
         ctx.strokeRect(bar.x-(bar.width||14)/2-3,top-3,(bar.width||14)+6,h+6);
@@ -8364,10 +8365,11 @@ function renderMobileQtdBridge(){
   bars.forEach(function(b){ maxNameLen=Math.max(maxNameLen,String(b.custName||'').length); });
   var scrollWrap=el('mqBridgeScroll');
   var parentW=scrollWrap?scrollWrap.clientWidth:900;
-  var barSlot=Math.max(72,Math.min(104,Math.floor(parentW/Math.max(bars.length,1))));
-  if(maxNameLen>14) barSlot=Math.max(barSlot,Math.min(112,maxNameLen*5.5));
-  if(bars.length>14) barSlot=Math.max(barSlot,84);
-  var minChartW=Math.max(parentW,bars.length*barSlot+32);
+  var idealSlot=Math.floor((parentW-28)/Math.max(bars.length,1));
+  var barSlot=Math.max(52,Math.min(78,idealSlot));
+  if(maxNameLen>16) barSlot=Math.max(barSlot,Math.min(86,maxNameLen*4.2));
+  var contentW=bars.length*barSlot+28;
+  var minChartW=contentW>parentW?contentW:parentW;
   var axisPad=8;
   var chartOuter=el('mqChartOuter');
   var chartWrap=el('mqChartWrap');
@@ -8381,7 +8383,6 @@ function renderMobileQtdBridge(){
     glkMobileQtdSectionPlugin(bars),
     glkMobileQtdFlowPlugin(bars),
     glkMobileQtdMinPxPlugin(bars,26),
-    glkMobileQtdTopBracketPlugin(bars),
     glkMobileQtdLabelPlugin(bars),
     glkMobileQtdSepPlugin(churnSepIdx,c)
   ];
@@ -8404,7 +8405,7 @@ function renderMobileQtdBridge(){
         barPercentage:.88,categoryPercentage:.92,minBarLength:0,maxBarThickness:52
       }]},
       options:{responsive:true,maintainAspectRatio:false,
-        layout:{padding:{bottom:axisPad,top:32,left:4,right:8}},
+        layout:{padding:{bottom:axisPad,top:36,left:4,right:8}},
         animation:{duration:0},
         onClick:function(evt,elements){
           if(!elements.length){ mqCloseBarDetail(); return; }
@@ -8812,36 +8813,14 @@ function rrApplyPipelineChurnToForecasts(data,chartId){
   var start=calQ*3, end=Math.min(start+3,(data.labels||[]).length);
   var forwardIdx=[];
   for(var i=start;i<end;i++){
-    if(lastActIdx>=0&&i<=lastActIdx) continue;
-    if((fcMl&&fcMl.data[i]!=null&&!isNaN(fcMl.data[i]))||(fcUp&&fcUp.data[i]!=null&&!isNaN(fcUp.data[i]))) forwardIdx.push(i);
+    if(lastActIdx>=0&&i<lastActIdx) continue;
+    var hasFc=(fcMl&&fcMl.data[i]!=null&&!isNaN(fcMl.data[i]))||(fcUp&&fcUp.data[i]!=null&&!isNaN(fcUp.data[i]));
+    if(!hasFc) continue;
+    forwardIdx.push(i);
   }
   if(!forwardIdx.length) return data;
   var churnMl=rrTrendPipelineChurn(chartId,false);
   var churnUp=rrTrendPipelineChurn(chartId,true);
-  if(chartId==='fixedMrc'){
-    var lastFwd=forwardIdx[forwardIdx.length-1];
-    data._projByMonth={};
-    forwardIdx.forEach(function(i){
-      var rawMl=fcMl&&fcMl.data[i]!=null&&!isNaN(fcMl.data[i])?num(fcMl.data[i]):null;
-      var rawUp=fcUp&&fcUp.data[i]!=null&&!isNaN(fcUp.data[i])?num(fcUp.data[i]):null;
-      var netMl=rawMl, netUp=rawUp, cMl=0, cUp=0;
-      if(i===lastFwd){
-        cMl=churnMl; cUp=churnUp;
-        if(rawMl!=null) netMl=rawMl+churnMl;
-        if(rawUp!=null) netUp=rawUp+churnUp;
-        if(fcMl&&rawMl!=null) fcMl.data[i]=netMl;
-        if(fcUp&&rawUp!=null) fcUp.data[i]=netUp;
-      }
-      data._projByMonth[i]={forwardMl:rawMl,churnMl:cMl,netMl:netMl,forwardUp:rawUp,churnUp:cUp,netUp:netUp};
-    });
-    data._pipelineChurn={ml:churnMl,up:churnUp,forwardMl:0,forwardUp:0};
-    forwardIdx.forEach(function(i){
-      var p=data._projByMonth[i];
-      if(p.forwardMl!=null) data._pipelineChurn.forwardMl+=p.forwardMl;
-      if(p.forwardUp!=null) data._pipelineChurn.forwardUp+=p.forwardUp;
-    });
-    return data;
-  }
   var mlShare=forwardIdx.length?churnMl/forwardIdx.length:0;
   var upShare=forwardIdx.length?churnUp/forwardIdx.length:0;
   data._projByMonth={};
@@ -9272,21 +9251,6 @@ function rrCrosshairPlugin(){
     ctx.restore();
   }};
 }
-function rrLatestQuarterActual(vals,q,lastActIdx){
-  var start=q*3, end=Math.min(start+3,(vals||[]).length);
-  var hi=lastActIdx>=0?Math.min(lastActIdx,end-1):end-1;
-  for(var i=hi;i>=start;i--){
-    if(vals[i]!=null&&!isNaN(vals[i])) return num(vals[i]);
-  }
-  return null;
-}
-function rrQuarterEndForecast(fcVals,q){
-  var start=q*3, end=Math.min(start+3,(fcVals||[]).length);
-  for(var i=end-1;i>=start;i--){
-    if(fcVals[i]!=null&&!isNaN(fcVals[i])) return num(fcVals[i]);
-  }
-  return null;
-}
 function rrSumQuarter(vals,q){
   var sum=0, n=0, start=q*3, end=Math.min(start+3,(vals||[]).length);
   for(var i=start;i<end;i++){
@@ -9350,6 +9314,25 @@ function rrTrendRawData(chartId){
   rrSanitizeCascadeForecasts(copy,chartId);
   return copy;
 }
+function rrSumQuarterActualPrior(vals,q,lastActIdx){
+  var sum=0,n=0,start=q*3,end=Math.min(start+3,(vals||[]).length);
+  for(var i=start;i<end;i++){
+    if(lastActIdx>=0&&i>=lastActIdx) continue;
+    if(vals[i]!=null&&!isNaN(vals[i])){ sum+=num(vals[i]); n++; }
+  }
+  return n?sum:null;
+}
+function rrQuarterForecastFromLastAct(fcVals,calQ,lastActIdx){
+  if(!fcVals||lastActIdx<0) return null;
+  var sum=0,n=0,start=calQ*3,end=Math.min(start+3,fcVals.length);
+  if(lastActIdx>=start&&lastActIdx<end&&fcVals[lastActIdx]!=null&&!isNaN(fcVals[lastActIdx])){
+    sum+=num(fcVals[lastActIdx]); n++;
+  }
+  for(var i=lastActIdx+1;i<end;i++){
+    if(fcVals[i]!=null&&!isNaN(fcVals[i])){ sum+=num(fcVals[i]); n++; }
+  }
+  return n?sum:null;
+}
 function rrTrendProjectionParts(chartId){
   var data=rrTrendRawData(chartId);
   if(!data) return null;
@@ -9363,30 +9346,25 @@ function rrTrendProjectionParts(chartId){
   var churnMl=rrTrendPipelineChurn(chartId,false);
   var churnUp=rrTrendPipelineChurn(chartId,true);
   var fmt=chartId==='fixedMrc'?'currency':'lines';
-  var qAct, forwardMl, forwardUp, totalMl, totalUp, actLabel, fwdLabel;
-  if(chartId==='fixedMrc'){
-    qAct=rrLatestQuarterActual(vals,calQ,lastActIdx);
-    var endMl=fcMl?rrQuarterEndForecast(fcMl.data||[],calQ):null;
-    var endUp=fcUp?rrQuarterEndForecast(fcUp.data||[],calQ):null;
-    forwardMl=(qAct!=null&&endMl!=null)?endMl-qAct:null;
-    forwardUp=(qAct!=null&&endUp!=null)?endUp-qAct:null;
-    totalMl=endMl!=null?endMl+churnMl:null;
-    totalUp=endUp!=null?endUp+churnUp:null;
-    actLabel='Current month actual';
-    fwdLabel='Forward to quarter-end (Excel)';
-  }else{
-    qAct=rrSumQuarterActual(vals,calQ,lastActIdx);
-    forwardMl=fcMl?rrSumQuarterFcRemainder(fcMl.data||[],calQ,lastActIdx):null;
-    forwardUp=fcUp?rrSumQuarterFcRemainder(fcUp.data||[],calQ,lastActIdx):null;
-    totalMl=qAct!=null&&forwardMl!=null?qAct+forwardMl+churnMl:null;
-    totalUp=qAct!=null&&forwardUp!=null?qAct+forwardUp+churnUp:null;
-    actLabel='Actual (quarter to date)';
-    fwdLabel='Forward (remaining months in quarter)';
-  }
+  var qActFull=rrSumQuarterActual(vals,calQ,lastActIdx);
+  var qActPrior=rrSumQuarterActualPrior(vals,calQ,lastActIdx);
+  var forwardMl=fcMl?rrQuarterForecastFromLastAct(fcMl.data||[],calQ,lastActIdx):null;
+  if(forwardMl==null&&fcMl) forwardMl=rrSumQuarterFcRemainder(fcMl.data||[],calQ,lastActIdx);
+  var forwardUp=fcUp?rrQuarterForecastFromLastAct(fcUp.data||[],calQ,lastActIdx):null;
+  if(forwardUp==null&&fcUp) forwardUp=rrSumQuarterFcRemainder(fcUp.data||[],calQ,lastActIdx);
+  var inQ=lastActIdx>=calQ*3&&lastActIdx<(calQ+1)*3;
+  var hasCurFc=(fcMl&&fcMl.data[lastActIdx]!=null&&!isNaN(fcMl.data[lastActIdx]))||
+    (fcUp&&fcUp.data[lastActIdx]!=null&&!isNaN(fcUp.data[lastActIdx]));
+  var qActProj=(inQ&&hasCurFc&&qActPrior!=null)?qActPrior:qActFull;
+  var totalMl=(qActProj!=null&&forwardMl!=null)?qActProj+forwardMl+churnMl:null;
+  var totalUp=(qActProj!=null&&forwardUp!=null)?qActProj+forwardUp+churnUp:null;
+  var actLabel=(inQ&&hasCurFc)?'Actual (prior months in quarter)':'Actual (quarter to date)';
+  var fwdLabel=(inQ&&hasCurFc)?'Current month forecast (Excel)':'Forward (remaining months in quarter)';
   return {
     calQ:calQ,
     qLabel:['Q1','Q2','Q3','Q4'][calQ],
-    qAct:qAct,
+    qAct:qActProj,
+    qActFull:qActFull,
     forwardMl:forwardMl,
     forwardUp:forwardUp,
     churnMl:churnMl,
@@ -9436,12 +9414,7 @@ function rrCeoTrendKpis(def,data){
   var prevActual=null;
   for(var q=0;q<=calQ;q++){
     var isCurrent=(q===calQ);
-    var qAct;
-    if(def.id==='fixedMrc'){
-      qAct=isCurrent?rrLatestQuarterActual(vals,q,lastActIdx):rrQuarterEndForecast(vals,q);
-    }else{
-      qAct=isCurrent?rrSumQuarterActual(vals,q,lastActIdx):rrSumQuarter(vals,q);
-    }
+    var qAct=isCurrent?rrSumQuarterActual(vals,q,lastActIdx):rrSumQuarter(vals,q);
     if(qAct==null) continue;
     var chip=prevActual!=null?rrFmtPctChip(rrPctChange(qAct,prevActual),'vs Q'+q):'';
     var yoyExtra='';
@@ -9453,7 +9426,7 @@ function rrCeoTrendKpis(def,data){
       }
     }
     var qLbl='Q'+(q+1)+(isCurrent?' <span class="rr-kpi-curr">Current quarter</span>':'');
-    var qNote=def.id==='fixedMrc'?(isCurrent?'actual · month-end level':'quarter-end level'):(isCurrent?'actual to date':'actual');
+    var qNote=isCurrent?'actual to date':'actual';
     lines.push('<div class="rr-kpi-line"><span class="rr-kpi-q">'+qLbl+'</span><span class="rr-kpi-amt">'+rrFmtShort(qAct,fmt)+unit+'</span><span class="rr-kpi-note">'+qNote+'</span>'+chip+(yoyExtra?'<span class="rr-kpi-note">'+yoyExtra+'</span>':'')+'</div>');
     prevActual=qAct;
   }
