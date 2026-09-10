@@ -286,28 +286,47 @@ body[data-theme="dark"] .status-dot,body[data-theme="duralux-dark"] .status-dot{
 #rrChartWrap .chart-container{height:560px;position:relative;z-index:1}
 .rr-kpi{padding:.45rem .55rem;border-radius:10px;background:linear-gradient(135deg,var(--bg-card) 0%,var(--bg-secondary) 100%);border:1px solid var(--border-s);border-left:4px solid var(--acc);box-shadow:var(--cs),0 2px 8px rgba(0,0,0,.04)}
 .rr-kpi-val{font-size:1rem;font-weight:900;color:var(--acc);margin-top:.12rem;line-height:1.15;letter-spacing:-.01em}
-.mq-product-table-wrap{margin:.85rem auto 0;max-width:760px;padding:.65rem .75rem;background:var(--bg-card);border:1px solid var(--border-s);border-radius:10px;box-shadow:var(--cs)}
-.mq-product-table-head{margin-bottom:.5rem}
-.mq-product-table-title{font-size:.72rem;font-weight:900;text-transform:uppercase;letter-spacing:.05em;color:var(--t1)}
-.mq-product-table-sub{font-size:.62rem;color:var(--t3);margin-top:.15rem;line-height:1.4;font-weight:600}
-.mq-product-table{width:100%;border-collapse:separate;border-spacing:0;font-size:.71rem;border-radius:8px;overflow:hidden;border:1px solid var(--border)}
-.mq-product-table th,.mq-product-table td{padding:.42rem .5rem;border-bottom:1px solid var(--border);text-align:right;white-space:nowrap}
-.mq-product-table th:first-child,.mq-product-table td:first-child{text-align:left;font-weight:800;color:var(--t1)}
-.mq-product-table thead th{background:var(--acc);color:#fff;font-size:.62rem;text-transform:uppercase;letter-spacing:.04em;font-weight:800;border-bottom:none}
+.mq-product-tables-section{margin:1rem 0 0;padding:1rem 1.05rem;background:linear-gradient(165deg,var(--bg-card) 0%,var(--bg-secondary) 100%);border:1px solid var(--border-s);border-radius:14px;box-shadow:var(--cs)}
+.mq-pt-section-head{display:flex;align-items:flex-start;justify-content:space-between;gap:.75rem;flex-wrap:wrap;margin-bottom:.85rem;padding-bottom:.65rem;border-bottom:1px solid var(--border)}
+.mq-pt-section-title{display:flex;align-items:center;gap:.45rem;font-size:.88rem;font-weight:900;color:var(--t1);letter-spacing:-.01em}
+.mq-pt-section-title svg{width:18px;height:18px;stroke:var(--acc);fill:none;stroke-width:2;flex-shrink:0}
+.mq-pt-info-btn{width:22px;height:22px;border-radius:50%;border:1px solid var(--border-s);background:var(--nab);color:var(--acc);font-weight:800;font-size:.72rem;cursor:pointer;line-height:1;padding:0;flex-shrink:0}
+.mq-pt-info-btn:hover{background:var(--acc);color:#fff;border-color:var(--acc)}
+.mq-pt-section-sub{font-size:.68rem;color:var(--t3);font-weight:600;margin-top:.2rem;line-height:1.45}
+.mq-pt-section-actions{display:flex;align-items:center;gap:.45rem;flex-wrap:wrap}
+.mq-pt-bulk-btn{display:inline-flex;align-items:center;gap:.35rem;padding:.38rem .72rem;border-radius:8px;border:1px dashed var(--border-s);background:var(--bg-card);color:var(--t2);font-size:.68rem;font-weight:700;cursor:pointer;font-family:inherit;transition:all .15s}
+.mq-pt-bulk-btn:hover{border-color:var(--acc);color:var(--acc);background:var(--nab)}
+.mq-pt-info-panel{display:none;margin-bottom:.85rem;padding:.75rem .85rem;background:var(--bg-card);border:1px solid var(--border);border-radius:10px;font-size:.7rem;color:var(--t2);line-height:1.65}
+.mq-pt-info-panel.open{display:block}
+.mq-product-tables-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(460px,1fr));gap:1rem}
+.mq-product-table-card{background:var(--bg-card);border:1px solid var(--border);border-radius:12px;overflow:hidden;box-shadow:var(--cs);transition:box-shadow .15s,border-color .15s}
+.mq-product-table-card:hover{box-shadow:var(--ch);border-color:var(--border-s)}
+.mq-pt-card-head{display:flex;align-items:center;justify-content:space-between;gap:.5rem;padding:.55rem .7rem;background:linear-gradient(90deg,var(--nab),transparent);border-bottom:1px solid var(--border)}
+.mq-pt-scope-badge{font-size:.74rem;font-weight:900;color:var(--t1);letter-spacing:-.01em}
+.mq-pt-scenario{display:inline-flex;align-items:center;padding:.18rem .55rem;border-radius:999px;font-size:.58rem;font-weight:800;text-transform:uppercase;letter-spacing:.05em}
+.mq-pt-scenario.ml{background:rgba(99,102,241,.14);color:#4f46e5;border:1px solid rgba(99,102,241,.35)}
+.mq-pt-scenario.up{background:rgba(34,197,94,.12);color:#16a34a;border:1px solid rgba(34,197,94,.35)}
+.mq-product-table{width:100%;border-collapse:collapse;font-size:.78rem}
+.mq-product-table th,.mq-product-table td{padding:.52rem .62rem;border-bottom:1px solid var(--border);text-align:right;white-space:nowrap}
+.mq-product-table th:first-child,.mq-product-table td:first-child{text-align:left;font-weight:800;color:var(--t1);min-width:88px}
+.mq-product-table thead th{font-size:.64rem;text-transform:uppercase;letter-spacing:.04em;font-weight:800;color:#fff;border-bottom:none}
+.mq-product-table thead th.mq-pt-h-prod{background:var(--acc)}
 .mq-product-table thead th.mq-pt-h-gross{background:#2563eb}
 .mq-product-table thead th.mq-pt-h-churn{background:#dc2626}
 .mq-product-table thead th.mq-pt-h-net{background:#6366f1}
+.mq-product-table thead th.mq-pt-h-wow{background:#64748b}
 .mq-product-table tbody tr:nth-child(even){background:var(--bg-secondary)}
-.mq-product-table tbody tr:hover{background:var(--nab)}
-.mq-product-table td.mq-pt-gross{color:#1d4ed8;font-weight:700;background:rgba(37,99,235,.06)}
-.mq-product-table td.mq-pt-churn{color:#dc2626;font-weight:700;background:rgba(220,38,38,.06)}
-.mq-product-table td.mq-pt-net{color:#4f46e5;font-weight:800;background:rgba(99,102,241,.07)}
-.mq-product-table tr.mq-product-total td{font-weight:900;background:var(--nab);border-top:2px solid var(--nab2);color:var(--t1)}
-.mq-product-table tr.mq-product-total td.mq-pt-gross{color:#1d4ed8}
-.mq-product-table tr.mq-product-total td.mq-pt-churn{color:#dc2626}
-.mq-product-table tr.mq-product-total td.mq-pt-net{color:#6366f1}
-.mq-wow-up{color:#16a34a;font-weight:800}
-.mq-wow-down{color:#dc2626;font-weight:800}
+.mq-product-table td.mq-pt-gross{color:#1d4ed8;font-weight:800;background:rgba(37,99,235,.07);font-size:.8rem}
+.mq-product-table td.mq-pt-churn{color:#dc2626;font-weight:800;background:rgba(220,38,38,.07);font-size:.8rem}
+.mq-product-table td.mq-pt-net{color:#4f46e5;font-weight:900;background:rgba(99,102,241,.08);font-size:.82rem}
+.mq-product-table tr.mq-product-total td{font-weight:900;background:var(--nab);border-top:2px solid var(--nab2);font-size:.82rem}
+.mq-pt-card-foot{display:flex;align-items:center;justify-content:space-between;gap:.5rem;flex-wrap:wrap;padding:.5rem .65rem;background:var(--bg-secondary);border-top:1px solid var(--border);font-size:.64rem}
+.mq-pt-wow-status{color:var(--t3);font-weight:600;flex:1 1 auto;line-height:1.35}
+.mq-pt-wow-status.loaded{color:#16a34a;font-weight:700}
+.mq-pt-upload-btn{display:inline-flex;align-items:center;gap:.25rem;padding:.28rem .55rem;border-radius:7px;border:1px solid var(--border-s);background:var(--bg-card);color:var(--t2);font-size:.62rem;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap}
+.mq-pt-upload-btn:hover{border-color:var(--acc);color:var(--acc);background:var(--nab)}
+.mq-wow-up{color:#16a34a;font-weight:900;font-size:.78rem}
+.mq-wow-down{color:#dc2626;font-weight:900;font-size:.78rem}
 .mq-wow-neu{color:var(--t3);font-weight:700}
 .rr-chart-title{font-size:1.08rem;font-weight:800;color:var(--t1);margin-bottom:.5rem;display:flex;align-items:center;gap:.4rem;line-height:1.3}
 .rr-chart-title svg{width:18px;height:18px;stroke:var(--acc);fill:none;stroke-width:2;flex-shrink:0}
@@ -1303,9 +1322,9 @@ body[data-theme="dark"] .badge-warning,body[data-theme="duralux-dark"] .badge-wa
                 <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
                 Export PPT
               </button>
-              <button type="button" id="mqProductTableXlsxBtn" class="export-btn" onclick="mqExportMobileProductTableXlsx()" title="Export mobile product QTG table to Excel" style="font-size:.72rem;padding:.35rem .65rem;display:none;">
+              <button type="button" id="mqProductTableXlsxBtn" class="export-btn" onclick="mqExportMobileProductTableXlsx()" title="Export all mobile product QTG tables to Excel" style="font-size:.72rem;padding:.35rem .65rem;display:none;">
                 <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-                Export Table
+                Export All Tables
               </button>
             </div>
           </div>
@@ -1318,6 +1337,8 @@ body[data-theme="dark"] .badge-warning,body[data-theme="duralux-dark"] .badge-wa
           </div>
           <div id="mqBridgeLegend"></div>
           <div id="mqMobileProductTableWrap" style="display:none;"></div>
+          <input type="file" id="mqWowPriorInp" accept=".xlsx,.xls,.xlsm,.csv,.xls" style="display:none;">
+          <input type="file" id="mqWowPriorBulkInp" accept=".xlsx,.xls,.xlsm,.csv,.xls" style="display:none;">
           <div id="mqBarDetailHint">Click a bar → accounts sorted by value (largest first) · clubbed customers show all bid refs · click row for full detail</div>
           <div id="mqBarDetailPanel" style="display:none;margin-top:.55rem;padding:.75rem 1rem;background:var(--bg-secondary);border:1px solid var(--border);border-radius:10px;font-size:.72rem;color:var(--t2);line-height:1.55;overflow-y:auto;"></div>
           <div id="mqBridgeInfoPanel" style="display:none;margin-top:.65rem;padding:.85rem 1rem;background:var(--bg-secondary);border:1px solid var(--border);border-radius:10px;font-size:.72rem;color:var(--t2);line-height:1.65;max-height:420px;overflow-y:auto;"></div>
@@ -1519,6 +1540,9 @@ let GLK_FIXED_YTD_TARGETS={overall:null,byVert:{},sourceSheet:null,periodCols:[]
 let GLK_MOBILE_REPORT=null;
 let GLK_MOBILE_REPORT_META=null;
 let GLK_MOBILE_PRODUCT_PRIOR=null;
+const MQ_WOW_PRIOR_LS_KEY='GLK_MOBILE_PRODUCT_WOW_PRIOR';
+let GLK_MOBILE_PRODUCT_WOW_PRIOR=null;
+let GLK_MOBILE_PRODUCT_TABLES_ALL=[];
 const MQ_PRODUCT_TABLE_SHEET='Mobile Product QTG';
 const MQ_PRODUCT_EXPORT_INFO_SHEET='Mobile Product Export Info';
 let mqProductFamily='mobile';
@@ -4886,6 +4910,7 @@ function glkShowMobileQtd(){
   mqSyncBridgeControlsUi();
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   el('navMobileQtd').classList.add('active');
+  mqInitWowPriorStore();
   glkMobileQtdRefreshUI();
   if(mqGetActiveReport()){
     renderMobileQtdBridge();
@@ -6397,7 +6422,7 @@ function glkParseAndSetMobileReport(arrayBuffer,cb){
       return cb(new Error('Could not find Mobile Net Adds or Fixed Net MRC sections. Use the daily GLK Excel template (.xlsx/.xlsm).'));
     GLK_QTD_REPORT={mobile:parsed.mobile||null,fixed:parsed.fixed||null};
     GLK_YTD_META=parsed.ytdMeta||GLK_YTD_META;
-    GLK_MOBILE_PRODUCT_PRIOR=parsed.mobileProductPrior||null;
+    GLK_MOBILE_PRODUCT_PRIOR=null;
     mqRefreshAllYtdTargetsAfterParse(parsed);
     mqRefreshYtdTargetsOnReport(GLK_QTD_REPORT.mobile);
     mqRefreshYtdTargetsOnReport(GLK_QTD_REPORT.fixed);
@@ -7498,64 +7523,138 @@ function glkFindWorkbookSheet(wb,patterns){
   }
   return null;
 }
-function glkParseMobileProductWowWorkbook(wb){
-  if(!wb) return null;
-  var prior={scenarios:{worst:null,best:null},sheets:[]};
-  var infoHit=glkFindWorkbookSheet(wb,[MQ_PRODUCT_EXPORT_INFO_SHEET,/mobile product export info/i]);
-  var sharedInfo=infoHit?glkParseMobileProductExportInfo(glkSheetToRows(infoHit.sheet)):{};
-  wb.SheetNames.forEach(function(sn){
-    if(!/mobile product qtg/i.test(sn)&&sn!==MQ_PRODUCT_TABLE_SHEET) return;
-    if(/export info/i.test(sn)) return;
-    var rows=glkSheetToRows(wb.Sheets[sn]);
+function mqNormScopeKey(label){
+  var s=String(label||'GLK Overall').trim();
+  if(!s||/^glk\s*overall$/i.test(s)) return 'glk_overall';
+  return s.toLowerCase().replace(/[^a-z0-9]+/g,'_');
+}
+function mqWowPriorKey(scopeLabel,scenarioKey){
+  return mqNormScopeKey(scopeLabel)+'::'+(scenarioKey==='best'?'best':'worst');
+}
+function mqLoadWowPriorStore(){
+  try{ return JSON.parse(localStorage.getItem(MQ_WOW_PRIOR_LS_KEY)||'{}'); }catch(e){ return {}; }
+}
+function mqInitWowPriorStore(){
+  GLK_MOBILE_PRODUCT_WOW_PRIOR=mqLoadWowPriorStore();
+}
+function mqSaveWowPriorEntry(scopeLabel,scenarioKey,table,info){
+  if(!table) return;
+  var store=mqLoadWowPriorStore();
+  store[mqWowPriorKey(scopeLabel,scenarioKey)]={
+    table:table,
+    info:Object.assign({},info||{},{
+      scope:scopeLabel||info&&info.scope||'GLK Overall',
+      scenario:mqCaseDisplayName(scenarioKey),
+      uploadedAt:new Date().toISOString()
+    }),
+    uploadedAt:new Date().toISOString()
+  };
+  try{ localStorage.setItem(MQ_WOW_PRIOR_LS_KEY,JSON.stringify(store)); }catch(e){ console.warn('[GLK] WoW prior save failed:',e.message); }
+  GLK_MOBILE_PRODUCT_WOW_PRIOR=store;
+}
+function mqGetWowPrior(scopeLabel,scenarioKey){
+  var store=GLK_MOBILE_PRODUCT_WOW_PRIOR||mqLoadWowPriorStore();
+  return store[mqWowPriorKey(scopeLabel,scenarioKey)]||null;
+}
+function glkParseMobileProductWowWorkbook(wb,fallbackScope,fallbackScenario){
+  if(!wb) return {};
+  var out={};
+  function ingestSheet(rows,sn,forcedScope,forcedScenario){
+    if(!rows||!rows.length) return;
     var info=glkParseMobileProductExportInfo(rows);
     var table=mqParseProductTableRows(rows);
     if(!table) return;
-    if(!info.scenario){
-      for(var r=0;r<Math.min(rows.length,8);r++){
-        var row=rows[r]||[];
-        var txt=row.map(function(c){return String(c||'');}).join(' ').toLowerCase();
-        if(txt.indexOf('scenario')>=0){
-          info=Object.assign({},info,{scenario:row.join(' ')});
-          break;
-        }
-      }
-    }
-    var sk=mqScenarioKeyFromLabel(info.scenario)||(sn.toLowerCase().indexOf('upside')>=0?'best':(sn.toLowerCase().indexOf('likely')>=0?'worst':null));
+    var scope=forcedScope||info.scope||info.Scope||'GLK Overall';
+    var sk=forcedScenario||mqScenarioKeyFromLabel(info.scenario)||(sn&&sn.toLowerCase().indexOf('upside')>=0?'best':(sn&&sn.toLowerCase().indexOf('likely')>=0?'worst':null));
     if(!sk) sk='worst';
-    prior.scenarios[sk]={table:table,info:Object.assign({},info,{sheetName:sn})};
-    prior.sheets.push(sn);
+    out[mqWowPriorKey(scope,sk)]={table:table,info:Object.assign({},info,{scope:scope,scenario:mqCaseDisplayName(sk),sheetName:sn||''}),uploadedAt:new Date().toISOString()};
+  }
+  wb.SheetNames.forEach(function(sn){
+    if(/export info/i.test(sn)) return;
+    ingestSheet(glkSheetToRows(wb.Sheets[sn]),sn,null,null);
   });
-  if(!prior.scenarios.worst&&!prior.scenarios.best){
-    var any=glkFindWorkbookSheet(wb,[/mobile.*qtg/i,/mobile.*product/i]);
+  if(!Object.keys(out).length){
+    var any=glkFindWorkbookSheet(wb,[/mobile.*qtg/i,/mobile.*product/i,/.+/]);
     if(any){
-      var table2=mqParseProductTableRows(glkSheetToRows(any.sheet));
-      if(table2){
-        prior.scenarios.worst={table:table2,info:{sheetName:any.name,scenario:'Most Likely'}};
-        prior.sheets.push(any.name);
-      }
+      ingestSheet(glkSheetToRows(any.sheet),any.name,fallbackScope||'GLK Overall',fallbackScenario||'worst');
     }
   }
-  return (prior.scenarios.worst||prior.scenarios.best)?prior:null;
+  return out;
 }
-function mqCalcMobileProductTable(calc){
-  if(!calc||mqProductFamily!=='mobile') return null;
-  var base=mqApplyBridgeBaseFilters();
-  if(calc.activeReportLevels&&calc.activeReportLevels.length){
-    base=base.filter(function(b){return mqBidMatchesReportLevels(b,calc.activeReportLevels);});
-  }
-  var rows=['mpr','corporate','m2m'].map(function(key){
-    var label=key==='mpr'?'MPR':(key==='corporate'?'Corporate':'M2M');
-    var m=mqSumBucketQtg(base,calc,key);
-    return {key:key,label:label,gross:m.gross,churn:m.churn,net:m.net};
+function mqParseWowPriorFile(arrayBuffer,fallbackScope,fallbackScenario,cb){
+  cb=cb||function(){};
+  try{
+    var wb=XLSX.read(arrayBuffer,{type:'array',cellDates:true,cellNF:true});
+    var parsed=glkParseMobileProductWowWorkbook(wb,fallbackScope,fallbackScenario);
+    if(!Object.keys(parsed).length) return cb(new Error('Could not find a Mobile Product QTG table in that file. Export from this dashboard first.'));
+    cb(null,parsed);
+  }catch(e){ cb(e); }
+}
+function mqApplyWowPriorParsed(parsed){
+  var store=mqLoadWowPriorStore();
+  Object.keys(parsed||{}).forEach(function(k){ store[k]=parsed[k]; });
+  try{ localStorage.setItem(MQ_WOW_PRIOR_LS_KEY,JSON.stringify(store)); }catch(e){}
+  GLK_MOBILE_PRODUCT_WOW_PRIOR=store;
+}
+window.mqTriggerWowPriorUpload=function(scopeLabel,scenarioKey){
+  var inp=el('mqWowPriorInp'); if(!inp) return;
+  inp.onchange=function(){
+    var file=inp.files&&inp.files[0];
+    inp.value='';
+    if(!file) return;
+    mqUploadWowPriorFile(file,scopeLabel,scenarioKey);
+  };
+  inp.click();
+};
+window.mqTriggerWowPriorBulkUpload=function(){
+  var inp=el('mqWowPriorBulkInp'); if(!inp) return;
+  inp.onchange=function(){
+    var file=inp.files&&inp.files[0];
+    inp.value='';
+    if(!file) return;
+    mqUploadWowPriorFile(file,null,null);
+  };
+  inp.click();
+};
+window.mqUploadWowPriorFile=function(file,fallbackScope,fallbackScenario){
+  if(!file) return;
+  if(typeof XLSX==='undefined'){ alert('Excel parser not loaded. Refresh the page.'); return; }
+  var reader=new FileReader();
+  reader.onload=function(e){
+    mqParseWowPriorFile(e.target.result,fallbackScope,fallbackScenario,function(err,parsed){
+      if(err){ alert(err.message); return; }
+      mqApplyWowPriorParsed(parsed);
+      if(GLK_MQ_CALC_LAST) mqRenderMobileProductTable(GLK_MQ_CALC_LAST);
+      var n=Object.keys(parsed).length;
+      alert('Prior week loaded for '+n+' table'+(n===1?'':'s')+'. WoW % updated.');
+    });
+  };
+  reader.onerror=function(){ alert('Could not read file.'); };
+  reader.readAsArrayBuffer(file);
+};
+window.mqToggleProductTableInfo=function(){
+  var p=el('mqProductTableInfoPanel');
+  if(!p) return;
+  p.classList.toggle('open');
+};
+function mqGetProductTableScopes(report){
+  var scopes=[{key:'glk_overall',label:'GLK Overall',levels:[]}];
+  (report&&report.verticals||[]).forEach(function(v){
+    if(!v||!v.name) return;
+    scopes.push({key:mqNormScopeKey(v.name),label:v.name,levels:[v.name]});
   });
-  var total=rows.reduce(function(acc,r){
-    acc.gross+=r.gross; acc.churn+=r.churn; acc.net+=r.net; return acc;
-  },{key:'total',label:'Total',gross:0,churn:0,net:0});
-  rows.push(total);
-  var sk=calc.isBest?'best':'worst';
-  var prior=GLK_MOBILE_PRODUCT_PRIOR&&GLK_MOBILE_PRODUCT_PRIOR.scenarios&&GLK_MOBILE_PRODUCT_PRIOR.scenarios[sk];
-  var priorTable=prior&&prior.table;
-  var priorInfo=prior&&prior.info;
+  return scopes;
+}
+function mqMiniCalcFromBase(calc,isBest){
+  return {
+    year:calc.year,quarter:calc.quarter,isBest:!!isBest,isForward:!!calc.isForward,
+    bridgePeriod:calc.bridgePeriod,
+    bridgeGetVal:calc.bridgeGetVal,bridgeGetChurnVal:calc.bridgeGetChurnVal,bridgeActivationFn:calc.bridgeActivationFn
+  };
+}
+function mqApplyWowToRows(rows,scopeLabel,scenarioKey){
+  var priorEntry=mqGetWowPrior(scopeLabel,scenarioKey);
+  var priorTable=priorEntry&&priorEntry.table;
   rows.forEach(function(r){
     var p=priorTable&&priorTable[r.key];
     r.priorNet=p&&p.net!=null&&!isNaN(p.net)?num(p.net):null;
@@ -7565,15 +7664,56 @@ function mqCalcMobileProductTable(calc){
       r.wowPct=null;
     }
   });
+  return priorEntry;
+}
+function mqCalcMobileProductTableForScope(calc,scope,isBest){
+  if(!calc||mqProductFamily!=='mobile') return null;
+  var base=mqApplyBridgeBaseFilters();
+  if(scope&&scope.levels&&scope.levels.length){
+    base=base.filter(function(b){return mqBidMatchesReportLevels(b,scope.levels);});
+  }
+  var mini=mqMiniCalcFromBase(calc,isBest);
+  var rows=['mpr','corporate','m2m'].map(function(key){
+    var label=key==='mpr'?'MPR':(key==='corporate'?'Corporate':'M2M');
+    var m=mqSumBucketQtg(base,mini,key);
+    return {key:key,label:label,gross:m.gross,churn:m.churn,net:m.net};
+  });
+  var total=rows.reduce(function(acc,r){
+    acc.gross+=r.gross; acc.churn+=r.churn; acc.net+=r.net; return acc;
+  },{key:'total',label:'Total',gross:0,churn:0,net:0});
+  rows.push(total);
+  var sk=isBest?'best':'worst';
+  var priorEntry=mqApplyWowToRows(rows,scope.label,sk);
   return {
     rows:rows,
-    scenario:mqCaseDisplayName(calc.isBest?'best':'worst'),
+    scenario:mqCaseDisplayName(sk),
     scenarioKey:sk,
     period:mqPeriodLongName(calc.bridgePeriod||mqPeriod),
-    scope:calc.vertical||'GLK Overall',
+    scope:scope.label,
+    scopeKey:scope.key,
     quarter:calc.quarter&&calc.year?('Q'+calc.quarter+' '+calc.year):'',
-    priorInfo:priorInfo||null
+    priorInfo:priorEntry?priorEntry.info:null,
+    priorUploadedAt:priorEntry?priorEntry.uploadedAt:null
   };
+}
+function mqCalcAllMobileProductTables(calc){
+  if(!calc||mqProductFamily!=='mobile'||calc.isForward) return [];
+  var report=calc.report||mqGetActiveReport();
+  var scopes=mqGetProductTableScopes(report);
+  var tables=[];
+  scopes.forEach(function(scope){
+    tables.push(mqCalcMobileProductTableForScope(calc,scope,false));
+    tables.push(mqCalcMobileProductTableForScope(calc,scope,true));
+  });
+  return tables.filter(function(t){return t&&t.rows&&t.rows.length;});
+}
+function mqCalcMobileProductTable(calc){
+  if(!calc) return null;
+  var scopeLabel=calc.vertical||'GLK Overall';
+  var levels=calc.activeReportLevels&&calc.activeReportLevels.length?calc.activeReportLevels.slice():[];
+  var scope={key:mqNormScopeKey(scopeLabel),label:scopeLabel,levels:levels};
+  if(!levels.length&&/^glk overall$/i.test(String(scopeLabel).trim())) scope={key:'glk_overall',label:'GLK Overall',levels:[]};
+  return mqCalcMobileProductTableForScope(calc,scope,!!calc.isBest);
 }
 function mqFmtProductLines(v){
   if(v==null||isNaN(v)) return '—';
@@ -7585,41 +7725,22 @@ function mqFmtWowCell(row){
   var arrow=row.wowPct>0?'▲':row.wowPct<0?'▼':'';
   return '<span class="'+cls+'">'+arrow+' '+Math.abs(row.wowPct).toFixed(0)+'%</span>';
 }
-function mqRenderMobileProductTable(calc){
-  var wrap=el('mqMobileProductTableWrap');
-  var xBtn=el('mqProductTableXlsxBtn');
-  if(!wrap) return;
-  if(mqProductFamily!=='mobile'||!calc||calc.isForward){
-    wrap.style.display='none';
-    wrap.innerHTML='';
-    if(xBtn) xBtn.style.display='none';
-    return;
+function mqFmtWowStatus(data){
+  if(data.priorUploadedAt||data.priorInfo){
+    var dt=data.priorInfo&&data.priorInfo.snapshotDate?data.priorInfo.snapshotDate:(data.priorUploadedAt?new Date(data.priorUploadedAt).toLocaleDateString('en-GB'):'prior week');
+    return {loaded:true,text:'WoW vs '+dt};
   }
-  var data=mqCalcMobileProductTable(calc);
-  if(!data||!data.rows||!data.rows.length){
-    wrap.style.display='none';
-    wrap.innerHTML='';
-    if(xBtn) xBtn.style.display='none';
-    return;
-  }
-  GLK_MOBILE_PRODUCT_TABLE_LAST=data;
-  wrap.style.display='block';
-  if(xBtn) xBtn.style.display='inline-flex';
-  var priorNote='';
-  if(data.priorInfo&&data.priorInfo.snapshotDate){
-    priorNote='WoW vs snapshot '+mqEscHtml(data.priorInfo.snapshotDate)+(data.priorInfo.sheetName?' · sheet '+mqEscHtml(data.priorInfo.sheetName):'');
-  }else if(data.priorInfo&&data.priorInfo.sheetName){
-    priorNote='WoW vs prior sheet: '+mqEscHtml(data.priorInfo.sheetName);
-  }else{
-    priorNote='WoW: paste last week\'s export sheet "'+MQ_PRODUCT_TABLE_SHEET+'" into the GLK workbook, then re-upload';
-  }
-  var h='<div class="mq-product-table-wrap">';
-  h+='<div class="mq-product-table-head">';
-  h+='<div class="mq-product-table-title">Mobile Product QTG · '+mqEscHtml(data.scenario)+'</div>';
-  h+='<div class="mq-product-table-sub">'+mqEscHtml(data.period)+(data.quarter?(' · '+data.quarter):'')+' · '+mqEscHtml(data.scope)+'<br>'+priorNote+'</div>';
-  h+='</div>';
+  return {loaded:false,text:'No prior week loaded'};
+}
+function mqRenderProductTableCardHtml(data){
+  if(!data||!data.rows||!data.rows.length) return '';
+  var wow=mqFmtWowStatus(data);
+  var scCls=data.scenarioKey==='best'?'up':'ml';
+  var h='<div class="mq-product-table-card" data-scope="'+mqEscHtml(data.scopeKey||'')+'" data-scenario="'+mqEscHtml(data.scenarioKey||'')+'">';
+  h+='<div class="mq-pt-card-head"><span class="mq-pt-scope-badge">'+mqEscHtml(data.scope)+'</span>';
+  h+='<span class="mq-pt-scenario '+scCls+'">'+mqEscHtml(data.scenario)+'</span></div>';
   h+='<table class="mq-product-table"><thead><tr>';
-  h+='<th>Product</th><th class="mq-pt-h-gross">Gross Adds Lines QTG</th><th class="mq-pt-h-churn">Churn Line QTG</th><th class="mq-pt-h-net">Net Add Lines QTG</th><th>WoW Change</th>';
+  h+='<th class="mq-pt-h-prod">Product</th><th class="mq-pt-h-gross">Gross Adds QTG</th><th class="mq-pt-h-churn">Churn QTG</th><th class="mq-pt-h-net">Net Add QTG</th><th class="mq-pt-h-wow">WoW</th>';
   h+='</tr></thead><tbody>';
   data.rows.forEach(function(r){
     var trCls=r.key==='total'?' class="mq-product-total"':'';
@@ -7627,7 +7748,63 @@ function mqRenderMobileProductTable(calc){
     h+='<td class="mq-pt-gross">'+mqFmtProductLines(r.gross)+'</td><td class="mq-pt-churn">'+mqFmtProductLines(r.churn)+'</td><td class="mq-pt-net">'+mqFmtProductLines(r.net)+'</td>';
     h+='<td>'+mqFmtWowCell(r)+'</td></tr>';
   });
-  h+='</tbody></table></div>';
+  h+='</tbody></table>';
+  h+='<div class="mq-pt-card-foot">';
+  h+='<span class="mq-pt-wow-status'+(wow.loaded?' loaded':'')+'">'+mqEscHtml(wow.text)+'</span>';
+  h+='<button type="button" class="mq-pt-upload-btn" onclick="mqTriggerWowPriorUpload(\''+String(data.scope).replace(/'/g,"\\'")+'\',\''+data.scenarioKey+'\')">↑ Upload prior week</button>';
+  h+='</div></div>';
+  return h;
+}
+function mqBuildProductTableInfoHtml(calc){
+  var period=calc?mqPeriodLongName(calc.bridgePeriod||mqPeriod):'QTD';
+  return '<strong>What these tables show</strong><br>'+
+    'Every scope (GLK Overall + each vertical) × both scenarios (Most Likely + Upside). Metrics match the bridge: Gross = Won + in-flight · Churn = in-flight churn/downgrade · Net = Gross − Churn.<br><br>'+
+    '<strong>WoW (Week-on-Week)</strong><br>'+
+    '1. Export tables today and save the Excel file.<br>'+
+    '2. Next week, click <strong>Upload prior week</strong> on each card (or use bulk upload below) and select last week\'s export.<br>'+
+    '3. WoW compares current Net Add QTG vs the uploaded file — completely independent of the GLK report upload.<br><br>'+
+    '<strong>Row rules</strong> · MPR = Product Category MPR (excl. M2M) · Corporate = Corporate (excl. M2M) · M2M = Services M2M · Period: '+mqEscHtml(period);
+}
+function mqRenderMobileProductTable(calc){
+  var wrap=el('mqMobileProductTableWrap');
+  var xBtn=el('mqProductTableXlsxBtn');
+  if(!wrap) return;
+  if(mqProductFamily!=='mobile'||!calc||calc.isForward){
+    wrap.style.display='none';
+    wrap.innerHTML='';
+    GLK_MOBILE_PRODUCT_TABLES_ALL=[];
+    GLK_MOBILE_PRODUCT_TABLE_LAST=null;
+    if(xBtn) xBtn.style.display='none';
+    return;
+  }
+  mqInitWowPriorStore();
+  var tables=mqCalcAllMobileProductTables(calc);
+  if(!tables.length){
+    wrap.style.display='none';
+    wrap.innerHTML='';
+    GLK_MOBILE_PRODUCT_TABLES_ALL=[];
+    GLK_MOBILE_PRODUCT_TABLE_LAST=null;
+    if(xBtn) xBtn.style.display='none';
+    return;
+  }
+  GLK_MOBILE_PRODUCT_TABLES_ALL=tables;
+  GLK_MOBILE_PRODUCT_TABLE_LAST=tables.find(function(t){
+    return t.scenarioKey===(calc.isBest?'best':'worst')&&mqNormScopeKey(t.scope)===mqNormScopeKey(calc.vertical||'GLK Overall');
+  })||tables[0];
+  wrap.style.display='block';
+  if(xBtn) xBtn.style.display='inline-flex';
+  var h='<div class="mq-product-tables-section">';
+  h+='<div class="mq-pt-section-head">';
+  h+='<div><div class="mq-pt-section-title"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>';
+  h+='Mobile Product QTG <button type="button" class="mq-pt-info-btn" onclick="mqToggleProductTableInfo()" title="Table rules &amp; WoW workflow">i</button></div>';
+  h+='<div class="mq-pt-section-sub">'+mqEscHtml(mqPeriodLongName(calc.bridgePeriod||mqPeriod))+(calc.quarter&&calc.year?(' · Q'+calc.quarter+' '+calc.year):'')+' · All scopes · Most Likely &amp; Upside</div></div>';
+  h+='<div class="mq-pt-section-actions">';
+  h+='<button type="button" class="mq-pt-bulk-btn" onclick="mqTriggerWowPriorBulkUpload()">↑ Upload prior week (all tables)</button>';
+  h+='</div></div>';
+  h+='<div id="mqProductTableInfoPanel" class="mq-pt-info-panel">'+mqBuildProductTableInfoHtml(calc)+'</div>';
+  h+='<div class="mq-product-tables-grid">';
+  tables.forEach(function(data){ h+=mqRenderProductTableCardHtml(data); });
+  h+='</div></div>';
   wrap.innerHTML=h;
 }
 let GLK_MOBILE_PRODUCT_TABLE_LAST=null;
@@ -7676,33 +7853,29 @@ function mqBuildMobileProductExportHtml(data){
   data=data||GLK_MOBILE_PRODUCT_TABLE_LAST;
   if(!data) return null;
   var acc='#'+mqThemeAccentHex();
-  var filters=mqGetSelectedFilterLabels();
   var infoRows=[
     ['Export Date',new Date().toISOString().slice(0,10)],
     ['Scenario',data.scenario||mqCaseDisplayName()],
     ['Period',data.period||mqPeriodLongName(mqPeriod)],
     ['Quarter',data.quarter||''],
-    ['Scope',data.scope||filters['Report level']||'GLK Overall'],
-    ['Head Director',filters['Head director']||'All']
+    ['Scope',data.scope||'GLK Overall']
   ];
-  var html='<!DOCTYPE html><html><head><meta charset="utf-8"></head><body style="font-family:Inter,Arial,sans-serif;color:#1e1133;">';
-  html+='<div style="font-size:16px;font-weight:800;color:'+acc+';margin-bottom:4px;">Mobile Product QTG</div>';
-  html+='<div style="font-size:11px;color:#64748b;margin-bottom:12px;">'+mqEscHtml(data.period||'')+(data.quarter?(' · '+mqEscHtml(data.quarter)):'')+' · '+mqEscHtml(data.scope||'')+'</div>';
-  html+='<table border="0" cellpadding="6" cellspacing="0" style="margin-bottom:14px;font-size:11px;">';
+  var html='<div style="margin-bottom:28px;page-break-inside:avoid;">';
+  html+='<div style="font-size:15px;font-weight:800;color:'+acc+';margin-bottom:2px;">'+mqEscHtml(data.scope)+' · '+mqEscHtml(data.scenario)+'</div>';
+  html+='<div style="font-size:10px;color:#64748b;margin-bottom:10px;">'+mqEscHtml(data.period||'')+(data.quarter?(' · '+mqEscHtml(data.quarter)):'')+'</div>';
+  html+='<table border="0" cellpadding="5" cellspacing="0" style="margin-bottom:10px;font-size:10px;">';
   infoRows.forEach(function(row,i){
     var bg=i%2===0?'#f9f0ff':'#ffffff';
-    html+='<tr><td style="background:'+bg+';padding:6px 10px;font-weight:700;color:#64748b;">'+mqEscHtml(row[0])+'</td>';
-    html+='<td style="background:'+bg+';padding:6px 10px;">'+mqEscHtml(row[1])+'</td></tr>';
+    html+='<tr><td style="background:'+bg+';padding:5px 8px;font-weight:700;color:#64748b;">'+mqEscHtml(row[0])+'</td>';
+    html+='<td style="background:'+bg+';padding:5px 8px;">'+mqEscHtml(String(row[1]))+'</td></tr>';
   });
   html+='</table>';
-  html+='<table border="1" cellpadding="8" cellspacing="0" style="border-collapse:collapse;font-size:12px;">';
-  html+='<tr>';
-  html+='<th style="background:'+acc+';color:#fff;padding:10px;text-align:left;">Product</th>';
-  html+='<th style="background:#2563eb;color:#fff;padding:10px;text-align:right;">Gross Adds Lines QTG</th>';
-  html+='<th style="background:#dc2626;color:#fff;padding:10px;text-align:right;">Churn Line QTG</th>';
-  html+='<th style="background:#6366f1;color:#fff;padding:10px;text-align:right;">Net Add Lines QTG</th>';
-  html+='<th style="background:'+acc+';color:#fff;padding:10px;text-align:right;">WoW Change</th>';
-  html+='</tr>';
+  html+='<table border="1" cellpadding="7" cellspacing="0" style="border-collapse:collapse;font-size:11px;width:100%;max-width:640px;">';
+  html+='<tr><th style="background:'+acc+';color:#fff;padding:8px;text-align:left;">Product</th>';
+  html+='<th style="background:#2563eb;color:#fff;padding:8px;text-align:right;">Gross Adds QTG</th>';
+  html+='<th style="background:#dc2626;color:#fff;padding:8px;text-align:right;">Churn QTG</th>';
+  html+='<th style="background:#6366f1;color:#fff;padding:8px;text-align:right;">Net Add QTG</th>';
+  html+='<th style="background:#64748b;color:#fff;padding:8px;text-align:right;">WoW</th></tr>';
   (data.rows||[]).forEach(function(r,i){
     var bg=i%2===0?'#ffffff':'#f9f0ff';
     if(r.key==='total') bg='rgba(168,85,247,.12)';
@@ -7711,30 +7884,49 @@ function mqBuildMobileProductExportHtml(data){
       wow=(r.wowPct>=0?'▲ ':'▼ ')+Math.abs(r.wowPct).toFixed(0)+'%';
       wowColor=r.wowPct>=0?'#16a34a':r.wowPct<0?'#dc2626':'#64748b';
     }
-    html+='<tr>';
-    html+='<td style="background:'+bg+';padding:8px;font-weight:'+(r.key==='total'?'900':'700')+';">'+mqEscHtml(r.label)+'</td>';
-    html+='<td style="background:rgba(37,99,235,.08);padding:8px;text-align:right;color:#1d4ed8;font-weight:700;">'+mqFmtProductLines(r.gross)+'</td>';
-    html+='<td style="background:rgba(220,38,38,.08);padding:8px;text-align:right;color:#dc2626;font-weight:700;">'+mqFmtProductLines(r.churn)+'</td>';
-    html+='<td style="background:rgba(99,102,241,.1);padding:8px;text-align:right;color:#4f46e5;font-weight:900;">'+mqFmtProductLines(r.net)+'</td>';
-    html+='<td style="background:'+bg+';padding:8px;text-align:right;color:'+wowColor+';font-weight:800;">'+wow+'</td>';
-    html+='</tr>';
+    html+='<tr><td style="background:'+bg+';padding:7px;font-weight:'+(r.key==='total'?'900':'700')+';">'+mqEscHtml(r.label)+'</td>';
+    html+='<td style="background:rgba(37,99,235,.08);padding:7px;text-align:right;color:#1d4ed8;font-weight:700;">'+mqFmtProductLines(r.gross)+'</td>';
+    html+='<td style="background:rgba(220,38,38,.08);padding:7px;text-align:right;color:#dc2626;font-weight:700;">'+mqFmtProductLines(r.churn)+'</td>';
+    html+='<td style="background:rgba(99,102,241,.1);padding:7px;text-align:right;color:#4f46e5;font-weight:900;">'+mqFmtProductLines(r.net)+'</td>';
+    html+='<td style="background:'+bg+';padding:7px;text-align:right;color:'+wowColor+';font-weight:800;">'+wow+'</td></tr>';
   });
-  html+='</table></body></html>';
+  html+='</table></div>';
   return html;
 }
+function mqBuildAllMobileProductExportHtml(tables){
+  tables=tables||GLK_MOBILE_PRODUCT_TABLES_ALL;
+  if(!tables||!tables.length) return null;
+  var acc='#'+mqThemeAccentHex();
+  var html='<!DOCTYPE html><html><head><meta charset="utf-8"></head><body style="font-family:Inter,Arial,sans-serif;color:#1e1133;padding:12px;">';
+  html+='<div style="font-size:18px;font-weight:900;color:'+acc+';margin-bottom:4px;">GLK Mobile Product QTG — All Scopes</div>';
+  html+='<div style="font-size:11px;color:#64748b;margin-bottom:18px;">Exported '+new Date().toLocaleString('en-GB')+' · '+tables.length+' tables</div>';
+  tables.forEach(function(data,i){
+    if(i>0) html+='<div style="page-break-before:always;"></div>';
+    html+=mqBuildMobileProductExportHtml(data);
+  });
+  html+='</body></html>';
+  return html;
+}
+function mqExportSheetName(data){
+  var sc=(data.scenarioKey==='best'?'Upside':'ML');
+  var scope=String(data.scope||'GLK').replace(/[^\w\s-]+/g,'').trim().replace(/\s+/g,' ').substring(0,18);
+  return (scope+' '+sc).substring(0,31);
+}
 window.mqExportMobileProductTableXlsx=function(){
+  if(typeof XLSX==='undefined'){ alert('Excel library not loaded.'); return; }
   var calc=GLK_MQ_CALC_LAST;
-  var data=GLK_MOBILE_PRODUCT_TABLE_LAST||mqCalcMobileProductTable(calc);
-  if(!data){ alert('Mobile product table is not ready. Open Mobile Performance Bridge first.'); return; }
-  var html=mqBuildMobileProductExportHtml(data);
-  if(!html) return;
-  var fn=mqExportFileNameBase(calc);
-  var blob=new Blob([html],{type:'application/vnd.ms-excel;charset=utf-8'});
-  var a=document.createElement('a');
-  a.href=URL.createObjectURL(blob);
-  a.download='GLK_Mobile_Product_QTG_'+fn.sc+'_'+fn.scope+'_'+fn.dt+'.xls';
-  a.click();
-  setTimeout(function(){ try{ URL.revokeObjectURL(a.href); }catch(e){} },500);
+  var tables=GLK_MOBILE_PRODUCT_TABLES_ALL.length?GLK_MOBILE_PRODUCT_TABLES_ALL:mqCalcAllMobileProductTables(calc);
+  if(!tables||!tables.length){ alert('Mobile product tables are not ready. Open Mobile Performance Bridge first.'); return; }
+  var dt=new Date().toISOString().slice(0,10);
+  var wb=XLSX.utils.book_new();
+  tables.forEach(function(data){
+    var aoa=mqBuildMobileProductExportSheet(data);
+    if(!aoa) return;
+    var ws=XLSX.utils.aoa_to_sheet(aoa);
+    ws['!cols']=[{wch:22},{wch:22},{wch:18},{wch:20},{wch:14}];
+    XLSX.utils.book_append_sheet(wb,ws,mqExportSheetName(data));
+  });
+  XLSX.writeFile(wb,'GLK_Mobile_Product_QTG_All_'+dt+'.xlsx');
 };
 function mqBridgeBidValue(bid,calc,isChurn){
   calc=calc||GLK_MQ_CALC_LAST||{};
@@ -9028,25 +9220,41 @@ window.mqExportBridgePpt=function(){
         slide.addText(sumTxt,{x:0.35,y:metaY,w:12.5,h:0.22,fontSize:9,color:'475569',fontFace:'Arial'});
         metaY+=0.24;
       }
-      var ptData=(mqProductFamily==='mobile'&&!calc.isForward)?(GLK_MOBILE_PRODUCT_TABLE_LAST||mqCalcMobileProductTable(calc)):null;
       var imgY=Math.max(1.05,metaY+0.08);
-      var imgH=ptData&&ptData.rows&&ptData.rows.length?4.35:5.65;
-      slide.addImage({data:imgData,x:0.2,y:imgY,w:12.9,h:imgH});
-      var footY=imgY+imgH+0.12;
-      if(ptData&&ptData.rows&&ptData.rows.length){
-        slide.addText('Mobile Product QTG · '+String(ptData.scenario||'')+(ptData.quarter?(' · '+ptData.quarter):''),{
-          x:0.35,y:footY,w:12.0,h:0.24,fontSize:11,bold:true,color:'1E1133',fontFace:'Arial'
-        });
-        slide.addTable(mqBuildPptProductTableRows(ptData,accHex),{
-          x:0.35,y:footY+0.28,w:12.0,
-          colW:[1.35,2.05,1.75,2.05,1.2],
-          fontSize:9,border:{type:'solid',pt:0.5,color:'E9D5FF'},align:'left',fontFace:'Arial'
-        });
-        footY+=1.05+(ptData.rows.length*0.22);
-      }
+      slide.addImage({data:imgData,x:0.2,y:imgY,w:12.9,h:5.85});
       var legEl=el('mqBridgeLegend');
       if(legEl&&legEl.textContent){
-        slide.addText(legEl.textContent,{x:0.35,y:Math.min(footY,7.05),w:12.5,h:0.28,fontSize:8,color:'64748B',fontFace:'Arial'});
+        slide.addText(legEl.textContent,{x:0.35,y:7.05,w:12.5,h:0.28,fontSize:8,color:'64748B',fontFace:'Arial'});
+      }
+      if(mqProductFamily==='mobile'&&!calc.isForward){
+        var allPt=GLK_MOBILE_PRODUCT_TABLES_ALL.length?GLK_MOBILE_PRODUCT_TABLES_ALL:mqCalcAllMobileProductTables(calc);
+        var byScope={};
+        (allPt||[]).forEach(function(t){
+          if(!byScope[t.scopeKey]) byScope[t.scopeKey]={label:t.scope,tables:[]};
+          byScope[t.scopeKey].tables.push(t);
+        });
+        Object.keys(byScope).forEach(function(sk){
+          var grp=byScope[sk];
+          var slide2=pptx.addSlide();
+          slide2.background={color:'FFFFFF'};
+          slide2.addText(grp.label+' · Mobile Product QTG',{
+            x:0.35,y:0.15,w:12.5,h:0.35,fontSize:18,bold:true,color:'1E1133',fontFace:'Arial'
+          });
+          slide2.addText((qLbl?qLbl+' · ':'')+mqPeriodLongName(calc.bridgePeriod||mqPeriod),{
+            x:0.35,y:0.48,w:12.5,h:0.22,fontSize:10,color:'64748B',fontFace:'Arial'
+          });
+          grp.tables.forEach(function(ptData,idx){
+            var xPos=idx===0?0.35:6.75;
+            slide2.addText(String(ptData.scenario||''),{
+              x:xPos,y:0.78,w:5.8,h:0.2,fontSize:10,bold:true,color:ptData.scenarioKey==='best'?'16A34A':'4F46E5',fontFace:'Arial'
+            });
+            slide2.addTable(mqBuildPptProductTableRows(ptData,accHex),{
+              x:xPos,y:1.02,w:6.0,
+              colW:[0.95,1.35,1.15,1.35,0.85],
+              fontSize:8,border:{type:'solid',pt:0.5,color:'E9D5FF'},align:'left',fontFace:'Arial'
+            });
+          });
+        });
       }
       var dt=new Date().toISOString().slice(0,10);
       var fnScope=String(scopeLbl).replace(/[^\w\s-]+/g,'').trim().replace(/\s+/g,'_')||'GLK';
@@ -10741,6 +10949,7 @@ window.addEventListener('load',function(){
     const sel=el('colorSchemeSelector'); if(sel) sel.value=bt;
     applyTheme(bt,dm);
   }catch(e){}
+  mqInitWowPriorStore();
   initAccess();
 });
 </script>
