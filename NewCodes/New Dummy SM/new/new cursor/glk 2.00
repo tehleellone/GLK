@@ -299,6 +299,7 @@ body[data-theme="dark"] .status-dot,body[data-theme="duralux-dark"] .status-dot{
 .mq-pt-info-panel{display:none;margin-bottom:.85rem;padding:.75rem .85rem;background:var(--bg-card);border:1px solid var(--border);border-radius:10px;font-size:.7rem;color:var(--t2);line-height:1.65}
 .mq-pt-info-panel.open{display:block}
 .mq-product-tables-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(460px,1fr));gap:1rem}
+.mq-product-tables-single{grid-template-columns:minmax(0,760px);justify-content:center}
 .mq-product-table-card{background:var(--bg-card);border:1px solid var(--border);border-radius:12px;overflow:hidden;box-shadow:var(--cs);transition:box-shadow .15s,border-color .15s}
 .mq-product-table-card:hover{box-shadow:var(--ch);border-color:var(--border-s)}
 .mq-pt-card-head{display:flex;align-items:center;justify-content:space-between;gap:.5rem;padding:.55rem .7rem;background:linear-gradient(90deg,var(--nab),transparent);border-bottom:1px solid var(--border)}
@@ -7696,6 +7697,13 @@ function mqCalcMobileProductTableForScope(calc,scope,isBest){
     priorUploadedAt:priorEntry?priorEntry.uploadedAt:null
   };
 }
+function mqGetVisibleProductTableScopes(calc){
+  var levels=calc&&calc.activeReportLevels&&calc.activeReportLevels.length?calc.activeReportLevels.slice():[];
+  if(!levels.length) return [{key:'glk_overall',label:'GLK Overall',levels:[]}];
+  return levels.map(function(name){
+    return {key:mqNormScopeKey(name),label:name,levels:[name]};
+  });
+}
 function mqCalcAllMobileProductTables(calc){
   if(!calc||mqProductFamily!=='mobile'||calc.isForward) return [];
   var report=calc.report||mqGetActiveReport();
@@ -7707,13 +7715,17 @@ function mqCalcAllMobileProductTables(calc){
   });
   return tables.filter(function(t){return t&&t.rows&&t.rows.length;});
 }
+function mqCalcVisibleMobileProductTables(calc){
+  if(!calc||mqProductFamily!=='mobile'||calc.isForward) return [];
+  var scopes=mqGetVisibleProductTableScopes(calc);
+  var isBest=!!calc.isBest;
+  return scopes.map(function(scope){
+    return mqCalcMobileProductTableForScope(calc,scope,isBest);
+  }).filter(function(t){return t&&t.rows&&t.rows.length;});
+}
 function mqCalcMobileProductTable(calc){
-  if(!calc) return null;
-  var scopeLabel=calc.vertical||'GLK Overall';
-  var levels=calc.activeReportLevels&&calc.activeReportLevels.length?calc.activeReportLevels.slice():[];
-  var scope={key:mqNormScopeKey(scopeLabel),label:scopeLabel,levels:levels};
-  if(!levels.length&&/^glk overall$/i.test(String(scopeLabel).trim())) scope={key:'glk_overall',label:'GLK Overall',levels:[]};
-  return mqCalcMobileProductTableForScope(calc,scope,!!calc.isBest);
+  var visible=mqCalcVisibleMobileProductTables(calc);
+  return visible.length?visible[0]:null;
 }
 function mqFmtProductLines(v){
   if(v==null||isNaN(v)) return '—';
@@ -7757,12 +7769,14 @@ function mqRenderProductTableCardHtml(data){
 }
 function mqBuildProductTableInfoHtml(calc){
   var period=calc?mqPeriodLongName(calc.bridgePeriod||mqPeriod):'QTD';
-  return '<strong>What these tables show</strong><br>'+
-    'Every scope (GLK Overall + each vertical) × both scenarios (Most Likely + Upside). Metrics match the bridge: Gross = Won + in-flight · Churn = in-flight churn/downgrade · Net = Gross − Churn.<br><br>'+
+  return '<strong>What you see</strong><br>'+
+    'One table for your current <strong>Report level</strong> and <strong>Scenario</strong> (Most Likely / Upside). Change those filters — the table updates.<br><br>'+
+    '<strong>Export vs display</strong><br>'+
+    '<strong>Export All Tables</strong> always downloads every scope × both scenarios (for WoW archiving). Display only shows what you have filtered.<br><br>'+
     '<strong>WoW (Week-on-Week)</strong><br>'+
-    '1. Export tables today and save the Excel file.<br>'+
-    '2. Next week, click <strong>Upload prior week</strong> on each card (or use bulk upload below) and select last week\'s export.<br>'+
-    '3. WoW compares current Net Add QTG vs the uploaded file — completely independent of the GLK report upload.<br><br>'+
+    '1. Export All Tables and save the file.<br>'+
+    '2. Next week use <strong>Upload prior week</strong> — loads all scopes/scenarios from that file regardless of your current filter.<br>'+
+    '3. WoW is independent of the GLK report upload.<br><br>'+
     '<strong>Row rules</strong> · MPR = Product Category MPR (excl. M2M) · Corporate = Corporate (excl. M2M) · M2M = Services M2M · Period: '+mqEscHtml(period);
 }
 function mqRenderMobileProductTable(calc){
@@ -7778,32 +7792,31 @@ function mqRenderMobileProductTable(calc){
     return;
   }
   mqInitWowPriorStore();
-  var tables=mqCalcAllMobileProductTables(calc);
-  if(!tables.length){
+  GLK_MOBILE_PRODUCT_TABLES_ALL=mqCalcAllMobileProductTables(calc);
+  var visible=mqCalcVisibleMobileProductTables(calc);
+  if(!visible.length){
     wrap.style.display='none';
     wrap.innerHTML='';
-    GLK_MOBILE_PRODUCT_TABLES_ALL=[];
     GLK_MOBILE_PRODUCT_TABLE_LAST=null;
     if(xBtn) xBtn.style.display='none';
     return;
   }
-  GLK_MOBILE_PRODUCT_TABLES_ALL=tables;
-  GLK_MOBILE_PRODUCT_TABLE_LAST=tables.find(function(t){
-    return t.scenarioKey===(calc.isBest?'best':'worst')&&mqNormScopeKey(t.scope)===mqNormScopeKey(calc.vertical||'GLK Overall');
-  })||tables[0];
+  GLK_MOBILE_PRODUCT_TABLE_LAST=visible[0];
   wrap.style.display='block';
   if(xBtn) xBtn.style.display='inline-flex';
+  var scopeLbl=calc.vertical||'GLK Overall';
+  var scLbl=mqCaseDisplayName(calc.isBest?'best':'worst');
   var h='<div class="mq-product-tables-section">';
   h+='<div class="mq-pt-section-head">';
   h+='<div><div class="mq-pt-section-title"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>';
   h+='Mobile Product QTG <button type="button" class="mq-pt-info-btn" onclick="mqToggleProductTableInfo()" title="Table rules &amp; WoW workflow">i</button></div>';
-  h+='<div class="mq-pt-section-sub">'+mqEscHtml(mqPeriodLongName(calc.bridgePeriod||mqPeriod))+(calc.quarter&&calc.year?(' · Q'+calc.quarter+' '+calc.year):'')+' · All scopes · Most Likely &amp; Upside</div></div>';
+  h+='<div class="mq-pt-section-sub">'+mqEscHtml(mqPeriodLongName(calc.bridgePeriod||mqPeriod))+(calc.quarter&&calc.year?(' · Q'+calc.quarter+' '+calc.year):'')+' · '+mqEscHtml(scopeLbl)+' · '+mqEscHtml(scLbl)+'</div></div>';
   h+='<div class="mq-pt-section-actions">';
-  h+='<button type="button" class="mq-pt-bulk-btn" onclick="mqTriggerWowPriorBulkUpload()">↑ Upload prior week (all tables)</button>';
+  h+='<button type="button" class="mq-pt-bulk-btn" onclick="mqTriggerWowPriorBulkUpload()">↑ Upload prior week</button>';
   h+='</div></div>';
   h+='<div id="mqProductTableInfoPanel" class="mq-pt-info-panel">'+mqBuildProductTableInfoHtml(calc)+'</div>';
-  h+='<div class="mq-product-tables-grid">';
-  tables.forEach(function(data){ h+=mqRenderProductTableCardHtml(data); });
+  h+='<div class="mq-product-tables-grid'+(visible.length===1?' mq-product-tables-single':'')+'">';
+  visible.forEach(function(data){ h+=mqRenderProductTableCardHtml(data); });
   h+='</div></div>';
   wrap.innerHTML=h;
 }
@@ -7915,7 +7928,7 @@ function mqExportSheetName(data){
 window.mqExportMobileProductTableXlsx=function(){
   if(typeof XLSX==='undefined'){ alert('Excel library not loaded.'); return; }
   var calc=GLK_MQ_CALC_LAST;
-  var tables=GLK_MOBILE_PRODUCT_TABLES_ALL.length?GLK_MOBILE_PRODUCT_TABLES_ALL:mqCalcAllMobileProductTables(calc);
+  var tables=mqCalcAllMobileProductTables(calc);
   if(!tables||!tables.length){ alert('Mobile product tables are not ready. Open Mobile Performance Bridge first.'); return; }
   var dt=new Date().toISOString().slice(0,10);
   var wb=XLSX.utils.book_new();
@@ -9227,7 +9240,7 @@ window.mqExportBridgePpt=function(){
         slide.addText(legEl.textContent,{x:0.35,y:7.05,w:12.5,h:0.28,fontSize:8,color:'64748B',fontFace:'Arial'});
       }
       if(mqProductFamily==='mobile'&&!calc.isForward){
-        var allPt=GLK_MOBILE_PRODUCT_TABLES_ALL.length?GLK_MOBILE_PRODUCT_TABLES_ALL:mqCalcAllMobileProductTables(calc);
+        var allPt=mqCalcVisibleMobileProductTables(calc);
         var byScope={};
         (allPt||[]).forEach(function(t){
           if(!byScope[t.scopeKey]) byScope[t.scopeKey]={label:t.scope,tables:[]};
