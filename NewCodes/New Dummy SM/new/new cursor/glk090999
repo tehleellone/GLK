@@ -635,6 +635,14 @@ body[data-theme="dark"] .status-dot,body[data-theme="duralux-dark"] .status-dot{
 .mq-bid-table tbody tr:hover td{background:var(--nab)}
 .mq-bid-table .mq-ref-cell{font-family:ui-monospace,monospace;font-size:.68rem;word-break:break-all;max-width:240px;min-width:180px}
 .mq-bid-table .mq-sp-link a{color:var(--acc);font-weight:800;text-decoration:none;white-space:nowrap}
+.mq-acct-card{border:1px solid var(--border);border-radius:10px;background:var(--bg-card);padding:.75rem .9rem;margin-bottom:.65rem}
+.mq-acct-card-hdr{display:flex;justify-content:space-between;align-items:flex-start;gap:.75rem;flex-wrap:wrap;margin-bottom:.55rem}
+.mq-acct-card-hdr h4{margin:0;font-size:.84rem;font-weight:800;color:var(--t1)}
+.mq-acct-kv{display:grid;grid-template-columns:minmax(130px,22%) 1fr;gap:.28rem .65rem;font-size:.76rem;line-height:1.55;margin-bottom:.45rem}
+.mq-acct-kv dt{font-weight:800;color:var(--t3);margin:0}
+.mq-acct-kv dd{margin:0;font-weight:600;color:var(--t1);word-break:break-word}
+.mq-acct-ref{font-family:ui-monospace,monospace;font-size:.72rem;word-break:break-all;color:var(--t1);font-weight:700}
+.mq-acct-details summary{cursor:pointer;font-size:.72rem;font-weight:700;color:var(--acc);margin-top:.35rem}
 .mq-overdue-panel-hdr{display:flex;justify-content:space-between;align-items:center;gap:.65rem;flex-wrap:wrap;margin-bottom:.45rem}
 .mq-overdue-panel-hdr strong{color:#dc2626;font-size:.82rem}
 #mqOverdueGrid{height:440px;width:100%;margin-top:.55rem}
@@ -1425,7 +1433,7 @@ body[data-theme="dark"] .badge-warning,body[data-theme="duralux-dark"] .badge-wa
           <input type="file" id="mqWowPriorBulkInp" accept=".xlsx,.xls,.xlsm,.csv,.xls" style="display:none;">
           <div id="mqBarDetailPanel" style="display:none;margin-top:.55rem;padding:.75rem 1rem;background:var(--bg-secondary);border:1px solid var(--border);border-radius:10px;font-size:.72rem;color:var(--t2);line-height:1.55;overflow-y:auto;"></div>
           <div id="mqBridgeSearchGridWrap" style="display:none;margin-top:.55rem;padding:.75rem 1rem;background:var(--bg-secondary);border:1px solid var(--border);border-radius:10px;"></div>
-          <div id="mqBarDetailHint">Click a bar or table cell → AG Grid below with column filters · expand any row for full pipeline fields · Open in SharePoint opens the editable form</div>
+          <div id="mqBarDetailHint">Click a bar or table cell → account cards below with full bid reference, HD/AD/AM, and Open in SharePoint (editable form)</div>
           <div id="mqBridgeInfoPanel" style="display:none;margin-top:.65rem;padding:.85rem 1rem;background:var(--bg-secondary);border:1px solid var(--border);border-radius:10px;font-size:.72rem;color:var(--t2);line-height:1.65;max-height:420px;overflow-y:auto;"></div>
           <div id="mobileQtdControlsWrap"></div>
           <div id="mobileQtdSummaryWrap"></div>
@@ -7517,7 +7525,11 @@ function mqBidRefValue(bid){
   if(bid.id!=null) return 'SP-'+bid.id;
   return '';
 }
-function mqBuildFlatBidTableHtml(rows,opts){
+function mqSpEditUrl(bid){
+  if(!bid||bid.id==null||bid.id==='') return '';
+  return mqBidEditUrl(bid)||(SP_SITE+'/Lists/'+encodeURIComponent(SP_LIST)+'/EditForm.aspx?ID='+encodeURIComponent(bid.id));
+}
+function mqBuildBridgeAccountsHtml(rows,opts){
   opts=opts||{};
   var isChurn=!!opts.isChurn;
   if(!rows||!rows.length) return '<div style="color:var(--t3);font-style:italic;padding:.35rem 0;">No accounts.</div>';
@@ -7527,49 +7539,46 @@ function mqBuildFlatBidTableHtml(rows,opts){
     var vb=Math.abs(mqBidRowDetailValue(bb,isChurn?'decrease':'increase'));
     return vb-va;
   });
-  var h='<div class="mq-bid-table-wrap"><table class="mq-bid-table"><thead><tr>';
-  h+='<th>SharePoint</th><th>Bid Reference</th><th>Customer</th><th>Customer Code</th>';
-  h+='<th>Head Director</th><th>Account Director</th><th>Account Manager</th>';
-  h+='<th>Vertical</th><th>Opp Status</th><th>Expected Activation</th>';
-  h+='<th>'+(opts.valueLabel||'Bridge Value')+'</th><th>Product</th><th>Contract</th>';
-  if(opts.showGroup) h+='<th>Customer Group</th>';
   var showPlacement=!!opts.showBridgePlacement||(sorted.length&&sorted[0]._placement);
-  if(showPlacement) h+='<th>Bridge Placement</th>';
-  h+='</tr></thead><tbody>';
-  sorted.forEach(function(row){
+  var h='';
+  sorted.forEach(function(row,i){
     var bd=row.bid||row;
-    var val=row._value!=null?row._value:mqBidRowDetailValue(bd,isChurn?'decrease':'increase');
-    var viewUrl=mqBidViewUrl(bd);
-    h+='<tr>';
-    h+='<td class="mq-sp-link">'+(viewUrl?'<a href="'+viewUrl+'" target="_blank" rel="noopener" title="Open read-only SharePoint view">Open ↗</a>':'—')+'</td>';
-    h+='<td class="mq-ref-cell">'+mqEscHtml(mqBidRefValue(bd))+'</td>';
-    h+='<td>'+mqEscHtml(bd.customerName||'—')+'</td>';
-    h+='<td>'+mqEscHtml(bd.customerCode&&bd.customerCode!=='—'?bd.customerCode:'—')+'</td>';
-    h+='<td>'+mqEscHtml(bd.headDirector&&bd.headDirector!=='(Blank)'?bd.headDirector:'—')+'</td>';
-    h+='<td>'+mqEscHtml(bd.accountDirector||'—')+'</td>';
-    h+='<td>'+mqEscHtml(bd.amName||'—')+'</td>';
-    h+='<td>'+mqEscHtml(bd.vertical||'—')+'</td>';
-    h+='<td><strong>'+mqEscHtml(mqRawOppStatus(bd)||'—')+'</strong></td>';
-    h+='<td>'+mqFmtBidDate(bd.expectedActivation)+' <span style="color:var(--t3);font-weight:600;">('+mqActivationMonthLabel(bd.expectedActivation)+')</span></td>';
-    h+='<td style="color:'+(isChurn?'#ef4444':'var(--acc)')+';font-weight:800;">'+fmtLines(Math.abs(val))+'</td>';
-    h+='<td>'+mqEscHtml((bd.productFamily||'—')+' · '+(bd.productCategory||'—'))+'</td>';
-    h+='<td>'+mqEscHtml(bd.typeOfContract||'—')+'</td>';
-    if(opts.showGroup) h+='<td>'+mqEscHtml(row.groupLabel||(row.solo?'—':row.name)||'—')+'</td>';
+    var rowChurn=row._isChurn!=null?!!row._isChurn:isChurn;
+    var val=row._value!=null?row._value:mqBidRowDetailValue(bd,rowChurn?'decrease':'increase');
+    var spUrl=mqSpEditUrl(bd);
+    h+='<div class="mq-acct-card">';
+    h+='<div class="mq-acct-card-hdr">';
+    h+='<h4>'+(i+1)+'. '+mqEscHtml(bd.customerName||'—')+' · <span style="color:'+(rowChurn?'#ef4444':'var(--acc)')+';">'+fmtLines(Math.abs(val))+' '+mqMetricShort()+'</span></h4>';
+    h+=(spUrl?'<a class="mq-detail-open-form" href="'+spUrl+'" target="_blank" rel="noopener">Open in SharePoint ↗</a>':'<span style="color:var(--t3);font-size:.72rem;">No SP link</span>');
+    h+='</div>';
+    h+='<dl class="mq-acct-kv">';
+    h+='<dt>Bid Reference</dt><dd class="mq-acct-ref">'+mqEscHtml(mqBidRefValue(bd)||'—')+'</dd>';
+    h+='<dt>Customer Code</dt><dd>'+mqEscHtml(bd.customerCode&&bd.customerCode!=='—'?bd.customerCode:'—')+'</dd>';
+    h+='<dt>Head Director</dt><dd>'+mqEscHtml(bd.headDirector&&bd.headDirector!=='(Blank)'?bd.headDirector:'—')+'</dd>';
+    h+='<dt>Account Director</dt><dd>'+mqEscHtml(bd.accountDirector||'—')+'</dd>';
+    h+='<dt>Account Manager</dt><dd>'+mqEscHtml(bd.amName||'—')+'</dd>';
+    h+='<dt>Vertical</dt><dd>'+mqEscHtml(bd.vertical||'—')+'</dd>';
+    h+='<dt>Opp Status</dt><dd><strong>'+mqEscHtml(mqRawOppStatus(bd)||'—')+'</strong></dd>';
+    h+='<dt>Expected Activation</dt><dd>'+mqFmtBidDate(bd.expectedActivation)+' ('+mqActivationMonthLabel(bd.expectedActivation)+')</dd>';
+    h+='<dt>Product</dt><dd>'+mqEscHtml((bd.productFamily||'—')+' · '+(bd.productCategory||'—')+' · '+(bd.services||'—'))+'</dd>';
+    h+='<dt>Contract</dt><dd>'+mqEscHtml(bd.typeOfContract||'—')+' · '+mqEscHtml(bd.typeOfRequest||'—')+'</dd>';
+    if(opts.showGroup&&row.groupLabel) h+='<dt>Customer Group</dt><dd>'+mqEscHtml(row.groupLabel)+'</dd>';
     if(showPlacement){
-      h+='<td><strong>'+mqEscHtml(row._placement||'—')+'</strong>';
-      if(row._reason) h+='<div style="color:#b45309;font-size:.68rem;font-weight:600;margin-top:.2rem;">'+mqEscHtml(row._reason)+'</div>';
-      h+='</td>';
+      h+='<dt>Bridge Placement</dt><dd><strong>'+mqEscHtml(row._placement||'—')+'</strong>'+(row._reason?('<div style="color:#b45309;font-size:.68rem;margin-top:.15rem;">'+mqEscHtml(row._reason)+'</div>'):'')+'</dd>';
     }
-    h+='</tr>';
+    h+='</dl>';
+    h+='<details class="mq-acct-details"><summary>All pipeline fields</summary>';
+    h+=mqBidDetailExpandHtml(bd);
+    h+='</details></div>';
   });
-  h+='</tbody></table></div>';
   return h;
 }
+function mqBuildFlatBidTableHtml(rows,opts){ return mqBuildBridgeAccountsHtml(rows,opts); }
 function mqFlatRowsFromGroups(groups){
   var out=[];
   (groups||[]).forEach(function(g){
     (g.bids||[]).forEach(function(bd){
-      out.push({bid:bd,groupLabel:g.solo?null:(g.name||null)});
+      out.push({bid:bd,groupLabel:g.solo?null:(g.name||null),_isChurn:!!g._isChurn});
     });
   });
   return out;
@@ -7773,7 +7782,6 @@ function mqRenderOverdueActivationPanel(){
   if(wrap) wrap.style.display=(GLK_MQ_DETAIL_IDX>=0||el('mqBridgeSearchGridWrap')&&el('mqBridgeSearchGridWrap').style.display!=='none')?'block':'none';
   if(!panel) return;
   if(!MQ_OVERDUE_OPEN){
-    mqDestroyOverdueGrid();
     panel.style.display='none';
     panel.innerHTML='';
     return;
@@ -7782,40 +7790,11 @@ function mqRenderOverdueActivationPanel(){
   var today=mqFmtBidDate(new Date().toISOString());
   var h='<div class="mq-overdue-panel-hdr">';
   h+='<strong>⚠ Overdue activation — Q'+live.quarter+' '+live.year+' · Proposed / Opportunity · expected date before '+today+' ('+overdue.length+')</strong>';
-  h+='<span style="font-size:.7rem;color:var(--t3);font-weight:600;">Use column filters on the grid. Open SharePoint to update status or expected activation.</span>';
+  h+='<span style="font-size:.7rem;color:var(--t3);font-weight:600;">Open SharePoint to update status or expected activation.</span>';
   h+='</div>';
-  h+='<div id="mqOverdueGrid" class="ag-theme-alpine"></div>';
+  h+=(!overdue.length?'<div style="padding:.65rem;color:var(--t3);font-weight:600;">No overdue activations in the current bridge filters.</div>':mqBuildBridgeAccountsHtml(overdue.map(function(b){ return {bid:b}; }),{isChurn:false,showGroup:false}));
   panel.innerHTML=h;
   panel.style.display='block';
-  mqDestroyOverdueGrid();
-  var gridEl=el('mqOverdueGrid');
-  if(!gridEl) return;
-  if(!overdue.length){
-    gridEl.innerHTML='<div style="padding:1rem;color:var(--t3);font-weight:600;">No overdue activations in the current bridge filters.</div>';
-    return;
-  }
-  if(typeof agGrid==='undefined'){
-    gridEl.innerHTML='<div style="padding:1rem;color:var(--t3);">AG Grid not loaded.</div>';
-    return;
-  }
-  var odRows=mqOverdueGridRows(overdue).map(function(r,i){ r._rowId='od'+i; r._bid=overdue[i]; return r; });
-  window._MQ_DETAIL_GRID_ROWS=odRows;
-  MQ_EXPANDED_ROW_IDS={};
-  MQ_OVERDUE_GRID_API=agGrid.createGrid(gridEl,{
-    columnDefs:mqBridgeDetailGridCols({valueLabel:mqMetricShort(),showGroup:false}),
-    rowData:mqGridRowsWithExpansions(odRows),
-    defaultColDef:{sortable:true,filter:GlkValueListFilter,resizable:true},
-    suppressMenuHide:true,
-    isFullWidthRow:function(p){ return !!(p.rowNode&&p.rowNode.data&&p.rowNode.data._isDetail); },
-    fullWidthCellRenderer:function(p){
-      var div=document.createElement('div');
-      div.innerHTML=mqBidDetailExpandHtml(p.data._bid);
-      return div;
-    },
-    getRowHeight:function(p){ return p.data&&p.data._isDetail?320:44; },
-    pagination:true,paginationPageSize:50,paginationPageSizeSelector:[25,50,100,250],
-    rowHeight:44,headerHeight:48,animateRows:true,enableCellTextSelection:true
-  });
 }
 function glkInitBridgeEnterBlock(){
   if(window._GLK_BRIDGE_ENTER_INIT) return;
@@ -8136,14 +8115,12 @@ function mqBuildDetailAccountsListHtml(groups,barIdx,toggleFn,opts){
   var flatRows=mqFlatRowsFromGroups(filtered);
   var isChurn=!!(groups[0]&&groups[0]._isChurn);
   var h=opts.includeToolbar!==false?mqBuildDetailToolbarHtml(groups):'';
-  h+='<div style="margin:.35rem 0 .45rem;font-weight:700;font-size:.82rem;">Accounts ('+flatRows.length+' shown · '+totalBids+' total) — full detail · sorted largest to smallest</div>';
+  h+='<div style="margin:.35rem 0 .45rem;font-weight:700;font-size:.82rem;">Accounts ('+flatRows.length+' shown · '+totalBids+' total) — sorted largest to smallest</div>';
   if(!flatRows.length){
     h+='<div style="color:var(--t3);font-style:italic;padding:.35rem 0;">No accounts match the current search/filters.</div>';
     return h;
   }
-  h+='<div id="mqBridgeDetailGrid"></div>';
-  window._MQ_DETAIL_GRID_ROWS=flatRows.map(function(r){ return mqBidToBridgeGridRow(r.bid,{isChurn:isChurn,groupLabel:r.groupLabel}); });
-  window._MQ_DETAIL_GRID_OPTS={isChurn:isChurn,valueLabel:mqMetricShort(),showGroup:true};
+  h+=mqBuildBridgeAccountsHtml(flatRows,{isChurn:isChurn,showGroup:true});
   return h;
 }
 function mqBuildProductTableDetailHtml(){
@@ -8189,15 +8166,11 @@ function mqBuildProductTableDetailHtml(){
     h+=collectGroups('churn',collected.churnBids,true,'Churn / Downgrade');
   }
   var flatRows=mqFlatRowsFromGroups(mqFilterDetailGroups(allGroups));
-  h+='<div style="margin:.35rem 0 .45rem;font-weight:700;font-size:.82rem;">Accounts ('+flatRows.length+' shown) — expand row (+) for all fields</div>';
-  h+='<div id="mqBridgeDetailGrid"></div>';
+  h+='<div style="margin:.35rem 0 .45rem;font-weight:700;font-size:.82rem;">Accounts ('+flatRows.length+' shown)</div>';
+  h+=mqBuildBridgeAccountsHtml(flatRows,{isChurn:!!(allGroups[0]&&allGroups[0]._isChurn),showGroup:true});
   h+='<div id="mqDetailOverdueWrap" style="display:block;margin-top:1rem;padding-top:.75rem;border-top:1px solid var(--border);">';
   h+='<button type="button" id="mqOverdueToggleBtn" class="reset-btn" onclick="mqToggleOverdueActivation()" style="font-size:.72rem;padding:.4rem .75rem;margin-bottom:.55rem;">Show overdue activation</button>';
   h+='<div id="mqOverdueActPanel" style="display:none;"></div></div>';
-  window._MQ_DETAIL_GRID_ROWS=flatRows.map(function(r){
-    return mqBidToBridgeGridRow(r.bid,{isChurn:!!(allGroups[0]&&allGroups[0]._isChurn),groupLabel:r.groupLabel});
-  });
-  window._MQ_DETAIL_GRID_OPTS={valueLabel:mqMetricShort(),showGroup:true};
   return h;
 }
 window.mqTogglePtWonExcluded=function(){
@@ -8241,12 +8214,7 @@ function mqRefreshProductTableDetailPanel(){
   var p=el('mqBarDetailPanel');
   if(!p||!GLK_MQ_PT_DETAIL) return;
   p.style.display='block';
-  mqDestroyBridgeDetailGrid();
   p.innerHTML=mqBuildProductTableDetailHtml();
-  var gridEl=el('mqBridgeDetailGrid');
-  if(gridEl&&window._MQ_DETAIL_GRID_ROWS){
-    mqRenderBridgeDetailGrid(gridEl,window._MQ_DETAIL_GRID_ROWS,window._MQ_DETAIL_GRID_OPTS||{});
-  }
   mqUpdateOverdueButtonCount();
   if(MQ_OVERDUE_OPEN) mqRenderOverdueActivationPanel();
   mqHighlightProductTableSelection();
@@ -8927,7 +8895,6 @@ function mqSearchBridgeAccounts(query){
 function mqRenderBridgeSearchResults(items){
   var box=el('mqBridgeSearchResults'); if(!box) return;
   var wrap=el('mqBridgeSearchGridWrap');
-  mqDestroySearchGrid();
   if(!items||!items.length){
     box.style.display='block';
     box.innerHTML='<div style="padding:.55rem .65rem;color:var(--t3);font-size:.72rem;">No matching accounts in pipeline.</div>';
@@ -8938,30 +8905,24 @@ function mqRenderBridgeSearchResults(items){
   box.innerHTML='';
   if(!wrap) return;
   wrap.style.display='block';
+  var cardRows=items.map(function(r){
+    return {
+      bid:r.bid,
+      _value:r.value,
+      _placement:r.placement,
+      _reason:r.reason,
+      _isChurn:r.section==='churn'
+    };
+  });
   wrap.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center;gap:.65rem;margin-bottom:.55rem;flex-wrap:wrap;">'+
-    '<strong style="color:var(--acc);font-size:.78rem;">Search results ('+items.length+') — expand row for full detail</strong>'+
+    '<strong style="color:var(--acc);font-size:.78rem;">Search results ('+items.length+')</strong>'+
     '<button type="button" onclick="mqClearBridgeSearch()" style="border:none;background:transparent;color:var(--t3);cursor:pointer;font-size:.85rem;">✕ Close</button></div>'+
-    '<div id="mqBridgeSearchGrid"></div>'+
+    mqBuildBridgeAccountsHtml(cardRows,{isChurn:false,showGroup:false,showBridgePlacement:true})+
     '<div id="mqDetailOverdueWrap" style="margin-top:1rem;padding-top:.75rem;border-top:1px solid var(--border);">'+
     '<button type="button" id="mqOverdueToggleBtn" class="reset-btn" onclick="mqToggleOverdueActivation()" style="font-size:.72rem;padding:.4rem .75rem;margin-bottom:.55rem;">Show overdue activation</button>'+
     '<div id="mqOverdueActPanel" style="display:none;"></div></div>';
-  var rows=items.map(function(r){
-    return mqBidToBridgeGridRow(r.bid,{
-      isChurn:r.section==='churn',
-      value:r.value,
-      _placement:r.placement,
-      _reason:r.reason
-    });
-  });
-  var searchGridEl=el('mqBridgeSearchGrid');
-  if(searchGridEl&&typeof agGrid!=='undefined'){
-    searchGridEl.style.height='min(50vh,480px)';
-    searchGridEl.className='ag-theme-alpine';
-    window._MQ_DETAIL_GRID_ROWS=rows;
-    MQ_SEARCH_GRID_API=agGrid.createGrid(searchGridEl,mqBridgeGridOptions(rows,{valueLabel:'Bridge '+mqMetricShort(),showGroup:false,showPlacement:true,gridHeight:'min(50vh,480px)'}));
-    MQ_BRIDGE_DETAIL_GRID_API=null;
-  }
   mqUpdateOverdueButtonCount();
+  if(MQ_OVERDUE_OPEN) mqRenderOverdueActivationPanel();
   wrap.scrollIntoView({behavior:'smooth',block:'nearest'});
 }
 window.mqRunBridgeSearch=function(){
@@ -8973,9 +8934,7 @@ window.mqClearBridgeSearch=function(){
   var box=el('mqBridgeSearchResults'); if(box){ box.style.display='none'; box.innerHTML=''; }
   var wrap=el('mqBridgeSearchGridWrap');
   if(wrap){ wrap.style.display='none'; wrap.innerHTML=''; }
-  mqDestroySearchGrid();
   MQ_OVERDUE_OPEN=false;
-  mqDestroyOverdueGrid();
 };
 function glkMobileQtdCalc(){
   var report=mqGetActiveReport();
@@ -9429,13 +9388,11 @@ function mqBuildBarDetailHtml(b,metaLabel,barIdx){
     });
     h+='</select></div>';
     var flatRows=mqFlatRowsFromGroups(filtered);
-    h+='<div style="margin:.35rem 0 .45rem;font-weight:700;font-size:.82rem;">Accounts ('+flatRows.length+' shown · '+totalBids+' total) — use column filters · expand row (+) for all fields'+(b.section==='won'?' · <span style="color:var(--t3);font-weight:600;">each bid listed separately on Won bar</span>':'')+'</div>';
-    h+='<div id="mqBridgeDetailGrid"></div>';
+    h+='<div style="margin:.35rem 0 .45rem;font-weight:700;font-size:.82rem;">Accounts ('+flatRows.length+' shown · '+totalBids+' total)'+(b.section==='won'?' · <span style="color:var(--t3);font-weight:600;">each bid listed separately on Won bar</span>':'')+'</div>';
+    h+=mqBuildBridgeAccountsHtml(flatRows,{isChurn:isChurn,showGroup:true});
     h+='<div id="mqDetailOverdueWrap" style="display:block;margin-top:1rem;padding-top:.75rem;border-top:1px solid var(--border);">';
     h+='<button type="button" id="mqOverdueToggleBtn" class="reset-btn" onclick="mqToggleOverdueActivation()" style="font-size:.72rem;padding:.4rem .75rem;margin-bottom:.55rem;">Show overdue activation</button>';
     h+='<div id="mqOverdueActPanel" style="display:none;"></div></div>';
-    window._MQ_DETAIL_GRID_ROWS=flatRows.map(function(r){ return mqBidToBridgeGridRow(r.bid,{isChurn:isChurn,groupLabel:r.groupLabel,value:null}); });
-    window._MQ_DETAIL_GRID_OPTS={isChurn:isChurn,valueLabel:mqMetricShort()+' ('+(isChurn?'churn':'value')+')',showGroup:true,showPlacement:false};
   }else if(!b.vertBreakdown||!b.vertBreakdown.length){
     h+='<div style="color:var(--t3);font-style:italic;">No account-level detail for this bar.</div>';
   }
@@ -9480,12 +9437,7 @@ function mqRefreshBarDetailPanel(){
   var b=GLK_MQ_LAST_BARS[GLK_MQ_DETAIL_IDX];
   var m=(GLK_MQ_LAST_BAR_META||[])[GLK_MQ_DETAIL_IDX];
   p.style.display='block';
-  mqDestroyBridgeDetailGrid();
   p.innerHTML=mqBuildBarDetailHtml(b,m?m.label:'',GLK_MQ_DETAIL_IDX);
-  var gridEl=el('mqBridgeDetailGrid');
-  if(gridEl&&window._MQ_DETAIL_GRID_ROWS){
-    mqRenderBridgeDetailGrid(gridEl,window._MQ_DETAIL_GRID_ROWS,window._MQ_DETAIL_GRID_OPTS||{});
-  }
   mqUpdateOverdueButtonCount();
   if(MQ_OVERDUE_OPEN) mqRenderOverdueActivationPanel();
   mqSyncChartLabels(CHARTS.mobileQtd,GLK_MQ_LAST_BARS);
@@ -9496,8 +9448,6 @@ window.mqCloseBarDetail=function(){
   GLK_MQ_DETAIL_GROUP_IDX=-1;
   GLK_MQ_DETAIL_BID_IDX=-1;
   MQ_OVERDUE_OPEN=false;
-  mqDestroyBridgeDetailGrid();
-  mqDestroyOverdueGrid();
   if(!GLK_MQ_PT_DETAIL){
     var p=el('mqBarDetailPanel'); if(p){ p.style.display='none'; p.innerHTML=''; }
   }
