@@ -11433,7 +11433,7 @@ function rrTryLoadBundledWorkbook(cb){
 // ══════════════════════════════════════════════════════════════════
 //  PIPELINE GOVERNANCE — SharePoint version history
 // ══════════════════════════════════════════════════════════════════
-const PG_VERSION_CACHE_LS='glk_pg_version_cache_v5';
+const PG_VERSION_CACHE_LS='glk_pg_version_cache_v7';
 const PG_OPP_FIELD='Opportunity_x0020_Status';
 let PG_TAB='stale';
 let PG_ANALYSIS=[];
@@ -11447,7 +11447,7 @@ let PG_FLIP_FILTER='all';
 let PG_STALE_DAYS=1;
 let PG_FLIP_FROM_ISO='';
 let PG_FLIP_TO_ISO='';
-let PG_LOAD_STATS={fetched:0,cached:0,fallback:0,hardErrors:0,totalFlips:0,dealsWithFlips:0};
+let PG_LOAD_STATS={fetched:0,cached:0,fallback:0,hardErrors:0,totalFlips:0,dealsWithFlips:0,aspxReads:0};
 function pgTodayIso(){
   var d=new Date();
   return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
@@ -11549,26 +11549,36 @@ function pgFallbackVersions(bid){
 function pgStatusKey(s){
   return String(s||'').trim().toLowerCase();
 }
+function pgStripHtml(html){
+  var tmp=document.createElement('div');
+  tmp.innerHTML=html||'';
+  return (tmp.textContent||tmp.innerText||'').replace(/\s+/g,' ').trim();
+}
+function pgCleanFieldVal(v){
+  if(v==null||v===undefined) return '';
+  if(typeof v==='object'&&v.Title) return pgNormStatus(v.Title);
+  return pgNormStatus(pgStripHtml(String(v)));
+}
 function pgExtractOppFromVersionPayload(d){
   if(!d) return '';
-  var opp=pgNormStatus(d[PG_OPP_FIELD]);
+  var opp=pgCleanFieldVal(d[PG_OPP_FIELD]);
   if(opp) return opp;
   var fvt=d.FieldValuesAsText;
   if(fvt&&typeof fvt==='object'){
-    opp=pgNormStatus(fvt['Opportunity Status']||fvt[PG_OPP_FIELD]||fvt.Opportunity_x0020_Status);
+    opp=pgCleanFieldVal(fvt['Opportunity Status']||fvt[PG_OPP_FIELD]||fvt.Opportunity_x0020_Status);
     if(opp) return opp;
     try{
       Object.keys(fvt).forEach(function(k){
         if(opp) return;
-        if(/opportunity/i.test(k)&&/status/i.test(k)) opp=pgNormStatus(fvt[k]);
+        if(/opportunity/i.test(k)&&/status/i.test(k)) opp=pgCleanFieldVal(fvt[k]);
       });
     }catch(e){}
   }
   try{
     Object.keys(d).forEach(function(k){
       if(opp) return;
-      if(k==='__metadata'||k==='Editor'||k==='Author'||k==='CreatedBy') return;
-      if(/opportunity/i.test(k)&&/status/i.test(k)) opp=pgNormStatus(d[k]);
+      if(k==='__metadata'||k==='Editor'||k==='Author'||k==='CreatedBy'||k==='Modified'||k==='Created'||k==='VersionLabel') return;
+      if(/opportunity/i.test(k)&&/status/i.test(k)) opp=pgCleanFieldVal(d[k]);
     });
   }catch(e2){}
   return opp||'';
@@ -11584,61 +11594,85 @@ function pgVersionSortKey(row){
 function pgVersionId(rowMeta){
   if(rowMeta==null) return null;
   if(rowMeta.ID!=null) return rowMeta.ID;
+  if(rowMeta.Id!=null) return rowMeta.Id;
   if(rowMeta.VersionId!=null) return rowMeta.VersionId;
   return null;
 }
-function pgParseVersionFields(d,rowMeta){
-  var opp=pgExtractOppFromVersionPayload(d);
-  return {
-    versionId:pgVersionId(rowMeta),
-    versionLabel:rowMeta.VersionLabel||d.VersionLabel||String(pgVersionId(rowMeta)||''),
-    created:rowMeta.Modified||rowMeta.Created||d.Modified||d.Created,
-    oppStatus:opp,
-    editor:pgEditorFromRow(d)||pgEditorFromRow(rowMeta),
-    fetched:!!d
-  };
-}
-function pgFetchOneVersion(itemId,rowMeta,cb){
+function pgVersionFetchUrls(itemId,rowMeta){
+  var safeList=SP_LIST.replace(/'/g,"''");
+  var base=SP_SITE+"/_api/web/lists/getbytitle('"+safeList+"')/items("+itemId+")/versions";
   var vid=pgVersionId(rowMeta);
-  var empty=function(){
-    return {
-      versionId:vid,versionLabel:rowMeta.VersionLabel||String(vid||''),
-      created:rowMeta.Modified||rowMeta.Created,
-      oppStatus:'',editor:pgEditorFromRow(rowMeta),fetched:false
-    };
-  };
-  if(vid==null) return cb(empty());
-  var safeList=SP_LIST.replace(/'/g,"''");
-  var base=SP_SITE+"/_api/web/lists/getbytitle('"+safeList+"')/items("+itemId+")/versions("+vid+")";
-  var fvtUrl=base+'/FieldValuesAsText';
-  var selUrl=base+'?$select='+encodeURIComponent(PG_OPP_FIELD+',Modified,Created,VersionLabel');
-  spGet(fvtUrl,function(err,data){
-    if(!err&&data&&data.d){
-      var parsed=pgParseVersionFields(data.d,rowMeta);
-      if(parsed.oppStatus){
-        parsed.fetched=true;
-        return cb(parsed);
-      }
+  var vl=rowMeta.VersionLabel!=null?String(rowMeta.VersionLabel).replace(/'/g,"''"):null;
+  var sel=encodeURIComponent(PG_OPP_FIELD+',Modified,Created,VersionLabel');
+  var urls=[];
+  if(window._PG_LIST_GUID){
+    var gbase=SP_SITE+"/_api/web/lists(guid'"+window._PG_LIST_GUID+"')/items("+itemId+")/versions";
+    if(vid!=null){
+      urls.push(gbase+'('+vid+')/FieldValuesAsText');
+      urls.push(gbase+'('+vid+')?$select='+sel);
     }
-    spGet(selUrl,function(err2,data2){
-      if(!err2&&data2&&data2.d){
-        var parsed2=pgParseVersionFields(data2.d,rowMeta);
-        if(parsed2.oppStatus){
-          parsed2.fetched=true;
-          return cb(parsed2);
-        }
-      }
-      cb(empty());
-    });
-  });
+    if(vl){
+      urls.push(gbase+"('"+vl+"')/FieldValuesAsText");
+      urls.push(gbase+"('"+vl+"')?$select="+sel);
+    }
+  }
+  if(vid!=null){
+    urls.push(base+'('+vid+')/FieldValuesAsText');
+    urls.push(base+'('+vid+')?$select='+sel);
+  }
+  if(vl){
+    urls.push(base+"('"+vl+"')/FieldValuesAsText");
+    urls.push(base+"('"+vl+"')?$select="+sel);
+    if(String(vl)!==String(vid)) urls.push(base+'('+vl+')/FieldValuesAsText');
+  }
+  return urls;
 }
-function pgFetchItemVersionHistory(bid,cb){
-  var cached=pgGetCachedVersions(bid);
-  if(cached){ PG_LOAD_STATS.cached++; return cb(null,cached,false); }
+function pgFetchVersionFieldSet(itemId,rowMeta,cb){
+  var urls=pgVersionFetchUrls(itemId,rowMeta);
+  var listOpp=pgCleanFieldVal(rowMeta[PG_OPP_FIELD]);
+  var ci=0, bestFields=null;
+  function finish(fields,ok){
+    var opp=pgExtractOppFromVersionPayload(fields)||listOpp;
+    cb({
+      versionId:pgVersionId(rowMeta),
+      versionLabel:rowMeta.VersionLabel||String(pgVersionId(rowMeta)||''),
+      created:rowMeta.Modified||rowMeta.Created,
+      oppStatus:opp,
+      rawFields:fields||{},
+      editor:pgEditorFromRow(fields)||pgEditorFromRow(rowMeta),
+      fetched:!!ok,
+      listOpp:listOpp
+    });
+  }
+  function tryNext(){
+    if(ci>=urls.length) return finish(bestFields||{},!!bestFields);
+    spGet(urls[ci++],function(err,data){
+      if(!err&&data&&data.d){
+        bestFields=data.d;
+        var opp=pgExtractOppFromVersionPayload(data.d)||listOpp;
+        if(opp) return finish(data.d,true);
+      }
+      tryNext();
+    });
+  }
+  tryNext();
+}
+function pgFetchItemVersionHistory(bid,cb,skipCache){
+  if(!skipCache){
+    var cached=pgGetCachedVersions(bid);
+    if(cached){ PG_LOAD_STATS.cached++; return cb(null,cached,false,pgAnalyzeVersionHistory(bid,cached)); }
+  }
   var safeList=SP_LIST.replace(/'/g,"''");
-  var listUrl=SP_SITE+"/_api/web/lists/getbytitle('"+safeList+"')/items("+bid.id+")/versions";
+  var listUrl=SP_SITE+"/_api/web/lists/getbytitle('"+safeList+"')/items("+bid.id+")/versions?$select=VersionId,VersionLabel,Created,Modified,"+PG_OPP_FIELD;
   spGet(listUrl,function(err,data){
     var rows=(!err&&data&&data.d&&data.d.results)?data.d.results:[];
+    if(!rows.length){
+      spGet(SP_SITE+"/_api/web/lists/getbytitle('"+safeList+"')/items("+bid.id+")/versions",function(err2,data2){
+        rows=(!err2&&data2&&data2.d&&data2.d.results)?data2.d.results:[];
+        pgContinueVersionRows(bid,rows,cb);
+      });
+      return;
+    }
     pgContinueVersionRows(bid,rows,cb);
   });
 }
@@ -11647,27 +11681,177 @@ function pgContinueVersionRows(bid,rows,cb){
     var fb=pgFallbackVersions(bid);
     pgSaveVersionCacheEntry(bid.id,{modified:bid.modified,savedAt:Date.now(),versions:fb,partial:true});
     PG_LOAD_STATS.fallback++;
-    return cb(null,fb,true);
+    return cb(null,fb,true,pgAnalyzeVersionHistory(bid,fb));
   }
   rows.sort(function(a,b){ return pgVersionSortKey(a)-pgVersionSortKey(b); });
-  var out=new Array(rows.length), pending=rows.length;
-  rows.forEach(function(rowMeta,idx){
-    pgFetchOneVersion(bid.id,rowMeta,function(ver){
-      out[idx]=ver;
-      pending--;
-      if(pending>0) return;
-      var fetchedAny=out.some(function(v){ return v&&v.fetched; });
-      var withOpp=out.filter(function(v){ return v&&v.fetched&&v.oppStatus; });
-      if(fetchedAny&&withOpp.length>=1){
-        PG_LOAD_STATS.fetched++;
-        pgSaveVersionCacheEntry(bid.id,{modified:bid.modified,savedAt:Date.now(),versions:out});
-        return cb(null,out,false);
+  var out=rows.map(function(rowMeta){
+    return {
+      versionId:pgVersionId(rowMeta),
+      versionLabel:rowMeta.VersionLabel||String(pgVersionId(rowMeta)||''),
+      created:rowMeta.Modified||rowMeta.Created,
+      oppStatus:pgCleanFieldVal(rowMeta[PG_OPP_FIELD]),
+      editor:pgEditorFromRow(rowMeta),
+      fetched:true
+    };
+  });
+  PG_LOAD_STATS.fetched++;
+  pgFinishVersionHistory(bid,out,function(err2,finalOut,analysis,isPartial){
+    pgSaveVersionCacheEntry(bid.id,{modified:bid.modified,savedAt:Date.now(),versions:finalOut,analysisFlips:(analysis.flips||[]).length});
+    cb(null,finalOut,isPartial,analysis);
+  });
+}
+function pgDiffOppBetweenVersions(prevVer,curVer){
+  var oldSt=pgNormStatus(prevVer&&prevVer.oppStatus);
+  var newSt=pgNormStatus(curVer&&curVer.oppStatus);
+  if(!oldSt||!newSt||pgStatusKey(oldSt)===pgStatusKey(newSt)) return null;
+  return {from:oldSt,to:newSt};
+}
+function pgDiffOppFromRawFields(prevFields,curFields){
+  var oldSt=pgExtractOppFromVersionPayload(prevFields);
+  var newSt=pgExtractOppFromVersionPayload(curFields);
+  if(!oldSt||!newSt||pgStatusKey(oldSt)===pgStatusKey(newSt)) return null;
+  return {from:oldSt,to:newSt};
+}
+function pgListGuidBrace(){
+  if(!window._PG_LIST_GUID) return '';
+  var g=String(window._PG_LIST_GUID).replace(/[{}]/g,'');
+  return '{'+g+'}';
+}
+function pgFetchHtml(url,cb){
+  var xhr=new XMLHttpRequest();
+  xhr.open('GET',url,true);
+  xhr.onreadystatechange=function(){
+    if(xhr.readyState!==4) return;
+    if(xhr.status>=200&&xhr.status<300) cb(null,xhr.responseText);
+    else cb(new Error('HTTP '+xhr.status),null);
+  };
+  xhr.onerror=function(){ cb(new Error('Network error'),null); };
+  xhr.send();
+}
+function pgExtractOppChangeFromText(text){
+  text=pgStripHtml(text);
+  if(!/opportunity/i.test(text)||!/status/i.test(text)) return null;
+  var wasNow=text.match(/Opportunity\s+Status\s+was\s+(.+?)\s+now\s+(.+?)(?:\.|$)/i);
+  if(wasNow) return {from:pgCleanFieldVal(wasNow[1]),to:pgCleanFieldVal(wasNow[2])};
+  var setTo=text.match(/Opportunity\s+Status\s+Set\s+to\s+(.+?)(?:\.|$|;)/i);
+  if(setTo) return {to:pgCleanFieldVal(setTo[1])};
+  var chFrom=text.match(/Opportunity\s+Status[^.]{0,80}?(?:from|changed from)\s+(.+?)\s+to\s+(.+?)(?:\.|$)/i);
+  if(chFrom) return {from:pgCleanFieldVal(chFrom[1]),to:pgCleanFieldVal(chFrom[2])};
+  return null;
+}
+function pgBuildFlipsFromVersionEntries(entries){
+  entries.sort(function(a,b){ return parseFloat(a.versionLabel)-parseFloat(b.versionLabel); });
+  var flips=[], lastSt=null;
+  entries.forEach(function(e){
+    var to=e.oppTo?pgNormStatus(e.oppTo):null;
+    if(!to) return;
+    var from=e.oppFrom?pgNormStatus(e.oppFrom):lastSt;
+    if(!from||pgStatusKey(from)!==pgStatusKey(to)){
+      flips.push({
+        from:from||'—',to:to,
+        flipKind:pgFlipKind(to),
+        when:e.created,editor:e.editor||'—',
+        versionLabel:e.versionLabel||'',
+        source:'versions_aspx'
+      });
+    }
+    lastSt=to;
+  });
+  return flips;
+}
+function pgParseVersionsAspxOppFlips(html){
+  if(!html) return [];
+  var doc=new DOMParser().parseFromString(html,'text/html');
+  var entries=[], cur=null;
+  var table=doc.querySelector('table.ms-settingsframe')||doc.querySelector('table[id*="versions"]')||doc.querySelector('table.ms-formtable');
+  var rows=table?table.querySelectorAll('tr'):doc.querySelectorAll('tr');
+  for(var i=0;i<rows.length;i++){
+    var cells=rows[i].querySelectorAll(':scope>td');
+    if(cells.length>=2){
+      var first=pgStripHtml(cells[0].innerHTML).replace(/\s*View\s*$/i,'').trim();
+      var vm=first.match(/^(\d+\.\d+)/);
+      if(vm&&!/^no\.?$/i.test(first)){
+        cur={versionLabel:vm[1],created:pgStripHtml(cells[1]?cells[1].innerHTML:''),editor:pgStripHtml(cells[2]?cells[2].innerHTML:'')||'—',oppFrom:null,oppTo:null};
+        entries.push(cur);
+        continue;
       }
-      var fb=pgFallbackVersions(bid);
-      pgSaveVersionCacheEntry(bid.id,{modified:bid.modified,savedAt:Date.now(),versions:fb,partial:true});
-      PG_LOAD_STATS.fallback++;
-      cb(null,fb,true);
-    });
+    }
+    if(!cur) continue;
+    var change=pgExtractOppChangeFromText(rows[i].innerHTML);
+    if(change){
+      if(change.from) cur.oppFrom=change.from;
+      if(change.to) cur.oppTo=change.to;
+    }
+    var innerCells=rows[i].querySelectorAll('td');
+    for(var j=0;j<innerCells.length-1;j++){
+      var lbl=pgStripHtml(innerCells[j].innerHTML);
+      if(!/opportunity/i.test(lbl)||!/status/i.test(lbl)) continue;
+      var val=pgStripHtml(innerCells[j+1].innerHTML);
+      var c2=pgExtractOppChangeFromText(lbl+' '+val);
+      if(!c2&&val){
+        var sm=val.match(/set\s+to\s+(.+)/i);
+        if(sm) c2={to:pgCleanFieldVal(sm[1])};
+      }
+      if(c2){
+        if(c2.from) cur.oppFrom=c2.from;
+        if(c2.to) cur.oppTo=c2.to;
+      }
+    }
+  }
+  if(!entries.length){
+    var text=pgStripHtml(html);
+    var re=/(\d+\.\d+)[\s\S]{0,1200}?Opportunity\s+Status\s+Set\s+to\s+([^.;]+)/gi;
+    var m;
+    while((m=re.exec(text))){
+      entries.push({versionLabel:m[1],created:'',editor:'—',oppTo:pgCleanFieldVal(m[2]),oppFrom:null});
+    }
+  }
+  return pgBuildFlipsFromVersionEntries(entries);
+}
+function pgFetchVersionsAspxFlips(bid,cb){
+  var guid=pgListGuidBrace();
+  if(!guid) return cb([]);
+  var url=SP_SITE+'/_layouts/15/Versions.aspx?list='+encodeURIComponent(guid)+'&ID='+bid.id;
+  pgFetchHtml(url,function(err,html){
+    PG_LOAD_STATS.aspxReads++;
+    if(err||!html) return cb([]);
+    cb(pgParseVersionsAspxOppFlips(html));
+  });
+}
+function pgApplyFlipsToAnalysis(bid,out,flips,baseAnalysis){
+  var analysis=Object.assign({},baseAnalysis,{flips:flips});
+  if(!flips.length) return analysis;
+  var last=flips[flips.length-1];
+  analysis.currentStatus=last.to||analysis.currentStatus;
+  var sinceDt=pgParseSpDateTime(last.when);
+  if(sinceDt){
+    analysis.statusSince=last.when;
+    analysis.daysStale=mqInclusiveDaysBetween(sinceDt,new Date());
+  }
+  var segments=[], lastStatus=null;
+  flips.forEach(function(fl){
+    if(fl.from&&fl.from!=='—'&&pgStatusKey(fl.from)!==pgStatusKey(lastStatus)){
+      segments.push({status:fl.from,from:fl.when,editor:fl.editor,versionLabel:fl.versionLabel});
+      lastStatus=fl.from;
+    }
+    segments.push({status:fl.to,from:fl.when,editor:fl.editor,versionLabel:fl.versionLabel});
+    lastStatus=fl.to;
+  });
+  if(segments.length) analysis.segments=segments;
+  analysis.historyReadable=true;
+  return analysis;
+}
+function pgFinishVersionHistory(bid,out,cb){
+  var restAnalysis=pgAnalyzeVersionHistory(bid,out);
+  if(out.length<2||!window._PG_LIST_GUID){
+    return cb(null,out,restAnalysis,restAnalysis.flips.length===0);
+  }
+  pgFetchVersionsAspxFlips(bid,function(aspxFlips){
+    var analysis=restAnalysis;
+    if(aspxFlips.length>=restAnalysis.flips.length){
+      analysis=pgApplyFlipsToAnalysis(bid,out,aspxFlips,restAnalysis);
+    }
+    cb(null,out,analysis,analysis.flips.length===0);
   });
 }
 function pgFlipKind(toStatus){
@@ -11690,35 +11874,45 @@ function pgAnalyzeVersionHistory(bid,versions){
     return pgVersionSortKey({VersionLabel:a.versionLabel,VersionId:a.versionId,Created:a.created,Modified:a.created})-
       pgVersionSortKey({VersionLabel:b.versionLabel,VersionId:b.versionId,Created:b.created,Modified:b.created});
   });
-  var segments=[], flips=[], lastStatus=null;
+  var flips=[], segments=[];
+  for(var i=0;i<versions.length;i++){
+    var v=versions[i];
+    if(!v) continue;
+    if(!v.oppStatus&&v.rawFields) v.oppStatus=pgExtractOppFromVersionPayload(v.rawFields);
+    if(!v.oppStatus&&v.listOpp) v.oppStatus=v.listOpp;
+  }
+  for(var j=1;j<versions.length;j++){
+    var prev=versions[j-1], cur=versions[j];
+    if(!prev||!cur) continue;
+    var diff=pgDiffOppBetweenVersions(prev,cur);
+    if(!diff&&prev.rawFields&&cur.rawFields) diff=pgDiffOppFromRawFields(prev.rawFields,cur.rawFields);
+    if(!diff) continue;
+    flips.push({
+      from:diff.from,to:diff.to,
+      flipKind:pgFlipKind(diff.to),
+      when:cur.created,editor:cur.editor||'—',
+      versionLabel:cur.versionLabel||'',
+      source:'version_history'
+    });
+  }
+  var lastStatus=null;
   versions.forEach(function(v){
     if(!v) return;
     var st=pgNormStatus(v.oppStatus);
     if(!st) return;
-    if(lastStatus===null){
+    if(lastStatus===null||pgStatusKey(st)!==pgStatusKey(lastStatus)){
       segments.push({status:st,from:v.created,editor:v.editor||'—',versionLabel:v.versionLabel||''});
       lastStatus=st;
-      return;
     }
-    if(pgStatusKey(st)===pgStatusKey(lastStatus)) return;
-    flips.push({
-      from:lastStatus,to:st,
-      flipKind:pgFlipKind(st),
-      when:v.created,editor:v.editor||'—',
-      versionLabel:v.versionLabel||'',
-      source:'version_history'
-    });
-    segments.push({status:st,from:v.created,editor:v.editor||'—',versionLabel:v.versionLabel||''});
-    lastStatus=st;
   });
   if(!segments.length){
-    var cur=pgNormStatus(bid.oppStatus);
-    if(cur) segments.push({status:cur,from:bid.created||bid.modified,editor:'—',versionLabel:'current'});
+    var cur0=pgNormStatus(bid.oppStatus);
+    if(cur0) segments.push({status:cur0,from:bid.created||bid.modified,editor:'—',versionLabel:'current'});
   }
-  for(var i=0;i<segments.length;i++){
-    var startDt=pgParseSpDateTime(segments[i].from);
-    var endDt=i<segments.length-1?pgParseSpDateTime(segments[i+1].from):new Date();
-    segments[i].daysInStatus=(startDt&&endDt)?mqInclusiveDaysBetween(startDt,endDt):0;
+  for(var k=0;k<segments.length;k++){
+    var startDt=pgParseSpDateTime(segments[k].from);
+    var endDt=k<segments.length-1?pgParseSpDateTime(segments[k+1].from):new Date();
+    segments[k].daysInStatus=(startDt&&endDt)?mqInclusiveDaysBetween(startDt,endDt):0;
   }
   var current=segments[segments.length-1];
   var daysStale=0, statusSince=null;
@@ -11732,7 +11926,8 @@ function pgAnalyzeVersionHistory(bid,versions){
     daysStale:daysStale,statusSince:statusSince,
     flips:flips,currentStatus:pgNormStatus(bid.oppStatus)||(current?current.status:''),
     lastEditor:current?current.editor:'—',
-    historyReadable:versions.some(function(v){ return v&&v.fetched&&v.oppStatus; })
+    historyReadable:versions.some(function(v){ return v&&v.oppStatus; }),
+    uniqueStatuses:[...new Set(versions.map(function(v){ return pgNormStatus(v&&v.oppStatus); }).filter(Boolean))]
   };
 }
 function pgParseSpDateTime(iso){
@@ -12407,7 +12602,7 @@ function pgRender(){
     foot.innerHTML=(PG_TAB==='flips'
       ?'<strong>Status flips</strong> = every Opp Status change from SharePoint version history on live Q'+live.quarter+' '+live.year+' pipeline · default range = whole quarter'
       :'<strong>Stale queue</strong> = same Opp Status unchanged for 1+/7+/15+ days · days counted from last status change in version history')
-      +' · <strong>Shift+Refresh</strong> clears cache'+errNote+' · Q'+live.quarter+' pipeline '+PG_ANALYSIS.length+' deals · History OK '+PG_LOAD_STATS.fetched+' · No history '+PG_LOAD_STATS.fallback+' · '+PG_LOAD_STATS.totalFlips+' flips on '+PG_LOAD_STATS.dealsWithFlips+' deals.';
+      +' · Flips parsed from SharePoint Versions.aspx (same screen as Version History dialog)'+errNote+' · Q'+live.quarter+' pipeline '+PG_ANALYSIS.length+' · Version lists '+PG_LOAD_STATS.fetched+' · Versions.aspx reads '+PG_LOAD_STATS.aspxReads+' · <strong>'+PG_LOAD_STATS.totalFlips+' flips</strong> on '+PG_LOAD_STATS.dealsWithFlips+' deals.';
   }
 }
 function pgSetProgress(pct,text){
@@ -12426,15 +12621,7 @@ function pgRefreshFromSharePoint(evt){
     alert('Pipeline not loaded yet. Wait for the main dashboard to finish loading, then try again.');
     return;
   }
-  var force=evt&&evt.shiftKey;
-  try{
-    if(force){
-      localStorage.removeItem(PG_VERSION_CACHE_LS);
-    }else if(!localStorage.getItem(PG_VERSION_CACHE_LS+'_v5_init')){
-      localStorage.removeItem('glk_pg_version_cache_v4');
-      localStorage.setItem(PG_VERSION_CACHE_LS+'_v5_init','1');
-    }
-  }catch(e){}
+  try{ localStorage.removeItem(PG_VERSION_CACHE_LS); }catch(e){}
   var candidates=pgGetQtgCandidates();
   if(!candidates.length){
     alert('No live-quarter pipeline deals found in the current dataset.');
@@ -12444,7 +12631,7 @@ function pgRefreshFromSharePoint(evt){
   }
   PG_LOADING=true;
   PG_ANALYSIS=[];
-  PG_LOAD_STATS={fetched:0,cached:0,fallback:0,hardErrors:0,totalFlips:0,dealsWithFlips:0};
+  PG_LOAD_STATS={fetched:0,cached:0,fallback:0,hardErrors:0,totalFlips:0,dealsWithFlips:0,aspxReads:0};
   pgRender();
   pgSetProgress(0,'Syncing live Opp Status from SharePoint…');
   var syncIdx=0, syncActive=0, syncDone=0;
@@ -12464,33 +12651,41 @@ function pgRefreshFromSharePoint(evt){
   }
   syncPump(function(){
     pgSetProgress(42,'Reading SharePoint version history…');
-    var idx=0, active=0;
-    function pump(){
-      while(active<2&&idx<candidates.length){
-        (function(bid){
-          active++;
-          pgFetchItemVersionHistory(bid,function(err,versions,isPartial){
-            active--;
-            if(err&&!versions) PG_LOAD_STATS.hardErrors++;
-            var analysis=pgAnalyzeVersionHistory(bid,versions||pgFallbackVersions(bid));
-            if(analysis.flips&&analysis.flips.length){
-              PG_LOAD_STATS.totalFlips+=analysis.flips.length;
-              PG_LOAD_STATS.dealsWithFlips++;
-            }
-            PG_ANALYSIS.push({bid:bid,analysis:analysis,partial:!!isPartial});
-            var done=PG_ANALYSIS.length;
-            pgSetProgress(40+Math.round((done/candidates.length)*60),'Version history · '+done+' / '+candidates.length);
-            if(done>=candidates.length){
-              PG_LOADING=false;
-              pgHideProgress();
-              PG_ANALYSIS.sort(function(a,b){ return b.analysis.daysStale-a.analysis.daysStale; });
-              pgRender();
-            }else pump();
-          });
-        })(candidates[idx++]);
+    function startHistoryPump(){
+      var idx=0, active=0;
+      function pump(){
+        while(active<3&&idx<candidates.length){
+          (function(bid){
+            active++;
+            pgFetchItemVersionHistory(bid,function(err,versions,isPartial,prefetchedAnalysis){
+              active--;
+              if(err&&!versions) PG_LOAD_STATS.hardErrors++;
+              var analysis=prefetchedAnalysis||pgAnalyzeVersionHistory(bid,versions||pgFallbackVersions(bid));
+              if(analysis.flips&&analysis.flips.length){
+                PG_LOAD_STATS.totalFlips+=analysis.flips.length;
+                PG_LOAD_STATS.dealsWithFlips++;
+              }
+              PG_ANALYSIS.push({bid:bid,analysis:analysis,partial:!!isPartial});
+              var done=PG_ANALYSIS.length;
+              pgSetProgress(40+Math.round((done/candidates.length)*60),'Version history · '+done+' / '+candidates.length);
+              if(done>=candidates.length){
+                PG_LOADING=false;
+                pgHideProgress();
+                PG_ANALYSIS.sort(function(a,b){ return b.analysis.daysStale-a.analysis.daysStale; });
+                pgRender();
+              }else pump();
+            },true);
+          })(candidates[idx++]);
+        }
       }
+      pump();
     }
-    pump();
+    if(window._PG_LIST_GUID){ startHistoryPump(); return; }
+    var safeList=SP_LIST.replace(/'/g,"''");
+    spGet(SP_SITE+"/_api/web/lists/getbytitle('"+safeList+"')?$select=Id",function(err,gdata){
+      if(!err&&gdata&&gdata.d&&gdata.d.Id) window._PG_LIST_GUID=String(gdata.d.Id).replace(/[{}]/g,'');
+      startHistoryPump();
+    });
   });
 }
 function pgInitGovernanceDatesOnce(){
