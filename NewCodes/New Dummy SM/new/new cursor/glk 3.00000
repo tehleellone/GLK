@@ -5063,9 +5063,8 @@ function applyTheme(base,dark){
 let GLK_ACTIVE_NAV='navDashboard';
 function glkSetActiveNav(navId){
   GLK_ACTIVE_NAV=navId||'navDashboard';
-  ['navDashboard','navMobileQtd','navRevenueRec','navGovernance'].forEach(function(id){
-    var n=el(id);
-    if(n) n.classList.toggle('active',id===GLK_ACTIVE_NAV);
+  document.querySelectorAll('.sidebar .nav-item').forEach(function(n){
+    n.classList.toggle('active',n.id===GLK_ACTIVE_NAV);
   });
 }
 function glkRestoreActiveNav(){
@@ -11664,18 +11663,16 @@ function pgFetchItemVersionHistory(bid,cb,skipCache){
     var cached=pgGetCachedVersions(bid);
     if(cached){ PG_LOAD_STATS.cached++; return cb(null,cached,false,pgAnalyzeVersionHistory(bid,cached)); }
   }
-  var safeList=SP_LIST.replace(/'/g,"''");
-  var listUrl=SP_SITE+"/_api/web/lists/getbytitle('"+safeList+"')/items("+bid.id+")/versions?$select=VersionId,VersionLabel,Created,Modified,"+PG_OPP_FIELD;
-  spGet(listUrl,function(err,data){
-    var rows=(!err&&data&&data.d&&data.d.results)?data.d.results:[];
-    if(!rows.length){
-      spGet(SP_SITE+"/_api/web/lists/getbytitle('"+safeList+"')/items("+bid.id+")/versions",function(err2,data2){
-        rows=(!err2&&data2&&data2.d&&data2.d.results)?data2.d.results:[];
-        pgContinueVersionRows(bid,rows,cb);
-      });
-      return;
+  pgFetchVersionsAspxFlips(bid,function(aspxFlips,parsed){
+    var versions=(parsed&&parsed.versions&&parsed.versions.length)?parsed.versions:pgFallbackVersions(bid);
+    if(!(parsed&&parsed.versions&&parsed.versions.length)) PG_LOAD_STATS.fallback++;
+    else PG_LOAD_STATS.fetched++;
+    var analysis=pgAnalyzeVersionHistory(bid,versions);
+    if(aspxFlips&&aspxFlips.length){
+      analysis=pgApplyFlipsToAnalysis(bid,versions,aspxFlips,analysis);
     }
-    pgContinueVersionRows(bid,rows,cb);
+    pgSaveVersionCacheEntry(bid.id,{modified:bid.modified,savedAt:Date.now(),versions:versions,analysisFlips:(analysis.flips||[]).length});
+    cb(null,versions,!(aspxFlips&&aspxFlips.length),analysis);
   });
 }
 function pgContinueVersionRows(bid,rows,cb){
@@ -11721,15 +11718,23 @@ function pgListGuidBrace(){
   return g?'{'+g+'}':'';
 }
 function pgFetchHtml(url,cb){
+  var done=false;
+  function finish(err,html){
+    if(done) return;
+    done=true;
+    cb(err,html);
+  }
   var xhr=new XMLHttpRequest();
   xhr.open('GET',url,true);
+  xhr.timeout=8000;
   xhr.withCredentials=true;
   xhr.onreadystatechange=function(){
     if(xhr.readyState!==4) return;
-    if(xhr.status>=200&&xhr.status<300) cb(null,xhr.responseText);
-    else cb(new Error('HTTP '+xhr.status),null);
+    if(xhr.status>=200&&xhr.status<300) finish(null,xhr.responseText);
+    else finish(new Error('HTTP '+xhr.status),null);
   };
-  xhr.onerror=function(){ cb(new Error('Network error'),null); };
+  xhr.onerror=function(){ finish(new Error('Network error'),null); };
+  xhr.ontimeout=function(){ finish(new Error('timed out'),null); };
   xhr.send();
 }
 function pgTryHtmlUrls(urls,cb){
@@ -11802,7 +11807,7 @@ function pgBuildFlipsFromVersionEntries(entries){
   return flips;
 }
 function pgParseVersionsAspxOppFlips(html){
-  if(!html) return [];
+  if(!html) return {flips:[],versions:[],entries:[]};
   var doc=new DOMParser().parseFromString(html,'text/html');
   var entries=[], cur=null;
   var rows=doc.querySelectorAll('tr');
@@ -11846,41 +11851,52 @@ function pgParseVersionsAspxOppFlips(html){
     if(textEntries.length) entries=textEntries;
   }
   var flips=pgBuildFlipsFromVersionEntries(entries);
+  var versions=entries.map(function(e){
+    return {
+      versionId:parseFloat(e.versionLabel)||0,
+      versionLabel:e.versionLabel,
+      created:e.created,
+      oppStatus:e.oppTo||'',
+      editor:e.editor||'—',
+      fetched:true
+    };
+  });
   if(flips.length) PG_LOAD_STATS.aspxParseHits++;
-  if(!PG_DEBUG||((PG_DEBUG.flips||0)===0&&(flips.length||entries.length>PG_DEBUG.versionRows))){
+  if(!PG_DEBUG||((PG_DEBUG.flips||0)===0&&(flips.length||entries.length>(PG_DEBUG.versionRows||0)))){
     PG_DEBUG={
       htmlLen:html.length,
       hasOppStatus:/opportunity\s+status/i.test(pgStripHtml(html)),
       versionRows:entries.length,
       statusRows:entries.filter(function(e){ return e.oppTo; }).length,
       flips:flips.length,
-      sample:(pgStripHtml(html)||'').slice(0,240)
+      sample:(pgStripHtml(html)||'').slice(0,280)
     };
   }
-  return flips;
+  return {flips:flips,versions:versions,entries:entries};
 }
 function pgVersionsAspxUrls(bid){
-  var br=pgListGuidBrace(), raw=pgListGuidRaw(), id=bid.id;
+  var br=pgListGuidBrace(), id=bid.id;
   var urls=[];
-  if(br) urls.push(SP_SITE+'/_layouts/15/Versions.aspx?list='+encodeURIComponent(br)+'&ID='+id);
-  if(raw) urls.push(SP_SITE+'/_layouts/15/Versions.aspx?list='+encodeURIComponent(raw)+'&ID='+id);
-  if(br) urls.push(SP_SITE+'/_layouts/15/Versions.aspx?List='+encodeURIComponent(br)+'&ID='+id);
+  if(br){
+    urls.push(SP_SITE+'/_layouts/15/Versions.aspx?list='+encodeURIComponent(br)+'&ID='+id);
+    urls.push(SP_SITE+'/_layouts/15/Versions.aspx?list='+encodeURIComponent(br)+'&ID='+id+'&IsDlg=1');
+  }
   return urls;
 }
 function pgFetchVersionsAspxFlips(bid,cb){
   var urls=pgVersionsAspxUrls(bid);
   if(!urls.length){
     if(!PG_DEBUG) PG_DEBUG={err:'No list GUID — cannot open Versions.aspx'};
-    return cb([]);
+    return cb([],null);
   }
   pgTryHtmlUrls(urls,function(err,html){
     PG_LOAD_STATS.aspxReads++;
     if(!html){
       if(!PG_DEBUG) PG_DEBUG={err:'Versions.aspx empty/failed',url:urls[0]};
-      return cb([]);
+      return cb([],null);
     }
-    if(!PG_DEBUG) PG_DEBUG.url=urls[0];
-    cb(pgParseVersionsAspxOppFlips(html));
+    var parsed=pgParseVersionsAspxOppFlips(html);
+    cb(parsed.flips||[],parsed);
   });
 }
 function pgParseVersionDetailOpp(html,verMeta){
@@ -11967,13 +11983,7 @@ function pgApplyFlipsToAnalysis(bid,out,flips,baseAnalysis){
 }
 function pgFinishVersionHistory(bid,out,cb){
   var restAnalysis=pgAnalyzeVersionHistory(bid,out);
-  pgFetchVersionsAspxFlips(bid,function(aspxFlips){
-    var analysis=restAnalysis;
-    if(aspxFlips&&aspxFlips.length){
-      analysis=pgApplyFlipsToAnalysis(bid,out,aspxFlips,restAnalysis);
-    }
-    cb(null,out,analysis,!(aspxFlips&&aspxFlips.length));
-  });
+  cb(null,out,restAnalysis,!(restAnalysis.flips&&restAnalysis.flips.length));
 }
 function pgFlipKind(toStatus){
   var l=String(toStatus||'').trim().toLowerCase();
@@ -12713,9 +12723,11 @@ function pgRender(){
   var f=pgGetFilterVals();
   var foot=el('pgFootnote'), gridTitle=el('pgGridTitle'), gridCount=el('pgGridCount');
   if(PG_LOADING){
-    if(gridTitle) gridTitle.textContent='Loading SharePoint version history…';
-    if(gridCount) gridCount.textContent='';
-    el('pgGrid').innerHTML='<div class="pg-empty">Fetching version history from SharePoint…</div>';
+    var loaded=PG_ANALYSIS.length, total=window._PG_LOAD_TOTAL||loaded||0;
+    var pct=total?Math.round((loaded/total)*100):0;
+    if(gridTitle) gridTitle.textContent='Loading version history · '+loaded+' / '+total+' ('+pct+'%)';
+    if(gridCount) gridCount.textContent=(PG_LOAD_STATS.totalFlips||0)+' flips found so far';
+    el('pgGrid').innerHTML='<div class="pg-empty">Reading SharePoint Version History · <strong>'+loaded+' / '+total+'</strong> deals · <strong>'+(PG_LOAD_STATS.totalFlips||0)+'</strong> status flips found…</div>';
     return;
   }
   if(!PG_ANALYSIS.length){
@@ -12770,13 +12782,26 @@ function pgRefreshFromSharePoint(evt){
   PG_LOADING=true;
   PG_ANALYSIS=[];
   PG_DEBUG=null;
+  window._PG_LOAD_TOTAL=candidates.length;
   PG_LOAD_STATS={fetched:0,cached:0,fallback:0,hardErrors:0,totalFlips:0,dealsWithFlips:0,aspxReads:0,detailReads:0,aspxParseHits:0};
   pgRender();
+  pgSetProgress(0,'Starting · 0 / '+candidates.length+' deals (0%)');
+  function pgLiveProgress(){
+    var done=PG_ANALYSIS.length, total=candidates.length;
+    var pct=total?Math.round((done/total)*100):0;
+    var last=PG_ANALYSIS.length?PG_ANALYSIS[PG_ANALYSIS.length-1]:null;
+    var name=last&&last.bid?(last.bid.customerName||''):'';
+    pgSetProgress(pct,'Reading Version History · '+done+' / '+total+' ('+pct+'%) · '+(PG_LOAD_STATS.totalFlips||0)+' flips found'+(name?' · last: '+name:''));
+    var gridTitle=el('pgGridTitle'), gridCount=el('pgGridCount'), grid=el('pgGrid');
+    if(gridTitle) gridTitle.textContent='Loading version history · '+done+' / '+total+' ('+pct+'%)';
+    if(gridCount) gridCount.textContent=(PG_LOAD_STATS.totalFlips||0)+' flips found so far';
+    if(grid) grid.innerHTML='<div class="pg-empty">Reading SharePoint Version History · <strong>'+done+' / '+total+'</strong> deals ('+pct+'%) · <strong>'+(PG_LOAD_STATS.totalFlips||0)+'</strong> status flips found…</div>';
+  }
   function startHistoryPump(){
-    pgSetProgress(5,'Reading SharePoint Version History pages…');
+    pgLiveProgress();
     var idx=0, active=0;
     function pump(){
-      while(active<4&&idx<candidates.length){
+      while(active<6&&idx<candidates.length){
         (function(bid){
           active++;
           pgFetchItemVersionHistory(bid,function(err,versions,isPartial,prefetchedAnalysis){
@@ -12788,9 +12813,8 @@ function pgRefreshFromSharePoint(evt){
               PG_LOAD_STATS.dealsWithFlips++;
             }
             PG_ANALYSIS.push({bid:bid,analysis:analysis,partial:!!isPartial});
-            var done=PG_ANALYSIS.length;
-            pgSetProgress(Math.round((done/candidates.length)*100),'Version history · '+done+' / '+candidates.length);
-            if(done>=candidates.length){
+            pgLiveProgress();
+            if(PG_ANALYSIS.length>=candidates.length){
               PG_LOADING=false;
               pgHideProgress();
               PG_ANALYSIS.sort(function(a,b){ return b.analysis.daysStale-a.analysis.daysStale; });
@@ -12829,10 +12853,10 @@ window.glkShowGovernance=function(){
   el('governance-view').style.display='block';
   el('content').classList.add('mq-view');
   el('dashboardContent').classList.add('mq-full');
-  glkSetActiveNav('navGovernance');
   pgInitGovernanceDatesOnce();
   if(!PG_ANALYSIS.length&&!PG_LOADING&&ALL_BIDS&&ALL_BIDS.length) pgRefreshFromSharePoint(null);
   else pgRender();
+  glkSetActiveNav('navGovernance');
 };
 window.pgRefreshFromSharePoint=pgRefreshFromSharePoint;
 window.pgSetTab=pgSetTab;
