@@ -1478,7 +1478,7 @@ body[data-theme="dark"] .badge-warning,body[data-theme="duralux-dark"] .badge-wa
               </button>
             </div>
           </div>
-          <p class="pg-subtitle"><strong>Status flips</strong> — every Opp Status change from SharePoint version history, filterable by date (today or any range). <strong>Stale queue</strong> — deals sitting on the same Opp Status for 1+, 7+, or 15+ days with current status, days unchanged, and who last changed it.</p>
+          <p class="pg-subtitle">Live quarter pipeline only — full SharePoint version history per deal. <strong>Status flips</strong> = every Opp Status change (when, from → to, who). <strong>Stale queue</strong> = unchanged on current status for 1+/7+/15+ days.</p>
           <div id="pgProgressBar" class="pg-progress" style="display:none;">
             <div class="pg-progress-track"><div class="pg-progress-fill" id="pgProgressFill"></div></div>
             <div class="pg-progress-text" id="pgProgressText">Loading…</div>
@@ -11433,8 +11433,7 @@ function rrTryLoadBundledWorkbook(cb){
 // ══════════════════════════════════════════════════════════════════
 //  PIPELINE GOVERNANCE — SharePoint version history
 // ══════════════════════════════════════════════════════════════════
-const PG_VERSION_CACHE_LS='glk_pg_version_cache_v4';
-const PG_STATUS_SNAPSHOT_LS='glk_pg_status_snap_v1';
+const PG_VERSION_CACHE_LS='glk_pg_version_cache_v5';
 const PG_OPP_FIELD='Opportunity_x0020_Status';
 let PG_TAB='stale';
 let PG_ANALYSIS=[];
@@ -11448,10 +11447,19 @@ let PG_FLIP_FILTER='all';
 let PG_STALE_DAYS=1;
 let PG_FLIP_FROM_ISO='';
 let PG_FLIP_TO_ISO='';
-let PG_LOAD_STATS={fetched:0,cached:0,fallback:0,hardErrors:0};
+let PG_LOAD_STATS={fetched:0,cached:0,fallback:0,hardErrors:0,totalFlips:0,dealsWithFlips:0};
 function pgTodayIso(){
   var d=new Date();
   return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+function pgQuarterStartIso(){
+  var live=mqLiveYearQuarter();
+  var d=new Date(live.year,(live.quarter-1)*3,1);
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+function pgIsoFromDate(dt){
+  if(!dt) return '';
+  return dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0');
 }
 function pgParseIsoDate(s){
   if(!s) return null;
@@ -11525,8 +11533,11 @@ function pgGetCachedVersions(bid){
   return e.versions;
 }
 function pgEditorFromRow(d){
+  if(!d) return '—';
   try{
+    if(typeof d.Editor==='string'&&d.Editor.trim()) return d.Editor.trim();
     if(d.Editor&&d.Editor.Title) return d.Editor.Title;
+    if(typeof d.Author==='string'&&d.Author.trim()) return d.Author.trim();
     if(d.CreatedBy&&d.CreatedBy.Title) return d.CreatedBy.Title;
     if(d.Author&&d.Author.Title) return d.Author.Title;
   }catch(e){}
@@ -11589,26 +11600,36 @@ function pgParseVersionFields(d,rowMeta){
 }
 function pgFetchOneVersion(itemId,rowMeta,cb){
   var vid=pgVersionId(rowMeta);
-  if(vid==null){
-    return cb({
-      versionId:null,versionLabel:rowMeta.VersionLabel||'',
+  var empty=function(){
+    return {
+      versionId:vid,versionLabel:rowMeta.VersionLabel||String(vid||''),
       created:rowMeta.Modified||rowMeta.Created,
       oppStatus:'',editor:pgEditorFromRow(rowMeta),fetched:false
-    });
-  }
+    };
+  };
+  if(vid==null) return cb(empty());
   var safeList=SP_LIST.replace(/'/g,"''");
-  var url=SP_SITE+"/_api/web/lists/getbytitle('"+safeList+"')/items("+itemId+")/versions("+vid+")/FieldValuesAsText";
-  spGet(url,function(err,data){
-    if(err||!data||!data.d){
-      return cb({
-        versionId:vid,versionLabel:rowMeta.VersionLabel||String(vid),
-        created:rowMeta.Modified||rowMeta.Created,
-        oppStatus:'',editor:pgEditorFromRow(rowMeta),fetched:false
-      });
+  var base=SP_SITE+"/_api/web/lists/getbytitle('"+safeList+"')/items("+itemId+")/versions("+vid+")";
+  var fvtUrl=base+'/FieldValuesAsText';
+  var selUrl=base+'?$select='+encodeURIComponent(PG_OPP_FIELD+',Modified,Created,VersionLabel');
+  spGet(fvtUrl,function(err,data){
+    if(!err&&data&&data.d){
+      var parsed=pgParseVersionFields(data.d,rowMeta);
+      if(parsed.oppStatus){
+        parsed.fetched=true;
+        return cb(parsed);
+      }
     }
-    var parsed=pgParseVersionFields(data.d,rowMeta);
-    parsed.fetched=true;
-    cb(parsed);
+    spGet(selUrl,function(err2,data2){
+      if(!err2&&data2&&data2.d){
+        var parsed2=pgParseVersionFields(data2.d,rowMeta);
+        if(parsed2.oppStatus){
+          parsed2.fetched=true;
+          return cb(parsed2);
+        }
+      }
+      cb(empty());
+    });
   });
 }
 function pgFetchItemVersionHistory(bid,cb){
@@ -11635,8 +11656,9 @@ function pgContinueVersionRows(bid,rows,cb){
       out[idx]=ver;
       pending--;
       if(pending>0) return;
-      var readable=out.filter(function(v){ return v&&v.fetched&&v.oppStatus; });
-      if(readable.length>=1){
+      var fetchedAny=out.some(function(v){ return v&&v.fetched; });
+      var withOpp=out.filter(function(v){ return v&&v.fetched&&v.oppStatus; });
+      if(fetchedAny&&withOpp.length>=1){
         PG_LOAD_STATS.fetched++;
         pgSaveVersionCacheEntry(bid.id,{modified:bid.modified,savedAt:Date.now(),versions:out});
         return cb(null,out,false);
@@ -11668,65 +11690,49 @@ function pgAnalyzeVersionHistory(bid,versions){
     return pgVersionSortKey({VersionLabel:a.versionLabel,VersionId:a.versionId,Created:a.created,Modified:a.created})-
       pgVersionSortKey({VersionLabel:b.versionLabel,VersionId:b.versionId,Created:b.created,Modified:b.created});
   });
-  var timeline=versions.map(function(v){
-    return {
-      status:pgNormStatus(v.oppStatus),
-      from:v.created,
-      editor:v.editor||'—',
-      versionLabel:v.versionLabel||''
-    };
-  }).filter(function(v){ return v.status; });
-  if(!timeline.length){
-    var cur=pgNormStatus(bid.oppStatus);
-    if(cur) timeline.push({status:cur,from:bid.modified||bid.created,editor:'—',versionLabel:'current'});
-  }
-  var segments=[], lastStatus=null;
-  timeline.forEach(function(v){
-    if(pgStatusKey(v.status)===pgStatusKey(lastStatus)) return;
-    segments.push({status:v.status,from:v.from,editor:v.editor,versionLabel:v.versionLabel});
-    lastStatus=v.status;
-  });
-  if(!segments.length){
-    var cur2=pgNormStatus(bid.oppStatus);
-    if(cur2) segments.push({status:cur2,from:bid.modified||bid.created,editor:'—',versionLabel:'current'});
-  }
-  var flips=[];
-  for(var i=1;i<segments.length;i++){
-    if(pgStatusKey(segments[i-1].status)===pgStatusKey(segments[i].status)) continue;
+  var segments=[], flips=[], lastStatus=null;
+  versions.forEach(function(v){
+    if(!v) return;
+    var st=pgNormStatus(v.oppStatus);
+    if(!st) return;
+    if(lastStatus===null){
+      segments.push({status:st,from:v.created,editor:v.editor||'—',versionLabel:v.versionLabel||''});
+      lastStatus=st;
+      return;
+    }
+    if(pgStatusKey(st)===pgStatusKey(lastStatus)) return;
     flips.push({
-      from:segments[i-1].status,to:segments[i].status,
-      flipKind:pgFlipKind(segments[i].status),
-      when:segments[i].from,editor:segments[i].editor||'—',
-      versionLabel:segments[i].versionLabel||'',
+      from:lastStatus,to:st,
+      flipKind:pgFlipKind(st),
+      when:v.created,editor:v.editor||'—',
+      versionLabel:v.versionLabel||'',
       source:'version_history'
     });
+    segments.push({status:st,from:v.created,editor:v.editor||'—',versionLabel:v.versionLabel||''});
+    lastStatus=st;
+  });
+  if(!segments.length){
+    var cur=pgNormStatus(bid.oppStatus);
+    if(cur) segments.push({status:cur,from:bid.created||bid.modified,editor:'—',versionLabel:'current'});
+  }
+  for(var i=0;i<segments.length;i++){
+    var startDt=pgParseSpDateTime(segments[i].from);
+    var endDt=i<segments.length-1?pgParseSpDateTime(segments[i+1].from):new Date();
+    segments[i].daysInStatus=(startDt&&endDt)?mqInclusiveDaysBetween(startDt,endDt):0;
   }
   var current=segments[segments.length-1];
-  var daysStale=999, statusSince=null;
+  var daysStale=0, statusSince=null;
   if(current&&current.from){
     statusSince=current.from;
     var sinceDt=pgParseSpDateTime(current.from);
     if(sinceDt) daysStale=mqInclusiveDaysBetween(sinceDt,new Date());
-  }
-  var lastVersionDt=null;
-  if(versions.length){
-    var lv=versions[versions.length-1];
-    lastVersionDt=pgParseSpDateTime(lv.created);
-  }
-  var modDt=pgParseSpDateTime(bid.modified);
-  if(modDt&&(!lastVersionDt||modDt>=lastVersionDt)){
-    var modDays=mqInclusiveDaysBetween(modDt,new Date());
-    if(modDays<daysStale){
-      daysStale=modDays;
-      if(!flips.length) statusSince=bid.modified;
-    }
   }
   return {
     segments:segments,versionCount:versions.length,
     daysStale:daysStale,statusSince:statusSince,
     flips:flips,currentStatus:pgNormStatus(bid.oppStatus)||(current?current.status:''),
     lastEditor:current?current.editor:'—',
-    explicitStatusReads:timeline.length
+    historyReadable:versions.some(function(v){ return v&&v.fetched&&v.oppStatus; })
   };
 }
 function pgParseSpDateTime(iso){
@@ -11745,9 +11751,8 @@ function pgFmtDateTime(iso){
 }
 function pgEnsureFlipDates(){
   if(!PG_FLIP_FROM_ISO&&!PG_FLIP_TO_ISO){
-    var t=pgTodayIso();
-    PG_FLIP_FROM_ISO=t;
-    PG_FLIP_TO_ISO=t;
+    PG_FLIP_FROM_ISO=pgQuarterStartIso();
+    PG_FLIP_TO_ISO=pgTodayIso();
   }
 }
 function pgOnFlipDateChange(){
@@ -11778,7 +11783,10 @@ function pgSetStaleDays(days){
 }
 function pgSetFlipDatePreset(preset){
   var today=pgTodayIso();
-  if(preset==='today'){
+  if(preset==='quarter'){
+    PG_FLIP_FROM_ISO=pgQuarterStartIso();
+    PG_FLIP_TO_ISO=today;
+  }else if(preset==='today'){
     PG_FLIP_FROM_ISO=today;
     PG_FLIP_TO_ISO=today;
   }else if(preset==='7d'){
@@ -11821,6 +11829,7 @@ function pgRenderFlipFilters(){
   ];
   var h='<div class="pg-flip-date-row">';
   h+='<span class="pg-tab-filters-label">Flip date</span>';
+  h+='<button type="button" class="pg-flip-chip preset" onclick="pgSetFlipDatePreset(\'quarter\')">This quarter</button>';
   h+='<button type="button" class="pg-flip-chip preset" onclick="pgSetFlipDatePreset(\'today\')">Today</button>';
   h+='<button type="button" class="pg-flip-chip preset" onclick="pgSetFlipDatePreset(\'7d\')">Last 7 days</button>';
   h+='<button type="button" class="pg-flip-chip preset" onclick="pgSetFlipDatePreset(\'30d\')">Last 30 days</button>';
@@ -11942,49 +11951,6 @@ function pgStaleThreshold(f){
   if(PG_SEL_TILE&&String(PG_SEL_TILE).indexOf('stale_')===0) return parseInt(PG_SEL_TILE.replace('stale_',''),10)||f.staleDays;
   return f.staleDays||1;
 }
-function pgLoadStatusSnapshot(){
-  try{ return JSON.parse(localStorage.getItem(PG_STATUS_SNAPSHOT_LS)||'{}')||{}; }
-  catch(e){ return {}; }
-}
-function pgSaveStatusSnapshot(analysis){
-  try{
-    var snap={};
-    (analysis||[]).forEach(function(row){
-      if(!row.bid||row.bid.id==null) return;
-      snap[String(row.bid.id)]={oppStatus:pgNormStatus(row.bid.oppStatus),modified:row.bid.modified||''};
-    });
-    localStorage.setItem(PG_STATUS_SNAPSHOT_LS,JSON.stringify(snap));
-  }catch(e){}
-}
-function pgApplySnapshotFlips(bid,analysis,priorSnap){
-  if(!priorSnap||!analysis) return;
-  var prev=priorSnap[String(bid.id)];
-  if(!prev) return;
-  var cur=pgNormStatus(bid.oppStatus);
-  var prevSt=pgNormStatus(prev.oppStatus);
-  if(!cur||!prevSt||pgStatusKey(cur)===pgStatusKey(prevSt)) return;
-  var dup=analysis.flips.some(function(f){
-    return pgStatusKey(f.from)===pgStatusKey(prevSt)&&pgStatusKey(f.to)===pgStatusKey(cur);
-  });
-  if(!dup){
-    analysis.flips.push({
-      from:prevSt,to:cur,
-      flipKind:pgFlipKind(cur),
-      when:bid.modified||new Date().toISOString(),
-      editor:bid.userName||'Since last refresh',
-      versionLabel:'live',
-      source:'since_last_refresh'
-    });
-  }
-  var mod=pgParseSpDateTime(bid.modified);
-  if(mod){
-    analysis.statusSince=bid.modified;
-    analysis.daysStale=mqInclusiveDaysBetween(mod,new Date());
-    if(analysis.segments.length){
-      analysis.segments[analysis.segments.length-1].from=bid.modified;
-    }
-  }
-}
 function pgRefreshBidFromSp(bid,cb){
   var safeList=SP_LIST.replace(/'/g,"''");
   var url=SP_SITE+"/_api/web/lists/getbytitle('"+safeList+"')/items("+bid.id+")?$select=Id,Modified,"+PG_OPP_FIELD;
@@ -12066,20 +12032,22 @@ function pgRenderKpiTiles(rows,f){
   var defs;
   if(PG_TAB==='flips'){
     var today=pgParseIsoDate(pgTodayIso());
-    var flipsToday=0, flipsRange=pgCountFlipsInRange(rows,f);
+    var flipsToday=0, flipsRange=pgCountFlipsInRange(rows,f), allHistory=0;
     rows.forEach(function(row){
+      allHistory+=(row.analysis.flips||[]).length;
       (row.analysis.flips||[]).forEach(function(fl){
         if(PG_FLIP_FILTER!=='all'&&fl.flipKind!==PG_FLIP_FILTER) return;
         if(pgFlipInDateRange(fl,today,today)) flipsToday++;
       });
     });
     var rangeLabel=f.flipFrom&&f.flipTo
-      ?(f.flipFrom.getTime()===f.flipTo.getTime()?pgTodayIso()===el('pgFlipDateFrom')?.value?'Today':el('pgFlipDateFrom')?.value:f.flipFrom.toLocaleDateString('en-GB')+' – '+f.flipTo.toLocaleDateString('en-GB'))
+      ?pgIsoFromDate(f.flipFrom)+' – '+pgIsoFromDate(f.flipTo)
       :'All time';
     defs=[
-      {key:null,label:'Pipeline',value:rows.length,sub:'Q'+live.quarter+' '+live.year,color:'var(--sc)'},
-      {key:'flips_today',label:'Flips today',value:flipsToday,sub:'Opp Status changed today',color:'#16a34a'},
-      {key:'flips',label:'Flips in range',value:flipsRange,sub:rangeLabel,color:'#7c3aed'}
+      {key:null,label:'Pipeline',value:rows.length,sub:'Q'+live.quarter+' '+live.year+' only',color:'var(--sc)'},
+      {key:'flips_today',label:'Flips today',value:flipsToday,sub:'Changed today',color:'#16a34a'},
+      {key:'flips',label:'Flips in range',value:flipsRange,sub:rangeLabel,color:'#7c3aed'},
+      {key:null,label:'All history flips',value:allHistory,sub:'Every change in SharePoint history',color:'#6366f1'}
     ];
   }else{
     var th=f.staleDays;
@@ -12272,6 +12240,7 @@ function pgBuildStaleGridRows(rows,f){
       services:b.services||'—',
       currentStatus:a.currentStatus||'—',
       previousStatus:prevStatus,
+      statusChanges:(a.flips||[]).length,
       daysUnchanged:days,
       staleBucket:pgStaleBucketLabel(days),
       statusSince:pgFmtDateTime(a.statusSince),
@@ -12315,7 +12284,7 @@ function pgBuildFlipGridRows(rows,f){
         daysAgo:daysAgo,
         changedBy:fl.editor||'—',
         version:fl.versionLabel||'—',
-        flipSource:fl.source==='since_last_refresh'?'Since last refresh':'SharePoint history',
+        flipSource:'SharePoint version history',
         gaLines:num(b.gaLines),
         mrc:num(b.mrc),
         vertical:b.vertical||'—',
@@ -12372,6 +12341,7 @@ function pgRenderGrid(data){
       glkCol({field:'services',headerName:'Services',width:120}),
       glkCol({field:'currentStatus',headerName:'Current Opp Status',width:130,cellRenderer:pgStatusRenderer}),
       glkCol({field:'previousStatus',headerName:'Previous Status',width:120,cellRenderer:pgStatusRenderer}),
+      glkCol({field:'statusChanges',headerName:'Status changes',width:120},'num'),
       glkCol({field:'daysUnchanged',headerName:'Days unchanged',width:120,cellStyle:function(p){
         if(p.value>=21) return {color:'#991b1b',fontWeight:'900'};
         if(p.value>=15) return {color:'#dc2626',fontWeight:'900'};
@@ -12435,9 +12405,9 @@ function pgRender(){
     var live=mqLiveYearQuarter();
     var errNote=PG_LOAD_STATS.hardErrors?(' <span class="pg-error-note">'+PG_LOAD_STATS.hardErrors+' records could not reach SharePoint.</span>'):'';
     foot.innerHTML=(PG_TAB==='flips'
-      ?'<strong>Status flips</strong> = each Opp Status change from SharePoint version history · filter by date above · default is <strong>Today</strong>'
-      :'<strong>Stale queue</strong> = deals unchanged on the same Opp Status for the selected threshold (1+, 7+, 15+ days) · columns show current status, previous status, days unchanged, and since when')
-      +' · <strong>Shift+Refresh</strong> clears cache'+errNote+' · Q'+live.quarter+' '+live.year+' · History read '+PG_LOAD_STATS.fetched+' · Fallback '+PG_LOAD_STATS.fallback+'.';
+      ?'<strong>Status flips</strong> = every Opp Status change from SharePoint version history on live Q'+live.quarter+' '+live.year+' pipeline · default range = whole quarter'
+      :'<strong>Stale queue</strong> = same Opp Status unchanged for 1+/7+/15+ days · days counted from last status change in version history')
+      +' · <strong>Shift+Refresh</strong> clears cache'+errNote+' · Q'+live.quarter+' pipeline '+PG_ANALYSIS.length+' deals · History OK '+PG_LOAD_STATS.fetched+' · No history '+PG_LOAD_STATS.fallback+' · '+PG_LOAD_STATS.totalFlips+' flips on '+PG_LOAD_STATS.dealsWithFlips+' deals.';
   }
 }
 function pgSetProgress(pct,text){
@@ -12457,10 +12427,14 @@ function pgRefreshFromSharePoint(evt){
     return;
   }
   var force=evt&&evt.shiftKey;
-  if(force){
-    try{ localStorage.removeItem(PG_VERSION_CACHE_LS); }catch(e){}
-  }
-  var priorSnapshot=pgLoadStatusSnapshot();
+  try{
+    if(force){
+      localStorage.removeItem(PG_VERSION_CACHE_LS);
+    }else if(!localStorage.getItem(PG_VERSION_CACHE_LS+'_v5_init')){
+      localStorage.removeItem('glk_pg_version_cache_v4');
+      localStorage.setItem(PG_VERSION_CACHE_LS+'_v5_init','1');
+    }
+  }catch(e){}
   var candidates=pgGetQtgCandidates();
   if(!candidates.length){
     alert('No live-quarter pipeline deals found in the current dataset.');
@@ -12470,7 +12444,7 @@ function pgRefreshFromSharePoint(evt){
   }
   PG_LOADING=true;
   PG_ANALYSIS=[];
-  PG_LOAD_STATS={fetched:0,cached:0,fallback:0,hardErrors:0};
+  PG_LOAD_STATS={fetched:0,cached:0,fallback:0,hardErrors:0,totalFlips:0,dealsWithFlips:0};
   pgRender();
   pgSetProgress(0,'Syncing live Opp Status from SharePoint…');
   var syncIdx=0, syncActive=0, syncDone=0;
@@ -12499,7 +12473,10 @@ function pgRefreshFromSharePoint(evt){
             active--;
             if(err&&!versions) PG_LOAD_STATS.hardErrors++;
             var analysis=pgAnalyzeVersionHistory(bid,versions||pgFallbackVersions(bid));
-            pgApplySnapshotFlips(bid,analysis,priorSnapshot);
+            if(analysis.flips&&analysis.flips.length){
+              PG_LOAD_STATS.totalFlips+=analysis.flips.length;
+              PG_LOAD_STATS.dealsWithFlips++;
+            }
             PG_ANALYSIS.push({bid:bid,analysis:analysis,partial:!!isPartial});
             var done=PG_ANALYSIS.length;
             pgSetProgress(40+Math.round((done/candidates.length)*60),'Version history · '+done+' / '+candidates.length);
@@ -12507,7 +12484,6 @@ function pgRefreshFromSharePoint(evt){
               PG_LOADING=false;
               pgHideProgress();
               PG_ANALYSIS.sort(function(a,b){ return b.analysis.daysStale-a.analysis.daysStale; });
-              pgSaveStatusSnapshot(PG_ANALYSIS);
               pgRender();
             }else pump();
           });
@@ -12517,6 +12493,14 @@ function pgRefreshFromSharePoint(evt){
     pump();
   });
 }
+function pgInitGovernanceDatesOnce(){
+  try{
+    if(localStorage.getItem('glk_pg_dates_v5')) return;
+    PG_FLIP_FROM_ISO=pgQuarterStartIso();
+    PG_FLIP_TO_ISO=pgTodayIso();
+    localStorage.setItem('glk_pg_dates_v5','1');
+  }catch(e){}
+}
 window.glkShowGovernance=function(){
   glkHideAllMainViews();
   el('table-nav').style.display='none';
@@ -12524,6 +12508,7 @@ window.glkShowGovernance=function(){
   el('content').classList.add('mq-view');
   el('dashboardContent').classList.add('mq-full');
   glkSetActiveNav('navGovernance');
+  pgInitGovernanceDatesOnce();
   if(!PG_ANALYSIS.length&&!PG_LOADING&&ALL_BIDS&&ALL_BIDS.length) pgRefreshFromSharePoint(null);
   else pgRender();
 };
