@@ -333,35 +333,59 @@ body[data-theme="dark"] .status-dot,body[data-theme="duralux-dark"] .status-dot{
 .mq-pt-drill:hover{box-shadow:inset 0 0 0 1px var(--nab2)}
 .mq-product-table tr.mq-pt-row-sel td{box-shadow:inset 0 0 0 2px var(--acc);background:var(--nab)!important}
 .mq-pt-table-hint{font-size:.72rem;color:var(--t3);font-weight:600;margin:.55rem 0 0;line-height:1.45}
-.pg-progress{margin:.65rem 0 1rem;padding:.65rem .85rem;background:var(--bg-secondary);border:1px solid var(--border);border-radius:10px}
-.pg-progress-track{height:8px;background:var(--border);border-radius:99px;overflow:hidden;margin-bottom:.45rem}
+.pg-section{padding:.25rem 0 1.5rem}
+.pg-header-row{display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;flex-wrap:wrap;margin-bottom:.85rem}
+.pg-subtitle{font-size:.78rem;color:var(--t3);margin:0 0 1rem;line-height:1.55;max-width:920px}
+.pg-progress{margin:0 0 1rem;padding:.75rem 1rem;background:var(--bg-card);border:1px solid var(--border);border-radius:12px;box-shadow:var(--cs)}
+.pg-progress-track{height:10px;background:var(--border);border-radius:99px;overflow:hidden;margin-bottom:.5rem}
 .pg-progress-fill{height:100%;width:0;background:linear-gradient(90deg,var(--acc),var(--nab2));border-radius:99px;transition:width .25s ease}
-.pg-progress-text{font-size:.72rem;font-weight:700;color:var(--t2)}
-.pg-controls{display:flex;flex-wrap:wrap;gap:.75rem 1rem;align-items:flex-end;margin-bottom:.85rem;padding:.75rem 1rem;background:var(--bg-secondary);border:1px solid var(--border);border-radius:10px}
-.pg-control-block{display:flex;flex-direction:column;gap:.28rem}
-.pg-control-label{font-size:.62rem;font-weight:800;text-transform:uppercase;letter-spacing:.04em;color:var(--t3)}
-.pg-search-block{flex:1 1 200px}
-.pg-summary-bar{display:flex;flex-wrap:wrap;gap:.5rem .75rem;margin-bottom:.75rem;padding:.55rem .75rem;background:var(--nab);border:1px solid var(--nab2);border-radius:9px;font-size:.74rem;font-weight:700;color:var(--t1)}
-.pg-summary-bar .pg-stale{color:#ea580c}
-.pg-summary-bar .pg-flip{color:#7c3aed}
-.pg-table-wrap{overflow:auto;border:1px solid var(--border);border-radius:10px;background:var(--bg-card)}
-.pg-table{width:100%;border-collapse:collapse;font-size:.76rem}
-.pg-table th,.pg-table td{padding:.55rem .65rem;border-bottom:1px solid var(--border);text-align:left;white-space:nowrap}
-.pg-table th{font-size:.62rem;text-transform:uppercase;letter-spacing:.04em;font-weight:800;color:#fff;background:#475569;position:sticky;top:0;z-index:1}
-.pg-table th.pg-h-days,.pg-table td.pg-days{text-align:right}
-.pg-table th.pg-h-lines,.pg-table td.pg-lines{text-align:right}
-.pg-table tbody tr:nth-child(even){background:var(--bg-secondary)}
-.pg-table tbody tr:hover{background:var(--nab)}
-.pg-days-warn{color:#ea580c;font-weight:900}
-.pg-days-crit{color:#dc2626;font-weight:900}
-.pg-status-chip{display:inline-block;padding:.12rem .45rem;border-radius:999px;font-size:.68rem;font-weight:800;background:rgba(99,102,241,.12);color:#4f46e5;border:1px solid rgba(99,102,241,.25)}
+.pg-progress-text{font-size:.74rem;font-weight:700;color:var(--t2)}
+.pg-filter-panel{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:.75rem 1rem;margin-bottom:1rem;padding:1rem 1.1rem;background:var(--bg-card);border:1px solid var(--border);border-radius:12px;box-shadow:var(--cs)}
+.pg-control-block{display:flex;flex-direction:column;gap:.35rem;min-width:0}
+.pg-control-label{font-size:.62rem;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--t3)}
+.pg-control-block .fb-select,.pg-control-block .search-box{width:100%;min-width:0}
+.pg-search-block{grid-column:1/-1}
+.pg-kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:.85rem;margin-bottom:1.15rem}
+.pg-kpi-card{cursor:pointer}
+.pg-kpi-card.tile-active{box-shadow:0 0 0 2px var(--acc),var(--ch)!important}
+.pg-kpi-card.tile-dimmed{opacity:.42}
+.pg-kpi-card .stat-value{font-size:1.55rem}
+.pg-kpi-card .stat-subtitle{font-size:.72rem;color:var(--t3);font-weight:600;margin-top:.15rem}
+.pg-tab-row{display:flex;flex-wrap:wrap;gap:.65rem;align-items:center;margin-bottom:1rem}
+.pg-flip-filters{display:flex;flex-wrap:wrap;gap:.4rem;align-items:center}
+.pg-flip-chip{padding:.32rem .72rem;border-radius:999px;border:1px solid var(--border);background:var(--bg-secondary);color:var(--t2);font-size:.68rem;font-weight:800;cursor:pointer;font-family:inherit}
+.pg-flip-chip.active{background:var(--nab);border-color:var(--nab2);color:var(--acc)}
+.pg-breadcrumb{display:flex;flex-wrap:wrap;align-items:center;gap:.35rem;margin-bottom:.85rem;font-size:.74rem;font-weight:700;color:var(--t3)}
+.pg-breadcrumb button{background:none;border:none;padding:0;color:var(--acc);font:inherit;font-weight:800;cursor:pointer}
+.pg-breadcrumb button:hover{text-decoration:underline}
+.pg-breadcrumb .pg-crumb-sep{opacity:.45}
+.pg-drill-section{margin-bottom:1.15rem}
+.pg-drill-section .section-title{margin-bottom:.75rem}
+.pg-drill-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:.85rem}
+.pg-drill-tile{background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:.85rem 1rem;cursor:pointer;transition:transform .15s,box-shadow .15s,border-color .15s;box-shadow:var(--cs)}
+.pg-drill-tile:hover{transform:translateY(-2px);box-shadow:var(--ch);border-color:var(--nab2)}
+.pg-drill-tile.selected{border-color:var(--acc);box-shadow:0 0 0 2px var(--acc),var(--ch)}
+.pg-drill-tile h4{margin:0 0 .2rem;font-size:.92rem;font-weight:900;color:var(--t1)}
+.pg-drill-tile .pg-drill-meta{font-size:.64rem;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:.55rem}
+.pg-drill-metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:.45rem}
+.pg-drill-metric{background:var(--bg-secondary);border-radius:8px;padding:.45rem .5rem;text-align:center}
+.pg-drill-metric .lbl{font-size:.58rem;font-weight:800;color:var(--t3);text-transform:uppercase}
+.pg-drill-metric .val{font-size:.95rem;font-weight:900;margin-top:.12rem}
+.pg-drill-metric .val.stale{color:#ea580c}
+.pg-drill-metric .val.crit{color:#dc2626}
+.pg-drill-metric .val.ok{color:#16a34a}
+.pg-grid-panel{background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:.85rem;box-shadow:var(--cs)}
+.pg-grid-head{display:flex;align-items:center;justify-content:space-between;gap:.75rem;flex-wrap:wrap;margin-bottom:.65rem}
+.pg-grid-title{font-size:.88rem;font-weight:900;color:var(--t1)}
+.pg-grid-count{font-size:.72rem;font-weight:700;color:var(--t3)}
+.pg-status-chip{display:inline-block;padding:.14rem .48rem;border-radius:999px;font-size:.68rem;font-weight:800;background:rgba(99,102,241,.12);color:#4f46e5;border:1px solid rgba(99,102,241,.25)}
 .pg-status-chip.opp{background:rgba(37,99,235,.1);color:#1d4ed8;border-color:rgba(37,99,235,.25)}
 .pg-status-chip.prop{background:rgba(124,58,237,.1);color:#6d28d9;border-color:rgba(124,58,237,.25)}
-.pg-flip-arrow{color:var(--t3);font-weight:700;margin:0 .2rem}
-.pg-open-link{font-size:.68rem;font-weight:700;color:var(--acc);text-decoration:none}
-.pg-open-link:hover{text-decoration:underline}
-.pg-footnote{font-size:.68rem;color:var(--t3);margin-top:.65rem;line-height:1.5}
-.pg-empty{padding:2rem 1rem;text-align:center;color:var(--t3);font-weight:600;font-size:.82rem}
+.pg-status-chip.billed{background:rgba(22,163,74,.1);color:#15803d;border-color:rgba(22,163,74,.25)}
+.pg-status-chip.won{background:rgba(22,163,74,.12);color:#166534;border-color:rgba(22,163,74,.28)}
+.pg-footnote{font-size:.68rem;color:var(--t3);margin-top:.75rem;line-height:1.55;padding:.65rem .75rem;background:var(--bg-secondary);border-radius:8px;border:1px solid var(--border)}
+.pg-empty{padding:2.5rem 1rem;text-align:center;color:var(--t3);font-weight:600;font-size:.84rem}
+.pg-error-note{color:#dc2626;font-weight:800}
 .rr-chart-title{font-size:1.08rem;font-weight:800;color:var(--t1);margin-bottom:.5rem;display:flex;align-items:center;gap:.4rem;line-height:1.3}
 .rr-chart-title svg{width:18px;height:18px;stroke:var(--acc);fill:none;stroke-width:2;flex-shrink:0}
 .rr-chart-subtitle{font-size:.78rem;font-weight:600;color:var(--t3);margin-bottom:.55rem;line-height:1.45}
@@ -1434,44 +1458,39 @@ body[data-theme="dark"] .badge-warning,body[data-theme="duralux-dark"] .badge-wa
       </div><!-- /revenue-rec-view -->
 
       <!-- PIPELINE GOVERNANCE VIEW -->
-      <div id="governance-view" class="dashboard-section" style="display:none;margin:0;padding:0;">
-        <div class="filters-section" style="margin-bottom:1rem;">
-          <div class="mq-controls-toolbar">
-            <h2 class="section-title" style="margin-top:0;margin-bottom:0!important;">
+      <div id="governance-view" class="dashboard-section pg-section" style="display:none;margin:0;padding:0;">
+        <div class="filters-section">
+          <div class="pg-header-row">
+            <h2 class="section-title" style="margin:0;">
               <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>
-              Pipeline Governance
+              Pipeline Governance &amp; Cleanup
             </h2>
-            <button type="button" class="export-btn" id="pgRefreshBtn" onclick="pgRefreshFromSharePoint()" style="font-size:.72rem;padding:.35rem .65rem;">
+            <button type="button" class="export-btn" id="pgRefreshBtn" onclick="pgRefreshFromSharePoint(event)" style="font-size:.72rem;padding:.4rem .75rem;">
               <svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
-              Load version history
+              Refresh version history
             </button>
           </div>
-          <p style="font-size:.78rem;color:var(--t3);margin:0 0 .85rem;line-height:1.5;">Uses <strong>SharePoint version history</strong> on each pipeline record — same audit trail as the list (who changed what, when). Tracks QTG in-flight deals with unchanged Opportunity Status and Opportunity ↔ Proposed flips.</p>
+          <p class="pg-subtitle">SharePoint version history on every pipeline record — who changed Opportunity Status, when, and from what value. Drill from overview → Head Director → Account Director → Account Manager → deal detail.</p>
           <div id="pgProgressBar" class="pg-progress" style="display:none;">
             <div class="pg-progress-track"><div class="pg-progress-fill" id="pgProgressFill"></div></div>
             <div class="pg-progress-text" id="pgProgressText">Loading…</div>
           </div>
-          <div class="pg-controls">
+          <div class="pg-filter-panel">
             <div class="pg-control-block">
-              <span class="pg-control-label">View</span>
-              <div class="mq-control-tabs">
-                <button type="button" id="pgTabStale" class="pf-tab active" onclick="pgSetTab('stale')">Stale queue</button>
-                <button type="button" id="pgTabFlips" class="pf-tab" onclick="pgSetTab('flips')">Status flips</button>
-              </div>
+              <span class="pg-control-label">Head director</span>
+              <select id="pgHdFilter" class="fb-select" onchange="pgOnHdFilterChange()"><option value="">All</option></select>
             </div>
             <div class="pg-control-block">
-              <span class="pg-control-label">Min days unchanged</span>
-              <select id="pgMinDays" class="fb-select" onchange="pgRender()" style="min-width:88px;">
-                <option value="3">3+ days</option>
-                <option value="7" selected>7+ days</option>
-                <option value="14">14+ days</option>
-                <option value="21">21+ days</option>
-                <option value="30">30+ days</option>
-              </select>
+              <span class="pg-control-label">Account director</span>
+              <select id="pgAdFilter" class="fb-select" onchange="pgOnAdFilterChange()"><option value="">All</option></select>
+            </div>
+            <div class="pg-control-block">
+              <span class="pg-control-label">Account manager</span>
+              <select id="pgAmFilter" class="fb-select" onchange="pgRender()"><option value="">All</option></select>
             </div>
             <div class="pg-control-block">
               <span class="pg-control-label">Product family</span>
-              <select id="pgPfFilter" class="fb-select" onchange="pgRender()" style="min-width:100px;">
+              <select id="pgPfFilter" class="fb-select" onchange="pgRender()">
                 <option value="">All</option>
                 <option value="Mobile">Mobile</option>
                 <option value="Fixed">Fixed</option>
@@ -1480,17 +1499,37 @@ body[data-theme="dark"] .badge-warning,body[data-theme="duralux-dark"] .badge-wa
               </select>
             </div>
             <div class="pg-control-block">
-              <span class="pg-control-label">Head director</span>
-              <select id="pgHdFilter" class="fb-select" onchange="pgRender()" style="min-width:120px;">
-                <option value="">All</option>
+              <span class="pg-control-label">Min days unchanged</span>
+              <select id="pgMinDays" class="fb-select" onchange="pgRender()">
+                <option value="3">3+ days</option>
+                <option value="7" selected>7+ days</option>
+                <option value="14">14+ days</option>
+                <option value="21">21+ days</option>
+                <option value="30">30+ days</option>
               </select>
             </div>
             <div class="pg-control-block pg-search-block">
-              <input type="text" id="pgSearchInp" class="search-box" placeholder="Search customer, bid ref, AD…" oninput="pgRender()" style="min-width:200px;">
+              <span class="pg-control-label">Search</span>
+              <input type="text" id="pgSearchInp" class="search-box" placeholder="Customer, bid ref, vertical, status…" oninput="pgRender()">
             </div>
           </div>
-          <div id="pgSummaryBar" class="pg-summary-bar"></div>
-          <div id="pgTableWrap" class="pg-table-wrap"></div>
+          <div id="pgKpiRow" class="pg-kpi-row top-stats"></div>
+          <div class="pg-tab-row">
+            <div class="mq-control-tabs">
+              <button type="button" id="pgTabStale" class="pf-tab active" onclick="pgSetTab('stale')">Stale queue</button>
+              <button type="button" id="pgTabFlips" class="pf-tab" onclick="pgSetTab('flips')">Status flips</button>
+            </div>
+            <div id="pgFlipFilters" class="pg-flip-filters" style="display:none;"></div>
+          </div>
+          <div id="pgBreadcrumb" class="pg-breadcrumb"></div>
+          <div id="pgDrillSection" class="pg-drill-section"></div>
+          <div class="pg-grid-panel">
+            <div class="pg-grid-head">
+              <div class="pg-grid-title" id="pgGridTitle">Deal detail</div>
+              <div class="pg-grid-count" id="pgGridCount"></div>
+            </div>
+            <div id="pgGrid" class="ag-theme-alpine" style="height:620px;width:100%;"></div>
+          </div>
           <div id="pgFootnote" class="pg-footnote"></div>
         </div>
       </div><!-- /governance-view -->
@@ -11363,11 +11402,18 @@ function rrTryLoadBundledWorkbook(cb){
 // ══════════════════════════════════════════════════════════════════
 //  PIPELINE GOVERNANCE — SharePoint version history
 // ══════════════════════════════════════════════════════════════════
-const PG_VERSION_CACHE_LS='glk_pg_version_cache_v1';
+const PG_VERSION_CACHE_LS='glk_pg_version_cache_v2';
 const PG_OPP_FIELD='Opportunity_x0020_Status';
 let PG_TAB='stale';
 let PG_ANALYSIS=[];
 let PG_LOADING=false;
+let PG_GRID_API=null;
+let PG_SEL_TILE=null;
+let PG_DRILL_HD=null;
+let PG_DRILL_AD=null;
+let PG_DRILL_AM=null;
+let PG_FLIP_FILTER='all';
+let PG_LOAD_STATS={fetched:0,cached:0,fallback:0,hardErrors:0};
 function pgNormStatus(s){
   s=String(s||'').trim();
   return (s==='—'||!s)?'':s;
@@ -11376,6 +11422,8 @@ function pgStatusClass(s){
   var l=String(s||'').toLowerCase();
   if(l==='opportunity') return 'opp';
   if(l==='proposed') return 'prop';
+  if(l==='billed') return 'billed';
+  if(l==='won'||l==='closed won') return 'won';
   return '';
 }
 function pgIsQtgGovernanceBid(bid){
@@ -11409,106 +11457,100 @@ function pgGetCachedVersions(bid){
   if(bid.modified&&e.modified&&String(bid.modified)!==String(e.modified)) return null;
   return e.versions;
 }
-function pgFetchVersionDetail(itemId,versionId,cb){
-  var safeList=SP_LIST.replace(/'/g,"''");
-  var url=SP_SITE+"/_api/web/lists/getbytitle('"+safeList+"')/items("+itemId+")/versions("+versionId+")?$select="+encodeURIComponent(PG_OPP_FIELD+',Modified,Editor/Title')+"&$expand=Editor";
-  spGet(url,function(err,data){
-    if(err) return cb(err,null);
-    var d=data&&data.d?data.d:{};
-    var editor='—';
-    try{
-      if(d.Editor&&d.Editor.Title) editor=d.Editor.Title;
-      else if(d.Author&&d.Author.Title) editor=d.Author.Title;
-    }catch(e){}
-    cb(null,{
-      versionId:versionId,
-      versionLabel:d.VersionLabel||String(versionId),
-      created:d.Modified||d.Created||null,
-      oppStatus:pgNormStatus(d[PG_OPP_FIELD]),
-      editor:editor
-    });
-  });
-}
-function pgVersionEditorFromRow(d){
+function pgEditorFromRow(d){
   try{
     if(d.Editor&&d.Editor.Title) return d.Editor.Title;
+    if(d.CreatedBy&&d.CreatedBy.Title) return d.CreatedBy.Title;
     if(d.Author&&d.Author.Title) return d.Author.Title;
   }catch(e){}
   return '—';
 }
-function pgMapVersionRows(rows){
-  return (rows||[]).map(function(row){
-    return {
-      versionId:row.VersionId,
-      versionLabel:row.VersionLabel||String(row.VersionId||''),
-      created:row.Modified||row.Created||null,
-      oppStatus:pgNormStatus(row[PG_OPP_FIELD]),
-      editor:pgVersionEditorFromRow(row)
-    };
-  }).sort(function(a,b){ return (a.versionId||0)-(b.versionId||0); });
+function pgFallbackVersions(bid){
+  return [{versionId:1,versionLabel:'current',created:bid.modified||bid.created,oppStatus:pgNormStatus(bid.oppStatus),editor:bid.userName||'—'}];
+}
+function pgFetchOneVersion(itemId,rowMeta,cb){
+  var safeList=SP_LIST.replace(/'/g,"''");
+  var sel=encodeURIComponent(PG_OPP_FIELD+',Modified,Created');
+  var vid=rowMeta.VersionId;
+  var vlabel=rowMeta.VersionLabel;
+  var urls=[];
+  if(vid!=null) urls.push(SP_SITE+"/_api/web/lists/getbytitle('"+safeList+"')/items("+itemId+")/versions("+vid+")?$select="+sel);
+  if(vlabel!=null&&String(vlabel)!==String(vid)){
+    var vl=String(vlabel).replace(/'/g,"''");
+    urls.push(SP_SITE+"/_api/web/lists/getbytitle('"+safeList+"')/items("+itemId+")/versions('"+vl+"')?$select="+sel);
+    urls.push(SP_SITE+"/_api/web/lists/getbytitle('"+safeList+"')/items("+itemId+")/versions("+vl+")?$select="+sel);
+  }
+  var ci=0;
+  function tryNext(){
+    if(ci>=urls.length){
+      return cb({
+        versionId:vid,versionLabel:vlabel||String(vid||''),
+        created:rowMeta.Modified||rowMeta.Created,
+        oppStatus:pgNormStatus(rowMeta[PG_OPP_FIELD]),
+        editor:pgEditorFromRow(rowMeta)
+      });
+    }
+    spGet(urls[ci++],function(err,data){
+      if(err||!data||!data.d) return tryNext();
+      var d=data.d;
+      cb({
+        versionId:vid,versionLabel:vlabel||d.VersionLabel||String(vid||''),
+        created:d.Modified||d.Created||rowMeta.Modified||rowMeta.Created,
+        oppStatus:pgNormStatus(d[PG_OPP_FIELD]),
+        editor:pgEditorFromRow(rowMeta)||pgEditorFromRow(d)
+      });
+    });
+  }
+  tryNext();
+}
+function pgFetchVersionChain(bid,rows,idx,out,done){
+  if(idx>=rows.length){
+    out.sort(function(a,b){ return (a.versionId||0)-(b.versionId||0); });
+    return done(out);
+  }
+  pgFetchOneVersion(bid.id,rows[idx],function(ver){
+    out.push(ver);
+    pgFetchVersionChain(bid,rows,idx+1,out,done);
+  });
 }
 function pgFetchItemVersionHistory(bid,cb){
   var cached=pgGetCachedVersions(bid);
-  if(cached) return cb(null,cached);
+  if(cached){ PG_LOAD_STATS.cached++; return cb(null,cached,false); }
   var safeList=SP_LIST.replace(/'/g,"''");
-  var bulkUrl=SP_SITE+"/_api/web/lists/getbytitle('"+safeList+"')/items("+bid.id+")/versions?$select=VersionId,VersionLabel,Created,Modified,"+PG_OPP_FIELD+",Editor/Title&$expand=Editor";
-  spGet(bulkUrl,function(err,data){
-    if(err){
-      var bareUrl=SP_SITE+"/_api/web/lists/getbytitle('"+safeList+"')/items("+bid.id+")/versions?$select=VersionId,VersionLabel,Created,IsCurrentVersion";
-      return spGet(bareUrl,function(err2,data2){
-        if(err2) return cb(err2,null);
-        pgFetchItemVersionHistoryDetails(bid,(data2.d&&data2.d.results)||[],cb);
-      });
-    }
-    var rows=(data.d&&data.d.results)||[];
+  var listUrl=SP_SITE+"/_api/web/lists/getbytitle('"+safeList+"')/items("+bid.id+")/versions";
+  spGet(listUrl,function(err,data){
+    var rows=(!err&&data&&data.d&&data.d.results)?data.d.results:[];
     if(!rows.length){
-      var fallback=[{
-        versionId:0,versionLabel:'1.0',created:bid.created||bid.modified,
-        oppStatus:pgNormStatus(bid.oppStatus),editor:'—'
-      }];
-      pgSaveVersionCacheEntry(bid.id,{modified:bid.modified,savedAt:Date.now(),versions:fallback});
-      return cb(null,fallback);
+      var fb=pgFallbackVersions(bid);
+      pgSaveVersionCacheEntry(bid.id,{modified:bid.modified,savedAt:Date.now(),versions:fb,partial:true});
+      PG_LOAD_STATS.fallback++;
+      return cb(null,fb,true);
     }
-    var mapped=pgMapVersionRows(rows);
-    if(mapped.some(function(v){ return v.oppStatus; })){
-      pgSaveVersionCacheEntry(bid.id,{modified:bid.modified,savedAt:Date.now(),versions:mapped});
-      return cb(null,mapped);
-    }
-    pgFetchItemVersionHistoryDetails(bid,rows,cb);
+    rows.sort(function(a,b){ return (a.VersionId||0)-(b.VersionId||0); });
+    pgFetchVersionChain(bid,rows,0,[],function(out){
+      if(!out.length||!out.some(function(v){ return v.oppStatus; })){
+        out=pgFallbackVersions(bid);
+        PG_LOAD_STATS.fallback++;
+      }else PG_LOAD_STATS.fetched++;
+      pgSaveVersionCacheEntry(bid.id,{modified:bid.modified,savedAt:Date.now(),versions:out});
+      cb(null,out,false);
+    });
   });
 }
-function pgFetchItemVersionHistoryDetails(bid,rows,cb){
-  var out=[], idx=0;
-  if(!rows.length){
-    var fallback=[{
-      versionId:0,versionLabel:'1.0',created:bid.created||bid.modified,
-      oppStatus:pgNormStatus(bid.oppStatus),editor:'—'
-    }];
-    pgSaveVersionCacheEntry(bid.id,{modified:bid.modified,savedAt:Date.now(),versions:fallback});
-    return cb(null,fallback);
-  }
-  function nextVer(){
-    if(idx>=rows.length){
-      out.sort(function(a,b){ return (a.versionId||0)-(b.versionId||0); });
-      pgSaveVersionCacheEntry(bid.id,{modified:bid.modified,savedAt:Date.now(),versions:out});
-      return cb(null,out);
-    }
-    var row=rows[idx++];
-    pgFetchVersionDetail(bid.id,row.VersionId,function(err2,detail){
-      if(!err2&&detail){
-        detail.versionLabel=row.VersionLabel||detail.versionLabel;
-        if(!detail.created) detail.created=row.Created||row.Modified;
-        out.push(detail);
-      }else{
-        out.push({
-          versionId:row.VersionId,versionLabel:row.VersionLabel||String(row.VersionId),
-          created:row.Created||row.Modified,oppStatus:pgNormStatus(row[PG_OPP_FIELD]),editor:'—'
-        });
-      }
-      nextVer();
-    });
-  }
-  nextVer();
+function pgFlipKind(toStatus){
+  var l=String(toStatus||'').trim().toLowerCase();
+  if(l==='opportunity') return 'to_opportunity';
+  if(l==='proposed') return 'to_proposed';
+  if(l==='billed') return 'to_billed';
+  if(l==='won'||l==='closed won') return 'to_won';
+  return 'other';
+}
+function pgFlipKindLabel(kind){
+  if(kind==='to_opportunity') return '→ Opportunity';
+  if(kind==='to_proposed') return '→ Proposed';
+  if(kind==='to_billed') return '→ Billed';
+  if(kind==='to_won') return '→ Won';
+  return '→ Other';
 }
 function pgAnalyzeVersionHistory(bid,versions){
   versions=(versions||[]).slice().sort(function(a,b){
@@ -11537,16 +11579,20 @@ function pgAnalyzeVersionHistory(bid,versions){
   }
   var flips=[];
   for(var i=1;i<segments.length;i++){
-    var prev=segments[i-1].status.toLowerCase(), curS=segments[i].status.toLowerCase();
-    if((prev==='opportunity'&&curS==='proposed')||(prev==='proposed'&&curS==='opportunity')){
-      flips.push({
-        from:segments[i-1].status,to:segments[i].status,
-        when:segments[i].from,editor:segments[i].editor||'—',
-        versionLabel:segments[i].versionLabel||''
-      });
-    }
+    var toSt=segments[i].status;
+    flips.push({
+      from:segments[i-1].status,to:toSt,
+      flipKind:pgFlipKind(toSt),
+      when:segments[i].from,editor:segments[i].editor||'—',
+      versionLabel:segments[i].versionLabel||''
+    });
   }
-  return {segments:segments,daysStale:daysStale,statusSince:current?current.from:null,flips:flips,currentStatus:pgNormStatus(bid.oppStatus)||lastStatus};
+  return {
+    segments:segments,versionCount:versions.length,
+    daysStale:daysStale,statusSince:current?current.from:null,
+    flips:flips,currentStatus:pgNormStatus(bid.oppStatus)||lastStatus,
+    lastEditor:current?current.editor:'—'
+  };
 }
 function pgParseSpDateTime(iso){
   if(!iso) return null;
@@ -11566,127 +11612,422 @@ function pgSetTab(tab){
   PG_TAB=tab==='flips'?'flips':'stale';
   el('pgTabStale')?.classList.toggle('active',PG_TAB==='stale');
   el('pgTabFlips')?.classList.toggle('active',PG_TAB==='flips');
+  var ff=el('pgFlipFilters');
+  if(ff) ff.style.display=PG_TAB==='flips'?'flex':'none';
   pgRender();
 }
-function pgPopulateHdFilter(){
-  var sel=el('pgHdFilter');
-  if(!sel||sel.dataset.pgInit==='1') return;
-  var hds={};
-  pgGetQtgCandidates().forEach(function(b){
-    var hd=b.headDirector&&b.headDirector!=='(Blank)'?b.headDirector:null;
-    if(hd) hds[hd]=1;
-  });
-  Object.keys(hds).sort().forEach(function(hd){
-    var opt=document.createElement('option');
-    opt.value=hd; opt.textContent=hd;
-    sel.appendChild(opt);
-  });
-  sel.dataset.pgInit='1';
+function pgSetFlipFilter(kind){
+  PG_FLIP_FILTER=kind||'all';
+  pgRenderFlipFilterChips();
+  pgRender();
 }
-function pgMatchesFilters(bid,analysis,searchQ){
-  var pf=el('pgPfFilter')?el('pgPfFilter').value:'';
-  if(pf&&String(bid.productFamily||'').trim()!==pf) return false;
-  var hd=el('pgHdFilter')?el('pgHdFilter').value:'';
-  if(hd&&String(bid.headDirector||'').trim()!==hd) return false;
-  if(searchQ){
-    var hay=[bid.customerName,bid.bidRequest,bid.myId,bid.accountDirector,bid.headDirector,bid.vertical,mqBidRefValue(bid)].join(' ').toLowerCase();
-    if(hay.indexOf(searchQ)<0) return false;
+function pgRenderFlipFilterChips(){
+  var wrap=el('pgFlipFilters');
+  if(!wrap) return;
+  var chips=[
+    {id:'all',label:'All flips'},
+    {id:'to_opportunity',label:'→ Opportunity'},
+    {id:'to_proposed',label:'→ Proposed'},
+    {id:'to_billed',label:'→ Billed'},
+    {id:'to_won',label:'→ Won'}
+  ];
+  wrap.innerHTML=chips.map(function(c){
+    return '<button type="button" class="pg-flip-chip'+(PG_FLIP_FILTER===c.id?' active':'')+'" onclick="pgSetFlipFilter(\''+c.id+'\')">'+c.label+'</button>';
+  }).join('');
+}
+function pgAmKey(bid){
+  return (bid.amEmail&&bid.amEmail!=='—'?bid.amEmail:(bid.amName||'—'));
+}
+function pgRebuildCascadeFilters(){
+  var hdSel=el('pgHdFilter'), adSel=el('pgAdFilter'), amSel=el('pgAmFilter');
+  if(!hdSel||!adSel||!amSel) return;
+  var base=pgGetQtgCandidates();
+  var hdVal=hdSel.value, adVal=adSel.value;
+  var hds={}, ads={}, ams={};
+  base.forEach(function(b){
+    var hd=b.headDirector&&b.headDirector!=='(Blank)'?b.headDirector:'';
+    if(hd) hds[hd]=1;
+    if(hdVal&&b.headDirector!==hdVal) return;
+    var ad=b.accountDirector&&b.accountDirector!=='—'?b.accountDirector:'';
+    if(ad) ads[ad]=1;
+    if(adVal&&b.accountDirector!==adVal) return;
+    var am=pgAmKey(b);
+    if(am&&am!=='—') ams[am]=1;
+  });
+  function fill(sel,vals,keep){
+    var cur=keep?sel.value:'';
+    sel.innerHTML='<option value="">All</option>';
+    vals.sort().forEach(function(v){
+      var o=document.createElement('option');
+      o.value=v; o.textContent=v;
+      sel.appendChild(o);
+    });
+    if(cur&&vals.indexOf(cur)>=0) sel.value=cur; else sel.value='';
+  }
+  fill(hdSel,Object.keys(hds),true);
+  fill(adSel,Object.keys(ads),true);
+  fill(amSel,Object.keys(ams),true);
+}
+function pgOnHdFilterChange(){
+  var adSel=el('pgAdFilter'), amSel=el('pgAmFilter');
+  if(adSel) adSel.value='';
+  if(amSel) amSel.value='';
+  PG_DRILL_HD=null; PG_DRILL_AD=null; PG_DRILL_AM=null;
+  pgRebuildCascadeFilters();
+  pgRender();
+}
+function pgOnAdFilterChange(){
+  var amSel=el('pgAmFilter');
+  if(amSel) amSel.value='';
+  PG_DRILL_AD=null; PG_DRILL_AM=null;
+  pgRebuildCascadeFilters();
+  pgRender();
+}
+function pgGetFilterVals(){
+  return {
+    hd:el('pgHdFilter')?el('pgHdFilter').value:'',
+    ad:el('pgAdFilter')?el('pgAdFilter').value:'',
+    am:el('pgAmFilter')?el('pgAmFilter').value:'',
+    pf:el('pgPfFilter')?el('pgPfFilter').value:'',
+    minDays:parseInt(el('pgMinDays')&&el('pgMinDays').value,10)||7,
+    search:(el('pgSearchInp')&&el('pgSearchInp').value||'').trim().toLowerCase()
+  };
+}
+function pgRowMatchesFilters(row,f){
+  var b=row.bid;
+  if(f.pf&&String(b.productFamily||'').trim()!==f.pf) return false;
+  var hd=f.hd||PG_DRILL_HD;
+  var ad=f.ad||PG_DRILL_AD;
+  var am=f.am||PG_DRILL_AM;
+  if(hd&&String(b.headDirector||'').trim()!==hd) return false;
+  if(ad&&String(b.accountDirector||'').trim()!==ad) return false;
+  if(am){
+    var key=pgAmKey(b);
+    if(key!==am&&String(b.amName||'')!==am) return false;
+  }
+  if(f.search){
+    var hay=[b.customerName,b.bidRequest,b.myId,b.accountDirector,b.headDirector,b.amName,b.vertical,b.productFamily,b.productCategory,b.services,mqBidRefValue(b),row.analysis.currentStatus].join(' ').toLowerCase();
+    if(hay.indexOf(f.search)<0) return false;
   }
   return true;
 }
-function pgRender(){
-  pgPopulateHdFilter();
-  var minDays=parseInt(el('pgMinDays')&&el('pgMinDays').value,10)||7;
-  var searchQ=(el('pgSearchInp')&&el('pgSearchInp').value||'').trim().toLowerCase();
-  var wrap=el('pgTableWrap'), sum=el('pgSummaryBar'), foot=el('pgFootnote');
+function pgClassifyRow(row,minDays){
+  var d=row.analysis.daysStale;
+  if(d>=21) return 'critical';
+  if(d>=minDays) return 'stale';
+  return 'healthy';
+}
+function pgGetScopedRows(){
+  var f=pgGetFilterVals();
+  return PG_ANALYSIS.filter(function(row){ return pgRowMatchesFilters(row,f); });
+}
+function pgSelectTile(key){
+  if(key==='flips'){
+    PG_TAB='flips';
+    el('pgTabStale')?.classList.remove('active');
+    el('pgTabFlips')?.classList.add('active');
+    var ff=el('pgFlipFilters'); if(ff) ff.style.display='flex';
+  }
+  PG_SEL_TILE=PG_SEL_TILE===key?null:key;
+  pgRender();
+}
+function pgDrillReset(level){
+  if(level==='overview'){ PG_DRILL_HD=null; PG_DRILL_AD=null; PG_DRILL_AM=null; }
+  else if(level==='hd'){ PG_DRILL_AD=null; PG_DRILL_AM=null; }
+  else if(level==='ad'){ PG_DRILL_AM=null; }
+  pgRender();
+}
+function pgDrillSelectFromTile(node){
+  if(!node) return;
+  var level=node.getAttribute('data-pg-level');
+  var key=decodeURIComponent(node.getAttribute('data-pg-key')||'');
+  pgDrillSelect(level,key);
+}
+function pgDrillSelect(level,key){
+  if(level==='hd'){ PG_DRILL_HD=key; PG_DRILL_AD=null; PG_DRILL_AM=null; var h=el('pgHdFilter'); if(h) h.value=key; }
+  else if(level==='ad'){ PG_DRILL_AD=key; PG_DRILL_AM=null; var a=el('pgAdFilter'); if(a) a.value=key; }
+  else if(level==='am'){ PG_DRILL_AM=key; var m=el('pgAmFilter'); if(m) m.value=key; }
+  pgRebuildCascadeFilters();
+  pgRender();
+}
+function pgRenderKpiTiles(rows,f){
+  var wrap=el('pgKpiRow');
   if(!wrap) return;
+  var minDays=f.minDays;
+  var healthy=0, stale=0, critical=0, flips=0;
+  var flipCounts={to_opportunity:0,to_proposed:0,to_billed:0,to_won:0};
+  rows.forEach(function(row){
+    var cls=pgClassifyRow(row,minDays);
+    if(cls==='healthy') healthy++;
+    else if(cls==='stale') stale++;
+    else critical++;
+    row.analysis.flips.forEach(function(fl){
+      flips++;
+      if(flipCounts[fl.flipKind]!=null) flipCounts[fl.flipKind]++;
+    });
+  });
+  var live=mqLiveYearQuarter();
+  var defs=[
+    {key:null,label:'QTG In-Flight',value:rows.length,sub:'Q'+live.quarter+' '+live.year+' pipeline',color:'var(--sc)'},
+    {key:'healthy',label:'Recently updated',value:healthy,sub:'Status changed within '+minDays+' days',color:'#16a34a'},
+    {key:'stale',label:'Stale queue',value:stale,sub:'Unchanged ≥ '+minDays+' days',color:'#ea580c'},
+    {key:'critical',label:'Critical stale',value:critical,sub:'Unchanged ≥ 21 days',color:'#dc2626'},
+    {key:'flips',label:'Status flips',value:flips,sub:'All recorded changes',color:'#7c3aed'}
+  ];
+  wrap.innerHTML='';
+  defs.forEach(function(td){
+    var card=document.createElement('div');
+    var active=PG_SEL_TILE===td.key&&td.key;
+    var dim=PG_SEL_TILE&&td.key&&PG_SEL_TILE!==td.key;
+    card.className='stat-card pg-kpi-card'+(active?' tile-active':'')+(dim?' tile-dimmed':'');
+    if(td.key) card.onclick=function(){ pgSelectTile(td.key); };
+    card.innerHTML='<div class="stat-label">'+td.label+'</div><div class="stat-value" style="color:'+td.color+'">'+td.value+'</div><div class="stat-subtitle">'+td.sub+'</div>';
+    wrap.appendChild(card);
+  });
+}
+function pgAggregateGroup(rows,minDays,groupFn){
+  var map={};
+  rows.forEach(function(row){
+    var key=groupFn(row);
+    if(!key||key==='—'||key==='(Blank)') key='(Unassigned)';
+    if(!map[key]) map[key]={key:key,total:0,healthy:0,stale:0,critical:0,flips:0,ga:0};
+    var g=map[key];
+    g.total++;
+    g.ga+=num(row.bid.gaLines);
+    var cls=pgClassifyRow(row,minDays);
+    if(cls==='healthy') g.healthy++;
+    else if(cls==='stale') g.stale++;
+    else g.critical++;
+    g.flips+=row.analysis.flips.length;
+  });
+  return Object.keys(map).map(function(k){ return map[k]; }).sort(function(a,b){ return b.stale+b.critical-a.stale-a.critical; });
+}
+function pgRenderDrill(rows,f){
+  var sec=el('pgDrillSection');
+  if(!sec) return;
+  if(PG_DRILL_AM){
+    sec.innerHTML='';
+    sec.style.display='none';
+    return;
+  }
+  sec.style.display='block';
+  var minDays=f.minDays;
+  var groups, title, level;
+  if(!PG_DRILL_HD){
+    groups=pgAggregateGroup(rows,minDays,function(r){ return r.bid.headDirector; });
+    title='Head Directors — click to drill down';
+    level='hd';
+  }else if(!PG_DRILL_AD){
+    groups=pgAggregateGroup(rows.filter(function(r){ return r.bid.headDirector===PG_DRILL_HD; }),minDays,function(r){ return r.bid.accountDirector; });
+    title='Account Directors under '+PG_DRILL_HD;
+    level='ad';
+  }else{
+    groups=pgAggregateGroup(rows.filter(function(r){ return r.bid.headDirector===PG_DRILL_HD&&r.bid.accountDirector===PG_DRILL_AD; }),minDays,function(r){ return r.bid.amName||pgAmKey(r.bid); });
+    title='Account Managers under '+PG_DRILL_AD;
+    level='am';
+  }
+  var h='<h3 class="section-title" style="margin:0 0 .75rem;font-size:.95rem;">'+mqEscHtml(title)+'</h3><div class="pg-drill-grid">';
+  if(!groups.length) h+='<div class="pg-empty" style="grid-column:1/-1;">No records for this level.</div>';
+  groups.forEach(function(g){
+    var sel=(level==='hd'&&PG_DRILL_HD===g.key)||(level==='ad'&&PG_DRILL_AD===g.key)||(level==='am'&&PG_DRILL_AM===g.key);
+    h+='<div class="pg-drill-tile'+(sel?' selected':'')+'" data-pg-level="'+level+'" data-pg-key="'+encodeURIComponent(g.key)+'" onclick="pgDrillSelectFromTile(this)">';
+    h+='<h4>'+mqEscHtml(g.key)+'</h4><div class="pg-drill-meta">'+(level==='hd'?'Head Director':level==='ad'?'Account Director':'Account Manager')+'</div>';
+    h+='<div class="pg-drill-metrics">';
+    h+='<div class="pg-drill-metric"><div class="lbl">Total</div><div class="val">'+g.total+'</div></div>';
+    h+='<div class="pg-drill-metric"><div class="lbl">Stale</div><div class="val stale">'+g.stale+'</div></div>';
+    h+='<div class="pg-drill-metric"><div class="lbl">Critical</div><div class="val crit">'+g.critical+'</div></div>';
+    h+='</div></div>';
+  });
+  h+='</div>';
+  sec.innerHTML=h;
+}
+function pgRenderBreadcrumb(f){
+  var bc=el('pgBreadcrumb');
+  if(!bc) return;
+  var parts=['<button type="button" onclick="pgDrillReset(\'overview\')">Overview</button>'];
+  if(PG_DRILL_HD||f.hd){
+    var hk=encodeURIComponent(PG_DRILL_HD||f.hd);
+    parts.push('<span class="pg-crumb-sep">›</span><button type="button" data-pg-level="hd" data-pg-key="'+hk+'" onclick="pgDrillSelectFromTile(this)">'+mqEscHtml(PG_DRILL_HD||f.hd)+'</button>');
+  }
+  if(PG_DRILL_AD||f.ad){
+    var ak=encodeURIComponent(PG_DRILL_AD||f.ad);
+    parts.push('<span class="pg-crumb-sep">›</span><button type="button" data-pg-level="ad" data-pg-key="'+ak+'" onclick="pgDrillSelectFromTile(this)">'+mqEscHtml(PG_DRILL_AD||f.ad)+'</button>');
+  }
+  if(PG_DRILL_AM||f.am) parts.push('<span class="pg-crumb-sep">›</span><span>'+mqEscHtml(PG_DRILL_AM||f.am)+'</span>');
+  bc.innerHTML=parts.join(' ');
+}
+function pgStatusRenderer(params){
+  var s=params.value||'—';
+  return '<span class="pg-status-chip '+pgStatusClass(s)+'">'+mqEscHtml(String(s))+'</span>';
+}
+function pgBuildStaleGridRows(rows,f){
+  var out=[];
+  rows.forEach(function(row){
+    var cls=pgClassifyRow(row,f.minDays);
+    if(PG_SEL_TILE==='healthy'&&cls!=='healthy') return;
+    if(PG_SEL_TILE==='stale'&&cls!=='stale') return;
+    if(PG_SEL_TILE==='critical'&&cls!=='critical') return;
+    if(PG_SEL_TILE==='flips') return;
+    var b=row.bid, a=row.analysis;
+    out.push({
+      headDirector:b.headDirector||'—',
+      accountDirector:b.accountDirector||'—',
+      amName:b.amName||'—',
+      customerName:b.customerName||'—',
+      bidRef:mqBidRefValue(b)||'—',
+      vertical:b.vertical||'—',
+      productFamily:b.productFamily||'—',
+      productCategory:b.productCategory||'—',
+      services:b.services||'—',
+      oppStatus:a.currentStatus||'—',
+      daysUnchanged:a.daysStale,
+      statusSince:pgFmtDateTime(a.statusSince),
+      lastChangedBy:a.lastEditor||'—',
+      gaLines:num(b.gaLines),
+      mrc:num(b.mrc),
+      expectedActivation:mqFmtBidDate(b.expectedActivation),
+      proposedDate:mqFmtBidDate(b.proposedDate),
+      modified:mqFmtBidDate(b.modified),
+      versionCount:a.versionCount||0,
+      spLink:mqBidEditUrl(b)||'',
+      healthBand:cls
+    });
+  });
+  out.sort(function(a,b){ return b.daysUnchanged-a.daysUnchanged; });
+  return out;
+}
+function pgBuildFlipGridRows(rows,f){
+  var out=[];
+  rows.forEach(function(row){
+    if(PG_SEL_TILE==='healthy'||PG_SEL_TILE==='stale'||PG_SEL_TILE==='critical') return;
+    row.analysis.flips.forEach(function(fl){
+      if(PG_FLIP_FILTER!=='all'&&fl.flipKind!==PG_FLIP_FILTER) return;
+      var b=row.bid;
+      out.push({
+        headDirector:b.headDirector||'—',
+        accountDirector:b.accountDirector||'—',
+        amName:b.amName||'—',
+        customerName:b.customerName||'—',
+        bidRef:mqBidRefValue(b)||'—',
+        fromStatus:fl.from,
+        toStatus:fl.to,
+        flipType:pgFlipKindLabel(fl.flipKind),
+        flipKind:fl.flipKind,
+        when:pgFmtDateTime(fl.when),
+        changedBy:fl.editor||'—',
+        version:fl.versionLabel||'—',
+        gaLines:num(b.gaLines),
+        mrc:num(b.mrc),
+        vertical:b.vertical||'—',
+        productFamily:b.productFamily||'—',
+        daysInCurrent:row.analysis.daysStale,
+        spLink:mqBidEditUrl(b)||''
+      });
+    });
+  });
+  return out;
+}
+function pgRenderGrid(data){
+  if(typeof agGrid==='undefined'){
+    el('pgGrid').innerHTML='<div class="pg-empty">AG Grid not loaded.</div>';
+    return;
+  }
+  var cols;
+  if(PG_TAB==='flips'){
+    cols=[
+      glkCol({field:'headDirector',headerName:'Head Director',width:140,pinned:'left'}),
+      glkCol({field:'accountDirector',headerName:'Account Director',width:140,pinned:'left'}),
+      glkCol({field:'amName',headerName:'Account Manager',width:135,pinned:'left'}),
+      glkCol({field:'customerName',headerName:'Customer',width:170}),
+      glkCol({field:'bidRef',headerName:'Bid Reference',width:175}),
+      glkCol({field:'fromStatus',headerName:'From Status',width:115,cellRenderer:pgStatusRenderer}),
+      glkCol({field:'toStatus',headerName:'To Status',width:115,cellRenderer:pgStatusRenderer}),
+      glkCol({field:'flipType',headerName:'Flip type',width:120}),
+      glkCol({field:'when',headerName:'When',width:145}),
+      glkCol({field:'changedBy',headerName:'Changed by',width:130}),
+      glkCol({field:'version',headerName:'Version',width:80}),
+      glkCol({field:'vertical',headerName:'Vertical',width:100}),
+      glkCol({field:'productFamily',headerName:'Product Family',width:115}),
+      glkCol({field:'gaLines',headerName:'GA Lines',width:90},'num'),
+      glkCol({field:'mrc',headerName:'MRC',width:100,valueFormatter:function(p){ return fmt(p.value); }},'money'),
+      glkCol({field:'daysInCurrent',headerName:'Days in current status',width:155},'num'),
+      {colId:'spLink',headerName:'SharePoint',width:95,cellRenderer:function(p){
+        return p.value?'<a href="'+p.value+'" target="_blank" rel="noopener" style="color:var(--acc);font-weight:800;font-size:.68rem;">Open ↗</a>':'—';
+      },valueGetter:function(p){ return p.data.spLink; },sortable:false,filter:false}
+    ];
+  }else{
+    cols=[
+      glkCol({field:'headDirector',headerName:'Head Director',width:140,pinned:'left'}),
+      glkCol({field:'accountDirector',headerName:'Account Director',width:140,pinned:'left'}),
+      glkCol({field:'amName',headerName:'Account Manager',width:135,pinned:'left'}),
+      glkCol({field:'customerName',headerName:'Customer',width:170}),
+      glkCol({field:'bidRef',headerName:'Bid Reference',width:175}),
+      glkCol({field:'vertical',headerName:'Vertical',width:100}),
+      glkCol({field:'productFamily',headerName:'Product Family',width:115}),
+      glkCol({field:'productCategory',headerName:'Product Category',width:130}),
+      glkCol({field:'services',headerName:'Services',width:120}),
+      glkCol({field:'oppStatus',headerName:'Opp Status',width:115,cellRenderer:pgStatusRenderer}),
+      glkCol({field:'daysUnchanged',headerName:'Days unchanged',width:120,cellStyle:function(p){
+        if(p.value>=21) return {color:'#dc2626',fontWeight:'900'};
+        if(p.value>=14) return {color:'#ea580c',fontWeight:'900'};
+        return {fontWeight:'800'};
+      }},'num'),
+      glkCol({field:'statusSince',headerName:'Status since',width:145}),
+      glkCol({field:'lastChangedBy',headerName:'Last changed by',width:130}),
+      glkCol({field:'gaLines',headerName:'GA Lines',width:90},'num'),
+      glkCol({field:'mrc',headerName:'MRC',width:100,valueFormatter:function(p){ return fmt(p.value); }},'money'),
+      glkCol({field:'expectedActivation',headerName:'Expected Activation',width:145}),
+      glkCol({field:'proposedDate',headerName:'Proposed Date',width:120}),
+      glkCol({field:'modified',headerName:'Modified',width:120}),
+      glkCol({field:'versionCount',headerName:'Versions',width:85},'num'),
+      {colId:'spLink',headerName:'SharePoint',width:95,cellRenderer:function(p){
+        return p.value?'<a href="'+p.value+'" target="_blank" rel="noopener" style="color:var(--acc);font-weight:800;font-size:.68rem;">Open ↗</a>':'—';
+      },valueGetter:function(p){ return p.data.spLink; },sortable:false,filter:false}
+    ];
+  }
+  var opts={
+    columnDefs:cols,rowData:data,
+    defaultColDef:{sortable:true,filter:GlkValueListFilter,resizable:true},
+    suppressMenuHide:true,
+    pagination:true,paginationPageSize:50,paginationPageSizeSelector:[25,50,100,250],
+    rowHeight:44,headerHeight:48,animateRows:true,enableCellTextSelection:true,
+    onGridReady:function(p){ PG_GRID_API=p.api; }
+  };
+  if(PG_GRID_API){ try{ PG_GRID_API.destroy(); }catch(e){} PG_GRID_API=null; }
+  el('pgGrid').innerHTML='';
+  agGrid.createGrid(el('pgGrid'),opts);
+}
+function pgRender(){
+  pgRebuildCascadeFilters();
+  pgRenderFlipFilterChips();
+  var f=pgGetFilterVals();
+  var foot=el('pgFootnote'), gridTitle=el('pgGridTitle'), gridCount=el('pgGridCount');
   if(PG_LOADING){
-    wrap.innerHTML='<div class="pg-empty">Loading SharePoint version history…</div>';
+    if(gridTitle) gridTitle.textContent='Loading SharePoint version history…';
+    if(gridCount) gridCount.textContent='';
+    el('pgGrid').innerHTML='<div class="pg-empty">Fetching version history from SharePoint…</div>';
     return;
   }
   if(!PG_ANALYSIS.length){
-    wrap.innerHTML='<div class="pg-empty">Click <strong>Load version history</strong> to pull SharePoint audit data for QTG in-flight deals (Proposed / Opportunity, activation in live quarter).</div>';
-    if(sum) sum.innerHTML='';
+    el('pgKpiRow').innerHTML='';
+    el('pgDrillSection').innerHTML='';
+    el('pgBreadcrumb').innerHTML='';
+    el('pgGrid').innerHTML='<div class="pg-empty">Click <strong>Refresh version history</strong> to load SharePoint audit data for QTG in-flight deals.</div>';
     if(foot) foot.textContent='';
     return;
   }
-  var staleRows=[], flipRows=[], totalStale=0, totalFlips=0;
-  PG_ANALYSIS.forEach(function(row){
-    if(!pgMatchesFilters(row.bid,row.analysis,searchQ)) return;
-    if(row.analysis.daysStale>=minDays) totalStale++;
-    totalFlips+=row.analysis.flips.length;
-    if(PG_TAB==='stale'){
-      if(row.analysis.daysStale>=minDays) staleRows.push(row);
-    }else{
-      row.analysis.flips.forEach(function(f){
-        flipRows.push({bid:row.bid,flip:f,daysStale:row.analysis.daysStale});
-      });
-    }
-  });
-  if(PG_TAB==='stale') staleRows.sort(function(a,b){ return b.analysis.daysStale-a.analysis.daysStale; });
-  else flipRows.sort(function(a,b){ return pgParseSpDateTime(b.flip.when)-pgParseSpDateTime(a.flip.when); });
-  if(sum){
-    var live=mqLiveYearQuarter();
-    sum.innerHTML='<span>Q'+live.quarter+' '+live.year+' QTG in-flight: <strong>'+PG_ANALYSIS.length+'</strong> deals tracked</span>'+
-      '<span class="pg-stale">Stale (≥'+minDays+'d): <strong>'+totalStale+'</strong></span>'+
-      '<span class="pg-flip">Opp ↔ Proposed flips: <strong>'+totalFlips+'</strong></span>';
-  }
-  var h='';
-  if(PG_TAB==='stale'){
-    h+='<table class="pg-table"><thead><tr>';
-    h+='<th>Customer</th><th>Bid reference</th><th>Status</th><th class="pg-h-days">Days unchanged</th><th>Status since</th><th>Last set by</th><th>Head director</th><th>Account director</th><th class="pg-h-lines">GA Lines</th><th></th>';
-    h+='</tr></thead><tbody>';
-    if(!staleRows.length){
-      h+='<tr><td colspan="10" class="pg-empty">No deals unchanged for '+minDays+'+ days with current filters.</td></tr>';
-    }else{
-      staleRows.forEach(function(row){
-        var b=row.bid, a=row.analysis;
-        var daysCls=a.daysStale>=21?'pg-days-crit':(a.daysStale>=14?'pg-days-warn':'');
-        var editUrl=mqBidEditUrl(b);
-        h+='<tr>';
-        h+='<td><strong>'+mqEscHtml(b.customerName||'—')+'</strong><div style="font-size:.64rem;color:var(--t3);">'+mqEscHtml(b.vertical||'—')+' · '+mqEscHtml(b.productFamily||'—')+'</div></td>';
-        h+='<td>'+mqBidRefCopyHtml(b)+'</td>';
-        h+='<td><span class="pg-status-chip '+pgStatusClass(a.currentStatus)+'">'+mqEscHtml(a.currentStatus||'—')+'</span></td>';
-        h+='<td class="pg-days '+daysCls+'"><strong>'+a.daysStale+'</strong></td>';
-        h+='<td>'+pgFmtDateTime(a.statusSince)+'</td>';
-        h+='<td>'+mqEscHtml((a.segments.length?a.segments[a.segments.length-1].editor:'—'))+'</td>';
-        h+='<td>'+mqEscHtml(b.headDirector||'—')+'</td>';
-        h+='<td>'+mqEscHtml(b.accountDirector||'—')+'</td>';
-        h+='<td class="pg-lines">'+mqFmtProductLines(b.gaLines)+'</td>';
-        h+='<td>'+(editUrl?'<a class="pg-open-link" href="'+editUrl+'" target="_blank" rel="noopener">Version history ↗</a>':'')+'</td>';
-        h+='</tr>';
-      });
-    }
-    h+='</tbody></table>';
-  }else{
-    h+='<table class="pg-table"><thead><tr>';
-    h+='<th>Customer</th><th>Bid reference</th><th>Change</th><th>When</th><th>Changed by</th><th>Version</th><th>Head director</th><th>Account director</th><th class="pg-h-days">Days in current status</th><th></th>';
-    h+='</tr></thead><tbody>';
-    if(!flipRows.length){
-      h+='<tr><td colspan="10" class="pg-empty">No Opportunity ↔ Proposed flips found in SharePoint version history for current filters.</td></tr>';
-    }else{
-      flipRows.forEach(function(row){
-        var b=row.bid, f=row.flip;
-        var editUrl=mqBidEditUrl(b);
-        h+='<tr>';
-        h+='<td><strong>'+mqEscHtml(b.customerName||'—')+'</strong></td>';
-        h+='<td>'+mqBidRefCopyHtml(b)+'</td>';
-        h+='<td><span class="pg-status-chip '+pgStatusClass(f.from)+'">'+mqEscHtml(f.from)+'</span><span class="pg-flip-arrow">→</span><span class="pg-status-chip '+pgStatusClass(f.to)+'">'+mqEscHtml(f.to)+'</span></td>';
-        h+='<td>'+pgFmtDateTime(f.when)+'</td>';
-        h+='<td>'+mqEscHtml(f.editor||'—')+'</td>';
-        h+='<td>'+mqEscHtml(f.versionLabel||'—')+'</td>';
-        h+='<td>'+mqEscHtml(b.headDirector||'—')+'</td>';
-        h+='<td>'+mqEscHtml(b.accountDirector||'—')+'</td>';
-        h+='<td class="pg-days">'+row.daysStale+'</td>';
-        h+='<td>'+(editUrl?'<a class="pg-open-link" href="'+editUrl+'" target="_blank" rel="noopener">Open record ↗</a>':'')+'</td>';
-        h+='</tr>';
-      });
-    }
-    h+='</tbody></table>';
-  }
-  wrap.innerHTML=h;
+  var rows=pgGetScopedRows();
+  pgRenderKpiTiles(rows,f);
+  pgRenderBreadcrumb(f);
+  pgRenderDrill(rows,f);
+  var gridRows=PG_TAB==='flips'?pgBuildFlipGridRows(rows,f):pgBuildStaleGridRows(rows,f);
+  if(gridTitle) gridTitle.textContent=PG_TAB==='flips'?'Status flip detail':'Stale queue detail';
+  if(gridCount) gridCount.textContent=gridRows.length+' row'+(gridRows.length===1?'':'s');
+  pgRenderGrid(gridRows);
   if(foot){
-    foot.innerHTML='Source: SharePoint list <strong>'+mqEscHtml(SP_LIST)+'</strong> version history · Opportunity Status field · QTG scope = Proposed/Opportunity with expected activation in live Q'+mqLiveYearQuarter().quarter+' '+mqLiveYearQuarter().year+'. Cached per record until Modified changes.';
+    var live=mqLiveYearQuarter();
+    var errNote=PG_LOAD_STATS.hardErrors?(' <span class="pg-error-note">'+PG_LOAD_STATS.hardErrors+' records could not reach SharePoint.</span>'):'';
+    foot.innerHTML='SharePoint list <strong>'+mqEscHtml(SP_LIST)+'</strong> · Opportunity Status version history · Q'+live.quarter+' '+live.year+' QTG in-flight · Loaded: '+PG_LOAD_STATS.fetched+' · Cache: '+PG_LOAD_STATS.cached+' · Fallback (current status only): '+PG_LOAD_STATS.fallback+'.'+errNote+' Hold Shift while refreshing to clear cache.';
   }
 }
 function pgSetProgress(pct,text){
@@ -11699,12 +12040,13 @@ function pgHideProgress(){
   var bar=el('pgProgressBar');
   if(bar) bar.style.display='none';
 }
-function pgRefreshFromSharePoint(force){
+function pgRefreshFromSharePoint(evt){
   if(PG_LOADING) return;
   if(!ALL_BIDS||!ALL_BIDS.length){
     alert('Pipeline not loaded yet. Wait for the main dashboard to finish loading, then try again.');
     return;
   }
+  var force=evt&&evt.shiftKey;
   if(force){
     try{ localStorage.removeItem(PG_VERSION_CACHE_LS); }catch(e){}
   }
@@ -11717,20 +12059,21 @@ function pgRefreshFromSharePoint(force){
   }
   PG_LOADING=true;
   PG_ANALYSIS=[];
+  PG_LOAD_STATS={fetched:0,cached:0,fallback:0,hardErrors:0};
   pgRender();
-  pgSetProgress(0,'Fetching SharePoint version history for 0 / '+candidates.length+' deals…');
-  var idx=0, concurrency=4, active=0, errors=0;
+  pgSetProgress(0,'Reading SharePoint version history · 0 / '+candidates.length);
+  var idx=0, concurrency=2, active=0;
   function pump(){
     while(active<concurrency&&idx<candidates.length){
       (function(bid){
         active++;
-        pgFetchItemVersionHistory(bid,function(err,versions){
+        pgFetchItemVersionHistory(bid,function(err,versions,isPartial){
           active--;
-          if(err) errors++;
-          var analysis=pgAnalyzeVersionHistory(bid,versions||[]);
-          PG_ANALYSIS.push({bid:bid,analysis:analysis,error:err?err.message:null});
+          if(err&&!versions) PG_LOAD_STATS.hardErrors++;
+          var analysis=pgAnalyzeVersionHistory(bid,versions||pgFallbackVersions(bid));
+          PG_ANALYSIS.push({bid:bid,analysis:analysis,partial:!!isPartial});
           var done=PG_ANALYSIS.length;
-          pgSetProgress(Math.round((done/candidates.length)*100),'SharePoint version history: '+done+' / '+candidates.length+(errors?' ('+errors+' errors)':''));
+          pgSetProgress(Math.round((done/candidates.length)*100),'SharePoint version history · '+done+' / '+candidates.length+' · cache '+PG_LOAD_STATS.cached+' · loaded '+PG_LOAD_STATS.fetched);
           if(done>=candidates.length){
             PG_LOADING=false;
             pgHideProgress();
@@ -11750,13 +12093,17 @@ window.glkShowGovernance=function(){
   el('content').classList.add('mq-view');
   el('dashboardContent').classList.add('mq-full');
   glkSetActiveNav('navGovernance');
-  pgPopulateHdFilter();
-  if(!PG_ANALYSIS.length&&!PG_LOADING&&ALL_BIDS&&ALL_BIDS.length) pgRefreshFromSharePoint(false);
+  pgRenderFlipFilterChips();
+  if(!PG_ANALYSIS.length&&!PG_LOADING&&ALL_BIDS&&ALL_BIDS.length) pgRefreshFromSharePoint(null);
   else pgRender();
 };
 window.pgRefreshFromSharePoint=pgRefreshFromSharePoint;
 window.pgSetTab=pgSetTab;
 window.pgRender=pgRender;
+window.pgDrillSelectFromTile=pgDrillSelectFromTile;
+window.pgSetFlipFilter=pgSetFlipFilter;
+window.pgOnHdFilterChange=pgOnHdFilterChange;
+window.pgOnAdFilterChange=pgOnAdFilterChange;
 
 // ══════════════════════════════════════════════════════════════════
 //  INIT
