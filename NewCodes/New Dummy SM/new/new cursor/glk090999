@@ -1732,10 +1732,6 @@ let MQ_OVERDUE_GRID_API=null;
 let MQ_BRIDGE_DETAIL_GRID_API=null;
 let MQ_SEARCH_GRID_API=null;
 let MQ_EXPANDED_ROW_IDS={};
-let MQ_DETAIL_GRID_API=null;
-let MQ_SEARCH_GRID_API=null;
-let MQ_DETAIL_BASE_ROWS=[];
-let MQ_DETAIL_EXPANDED={};
 let mqCase='worst';
 function mqCaseDisplayName(c){
   return (c||(mqCase==='best'?'best':'worst'))==='best'?'Upside':'Most Likely';
