@@ -681,7 +681,13 @@ body[data-theme="dark"] .badge-warning,body[data-theme="magenta-dark"] .badge-wa
         <div class="table-section" style="margin-top:1rem;">
           <div class="table-header">
             <h3 class="table-title"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>All OCC Records <span id="gridCountLabel" style="font-size:.75rem;color:var(--t3);font-weight:600;margin-left:.35rem"></span></h3>
-            <div class="table-actions"><input type="text" class="search-box" id="searchInp" placeholder="Search..." oninput="gridSearch(this.value)"></div>
+            <div class="table-actions">
+              <button type="button" class="export-btn" onclick="exportExcel()">
+                <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                Export to Excel
+              </button>
+              <input type="text" class="search-box" id="searchInp" placeholder="Search..." oninput="gridSearch(this.value)">
+            </div>
           </div>
           <div id="myGrid" class="ag-theme-alpine" style="height:620px;width:100%;"></div>
         </div>
@@ -1838,10 +1844,117 @@ function renderGrid(){ if(GRID_API){ GRID_API.setGridOption('rowData', getViewIt
 function gridSearch(q){ if(GRID_API) GRID_API.setGridOption('quickFilterText', q); }
 function updateGridCounts(){ const n=getViewItems().length; set('recordCountBadge', n+' of '+SCOPED.length+' records'); set('gridCountLabel', '('+n+' shown)'); }
 
+function occExcelTheme(){
+  const t = String(document.body.getAttribute('data-theme')||'');
+  const mag = t.indexOf('magenta')>=0;
+  const acc = (getComputedStyle(document.body).getPropertyValue('--acc')||'').trim();
+  const header = acc || (mag ? '#a855f7' : '#2563eb');
+  if(mag) return { header:header, meta:'#e9d5ff', even:'#f3e8ff', odd:'#ffffff', footer:'#e9d5ff', text:'#1e1033' };
+  return { header:header, meta:'#dbeafe', even:'#eff6ff', odd:'#ffffff', footer:'#dbeafe', text:'#0f1e3e' };
+}
+
+function occExcelEsc(v){
+  if(v===null || v===undefined || v==='') return '—';
+  return String(v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function occExcelFilterLines(){
+  const lines = [];
+  if(selHD) lines.push('Head Director: '+selHD);
+  if(selDirector) lines.push('Sales Director: '+selDirector);
+  if(selAMTile) lines.push('Account Manager: '+selAMTile);
+  if(selStatusTile) lines.push('Status tile: '+selStatusTile);
+  const msLabels = { vertical:'Vertical', portalStatus:'Portal Status', reason:'Reason', year:'Year', handset:'Handset' };
+  Object.keys(MS_STATE).forEach(function(k){
+    if(MS_STATE[k] && MS_STATE[k].size) lines.push((msLabels[k]||k)+': '+Array.from(MS_STATE[k]).join(', '));
+  });
+  if(selChartFilter) lines.push('Chart filter: '+(selChartFilter.label||selChartFilter.value));
+  const q = el('searchInp') ? String(el('searchInp').value||'').trim() : '';
+  if(q) lines.push('Search: '+q);
+  if(GRID_API && GRID_API.getFilterModel){
+    const model = GRID_API.getFilterModel()||{};
+    Object.keys(model).forEach(function(field){
+      const m = model[field];
+      if(!m) return;
+      const col = (gridColDefs().find(function(c){ return c.field===field; })||{});
+      const name = col.headerName || field;
+      if(m.values && m.values.length) lines.push('Grid · '+name+': '+m.values.join(', '));
+      else if(m.filter!=null) lines.push('Grid · '+name+': '+(m.type||'')+' '+m.filter+(m.filterTo!=null?' – '+m.filterTo:''));
+    });
+  }
+  return lines;
+}
+
+function occExcelExportRows(){
+  const rows = [];
+  if(GRID_API && GRID_API.forEachNodeAfterFilterAndSort){
+    GRID_API.forEachNodeAfterFilterAndSort(function(n){ if(n.data) rows.push(n.data); });
+  }
+  return rows.length ? rows : getViewItems();
+}
+
 function exportExcel(){
-  const rows = FILTERED.map(i=>[i.ref,i.accountCode,i.accountName,i.requestor,i.vertical,i.value,i.portalStatus,(i.portalStatus==='Open'?i.stuckAt:'—'),i.daysRaised,(i.portalStatus==='Open'?i.daysStuck:'—'),i.reason,i.am].join(','));
-  const csv = 'OCC Ref,Account,Account Name,Requestor,Vertical,Value,Portal Status,Pending At,Days Raised,Days Pending,Reason,AM\n'+rows.join('\n');
-  const a = document.createElement('a'); a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv); a.download='occ_export.csv'; a.click();
+  const data = occExcelExportRows();
+  const th = occExcelTheme();
+  const cols = [
+    { key:'ref', header:'OCC Ref' },
+    { key:'accountCode', header:'Account' },
+    { key:'accountName', header:'Account Name' },
+    { key:'requestor', header:'Requestor' },
+    { key:'vertical', header:'Vertical' },
+    { key:'value', header:'Value (AED)', num:true },
+    { key:'portalStatus', header:'Status' },
+    { key:'stuckAt', header:'Pending At' },
+    { key:'daysRaised', header:'Days Raised', num:true },
+    { key:'daysStuck', header:'Days Pending', num:true },
+    { key:'reason', header:'Reason' },
+    { key:'am', header:'Sales Director' },
+    { key:'headDirector', header:'Head Director' },
+    { key:'handset', header:'Handset' },
+    { key:'created', header:'Created', date:true },
+    { key:'posted', header:'Posted Date', date:true },
+    { key:'subject', header:'Subject' }
+  ];
+  const n = cols.length;
+  const now = new Date();
+  const dateStr = now.toLocaleDateString('en-GB')+' '+now.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+  const totalVal = data.reduce(function(s,i){ return s+(i.value||0); }, 0);
+  const filters = occExcelFilterLines();
+  const cell = function(v, extra){ return '<td style="padding:8px;'+(extra||'')+'">'+occExcelEsc(v)+'</td>'; };
+
+  let html = '<html><head><meta charset="utf-8"><title>OCC Portal Export</title></head><body>';
+  html += '<table border="1" cellpadding="4" cellspacing="0" style="border-collapse:collapse;font-family:Calibri,Arial,sans-serif;font-size:11pt;">';
+  html += '<tr><td colspan="'+n+'" style="background:'+th.header+';color:#fff;font-size:16px;font-weight:bold;text-align:center;padding:12px;">OCC Portal — Record Export</td></tr>';
+  html += '<tr><td colspan="'+n+'" style="background:'+th.meta+';color:'+th.text+';padding:8px;font-size:12px;"><b>Generated:</b> '+occExcelEsc(dateStr)+' &nbsp;|&nbsp; <b>By:</b> '+occExcelEsc((USER&&USER.name)||'—')+' ('+occExcelEsc((USER&&USER.role)||'—')+') &nbsp;|&nbsp; <b>Records:</b> '+data.length+' &nbsp;|&nbsp; <b>Total Value:</b> AED '+occExcelEsc(fmt(totalVal))+'</td></tr>';
+  html += '<tr><td colspan="'+n+'" style="background:'+th.meta+';color:'+th.text+';padding:8px;font-size:12px;"><b>Applied Filters:</b> '+(filters.length ? occExcelEsc(filters.join('  ·  ')) : 'None — all records in current scope')+'</td></tr>';
+  html += '<tr>'+cols.map(function(c){ return '<th style="background:'+th.header+';color:#fff;font-weight:bold;padding:10px;text-align:left;">'+occExcelEsc(c.header)+'</th>'; }).join('')+'</tr>';
+
+  data.forEach(function(row, i){
+    const bg = i%2===0 ? th.even : th.odd;
+    html += '<tr>';
+    cols.forEach(function(c){
+      let v = row[c.key];
+      if(c.key==='stuckAt' || c.key==='daysStuck'){
+        v = row.portalStatus==='Open' ? (v==null||v===''?'—':v) : '—';
+      }
+      if(c.date) v = fmtDate(v);
+      else if(c.num && c.key==='value') v = (v==null||v==='') ? '—' : Number(v);
+      else if(v===null || v===undefined || v==='') v = '—';
+      const align = c.num ? 'text-align:right;' : '';
+      html += '<td style="background:'+bg+';padding:8px;color:'+th.text+';'+align+'">'+occExcelEsc(v)+'</td>';
+    });
+    html += '</tr>';
+  });
+
+  html += '<tr><td colspan="'+n+'" style="background:'+th.footer+';color:'+th.text+';font-weight:bold;padding:10px;text-align:center;">Records: '+data.length+' &nbsp;|&nbsp; Total Value: AED '+occExcelEsc(fmt(totalVal))+'</td></tr>';
+  html += '</table></body></html>';
+
+  const blob = new Blob([html], { type:'application/vnd.ms-excel' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'OCC_Export_'+now.toISOString().split('T')[0]+'.xls';
+  a.click();
+  setTimeout(function(){ URL.revokeObjectURL(a.href); }, 1500);
 }
 
 function sendReminder(id){
