@@ -1,0 +1,1097 @@
+GLK Enterprise Pipeline Dashboard
+
+Full Director Presentation — Script, Demo Flow & Roadmap
+
+File to present: /Users/macbook/Downloads/GLK-Enterprise-Dashboard.html
+(upload to SharePoint SiteAssets, hard-refresh before the meeting)
+
+Suggested duration: 25–30 minutes live demo + 10 minutes discussion on roadmap
+
+
+
+PART 1 — OPENING (2 minutes)
+
+What to say
+
+
+
+"Good [morning/afternoon]. What I'm going to show you today is the GLK Enterprise Pipeline Dashboard — a single SharePoint-connected portal we built for quarter execution.
+
+Until now, our leadership reviews depended on three separate workflows: exporting the SharePoint pipeline into Excel, manually building the GLK performance bridge in a workbook, and spot-checking deal hygiene by opening individual bids or asking for audit trails. That process is slow, inconsistent, and hard to challenge in a live meeting.
+
+This dashboard brings all of that into one place. Pipeline overview, quarter performance bridge, historical trends, and pipeline governance — all reading live from SharePoint, scoped by role, and designed so you can drill from a chart number to the exact account and open the bid form in one click.
+
+I'll walk you through all four modules, show you exactly how each one works, and then share what we're building next — especially account-level drill-down and expanded pipeline hygiene scenarios."
+
+What to show
+
+
+
+
+
+Landing page or logged-in portal with the left navigation visible: Dashboard, Performance Bridge, Trends, Pipeline Governance.
+
+
+
+PART 2 — MAIN DASHBOARD (5 minutes)
+
+What this module is
+
+The main dashboard is the live pipeline command view. Every bid in SharePoint is loaded, filtered, and presented with KPI tiles, leadership drill-down, analytics charts, and a full exportable pipeline grid.
+
+What to show — step by step
+
+
+
+
+
+Product family tabs — click through Fixed, Mobile, Broadcast, DataMena. Show that KPI tiles and pipeline data change per family.
+
+
+
+KPI tiles at the top — point to Proposed, Opportunity, Won, Billed, Lost, etc. Explain these are live counts and line/MRC totals from the current filtered pipeline.
+
+
+
+Filters section — briefly show:
+
+
+
+
+
+Vertical, Opp Status, Head Director, Account Director, Account Manager, Product Category, Services, Contract type, etc.
+
+
+
+Date filters with multiple criteria (Created, Expected Activation, Proposed Date, etc.)
+
+
+
+Compare to another year toggle — same filters applied to a prior year for YoY comparison
+
+
+
+Head Director Performance tiles — click a Head Director (e.g. Khaled). Show:
+
+
+
+
+
+Account Director tiles appear below
+
+
+
+Click an AD → Account Manager list appears
+
+
+
+KPI tiles and pipeline grid narrow to that scope
+
+
+
+Pipeline grid — scroll through the AG Grid:
+
+
+
+
+
+Column filters on every column
+
+
+
+Sort by MRC, GA Lines, Expected Activation
+
+
+
+Show Export — full pipeline extract to Excel/CSV
+
+
+
+Analytics charts (optional, 1 min) — click "Show Analytics Charts":
+
+
+
+
+
+Revenue Trend
+
+
+
+Pipeline Mix pie (status breakdown)
+
+
+
+Probability / funnel views if relevant to audience
+
+What to say
+
+
+
+"This is our day-to-day pipeline view. Every leader sees only their scope — a Head Director sees their verticals, an Account Director sees their accounts, an Account Manager sees their book. Admin and CEO see everything.
+
+The filters are not cosmetic — they drive the KPI tiles, the leadership tiles, the charts, and the grid simultaneously. So when I click Khaled, I'm not just filtering a table; the entire view reframes to his organization.
+
+The pipeline grid is the detailed back-end — fifty-plus columns, exportable, filterable. This replaces the weekly 'please export SharePoint and send me the file' cycle."
+
+Business value
+
+One live pipeline view for the whole org. Role-based access. No manual exports for leadership reviews.
+
+
+
+PART 3 — PERFORMANCE BRIDGE (10 minutes) ⭐ CENTERPIECE
+
+What this module is
+
+The Performance Bridge connects finance actuals and targets (from the GLK Excel workbook in SharePoint SiteAssets) with live pipeline (from SharePoint bids) in a single waterfall chart. It answers: "Where are we against target, and which accounts make up the gap?"
+
+What to show — controls first (2 min)
+
+Open Performance Bridge from the left menu. Point out it loads the GLK workbook automatically from SharePoint.
+
+Walk through the control bar (steps 1–6):
+
+
+
+
+
+
+
+Control
+
+
+
+Show
+
+
+
+Explain
+
+
+
+
+
+1. Product family
+
+
+
+Mobile, Fixed
+
+
+
+Mobile = Net Add Lines bridge. Fixed = Net MRC + Aggregated Revenue. Revenue tab marked "Soon".
+
+
+
+
+
+2. Period
+
+
+
+QTD Bridge / YTD Bridge
+
+
+
+QTD = quarter-to-date actuals vs target. YTD = year-to-date.
+
+
+
+
+
+3. Aggregated Revenue
+
+
+
+(Fixed only) QTG / YTG
+
+
+
+Forward revenue from activation date to quarter-end or year-end.
+
+
+
+
+
+4. Scenario
+
+
+
+Most Likely / Upside
+
+
+
+Most Likely = Proposed only. Upside = Proposed + Opportunity.
+
+
+
+
+
+5. Head Director
+
+
+
+Khaled / Amer / Kamil
+
+
+
+Auto-selects report level verticals (e.g. Khaled → AUH, F-NE, HUNT).
+
+
+
+
+
+6. Report level
+
+
+
+GLK Overall, AUH, DXB, etc.
+
+
+
+Verticals from Excel — filters pipeline on every bridge metric.
+
+Also show:
+
+
+
+
+
+Refresh from SharePoint / Replace File — workbook publishing workflow
+
+
+
+Bridge search box — "Find in bridge" (demo later)
+
+What to show — the waterfall chart (3 min)
+
+Set: Mobile · QTD · Most Likely · GLK Overall
+
+Point to each bar segment left to right:
+
+
+
+"Actuals QTD → Gross Adds Won (100%) → Top 5 Opportunities → Others In-flight → Churn Top 5 → Others Churn → Net Forecast → Gap to Target"
+
+Explain:
+
+
+
+
+
+Actuals come from the Excel workbook (finance numbers)
+
+
+
+Gross Adds Won = deals with Won status activated this quarter
+
+
+
+Top 5 / Others = ranked in-flight pipeline clubbed by customer group
+
+
+
+Churn = downgrade/churn contract types
+
+
+
+Net Forecast = where we land if pipeline converts as modeled
+
+
+
+Gap = distance to target — the number leadership cares about
+
+Click the (i) info button if needed — shows formulas and rules.
+
+What to show — account drill-down (4 min) ⭐ KEY DEMO
+
+Click a bar — e.g. "Gross Adds (Won)" or "Top 5 Opportunities".
+
+Account cards appear below (not a grid — full visibility):
+
+On each card, point out:
+
+
+
+
+
+Customer name and bridge value (lines/MRC)
+
+
+
+Open in SharePoint ↗ — opens the editable bid form directly
+
+
+
+Bid Reference — full GKLA format (GKLA/VERTICAL/DDMMYYYYHHMMSS/ID)
+
+
+
+Head Director, Account Director, Account Manager
+
+
+
+Vertical, Opp Status, Expected Activation, Product, Contract
+
+
+
+"All pipeline fields" expandable section — every SharePoint field if needed
+
+Use the search/filter toolbar inside the panel:
+
+
+
+
+
+Search by customer name or bid ref
+
+
+
+Filter by Opp Status or Vertical
+
+Say:
+
+
+
+"When you challenge a number in a leadership meeting, we no longer say 'I'll come back to you.' One click on the bar shows every account behind that number — ownership, full bid reference, and a direct link to fix the bid in SharePoint. This is account-level drill-down at the bridge level."
+
+Bridge search demo:
+
+
+
+
+
+Type a customer name in the bridge search box → Find in bridge
+
+
+
+Results show where that deal sits on the bridge: Won, Top 5 in-flight, Top 5 churn, or excluded — with reason if excluded
+
+Mobile product tables (if time):
+
+
+
+
+
+Scroll to product tables below the chart (MPR / Corporate / M2M × Gross / Churn / Net)
+
+
+
+Click a cell → same account cards for that segment
+
+Overdue activation (if relevant):
+
+
+
+
+
+Click Show overdue activation below the detail panel
+
+
+
+Shows Q3 Proposed/Opportunity deals whose expected activation date is before today
+
+
+
+Same card format with SharePoint links
+
+What to show — export (1 min)
+
+
+
+
+
+Export PPT — downloads bridge chart (+ product tables) as PowerPoint
+
+
+
+Export All Tables — Excel export of mobile product tables
+
+What to say — closing this section
+
+
+
+"This module replaces the weekly manual process: export pipeline, paste into Excel bridge, build PowerPoint, email around. Now finance actuals and live pipeline sit in one chart, and every bar is clickable down to the account. That's the quarter close cockpit."
+
+
+
+PART 4 — TRENDS (4 minutes)
+
+What this module is
+
+Trends shows historical performance from the same GLK workbook — quarter-over-quarter and year-over-year context for Net Adds, Net MRC, and revenue metrics.
+
+What to show — step by step
+
+
+
+
+
+Open Trends from the left menu — workbook loads from SharePoint SiteAssets (same folder as Bridge).
+
+
+
+Chart tabs — switch between metrics (e.g. Mobile Net Adds, Fixed Net MRC).
+
+
+
+Quarter KPI tiles at top — current quarter vs prior quarters at a glance.
+
+
+
+Line chart — point out:
+
+
+
+
+
+Values displayed on the line points
+
+
+
+Distinct colors per series
+
+
+
+Projection zone for the current quarter (forward-looking portion)
+
+
+
+Explanation panel below the chart — what each line represents.
+
+
+
+Show Refresh from SharePoint / Replace File — same publishing model as Bridge.
+
+What to say
+
+
+
+"Trends answers the question leadership always asks after seeing the bridge: 'Is this good or bad compared to how we've been performing?' Same workbook, same source of truth — but here we're looking at the pattern over multiple quarters, not just the current gap.
+
+When the bridge shows a gap, Trends tells you whether that's unusual or part of a longer trend."
+
+
+
+PART 5 — PIPELINE GOVERNANCE & CLEANUP (6 minutes)
+
+What this module is
+
+Pipeline Governance uses SharePoint Version History (the same audit trail as Versions.aspx) to surface two hygiene problems: deals that haven't moved (stale queue) and deals where Opp Status changed (status flips). Scope = current quarter in-flight deals only.
+
+What to show — setup (1 min)
+
+Open Pipeline Governance. Note:
+
+
+
+
+
+Progress bar while version history loads (first visit or refresh)
+
+
+
+Filters: Head Director, Account Director, Account Manager, Product Family, Search
+
+
+
+Two tabs: Stale queue | Status flips
+
+What to show — Stale queue (2 min)
+
+
+
+
+
+Click Stale queue tab.
+
+
+
+Select threshold: 1+ / 7+ / 15+ / 21+ days unchanged on current Opp Status.
+
+
+
+KPI tiles update — click a tile to filter (e.g. "21+ days").
+
+
+
+Head Director hygiene cards — each HD shows:
+
+
+
+
+
+Count of stale deals
+
+
+
+Breakdown by severity (1+/7+/15+/21+ day buckets)
+
+
+
+Click HD → Account Director tiles → click AD → Account Manager list
+
+
+
+Deal detail grid below:
+
+
+
+
+
+SharePoint link is the first column — Open ↗ to editable form
+
+
+
+Customer, Bid Reference, Current Status, Previous Status
+
+
+
+Days unchanged, Status since date, Last changed by
+
+
+
+GA Lines, MRC, Expected Activation, Version count
+
+Say:
+
+
+
+"Stale queue catches deals sitting on the same Opp Status too long. A Proposed deal unchanged for 21 days is a forecast risk — it inflates the number but isn't progressing. This view lets us challenge ownership before the quarter review, not after."
+
+What to show — Status flips (2 min)
+
+
+
+
+
+Click Status flips tab.
+
+
+
+Date presets: This quarter · Today · Last 7 days · Last 30 days · All time — or custom date range.
+
+
+
+Flip type filters: All · → Opportunity · → Proposed · → Billed · → Won
+
+
+
+Grid shows one row per status change event:
+
+
+
+
+
+From Status → To Status
+
+
+
+When it changed, Who changed it (from SharePoint version history)
+
+
+
+Customer, Bid Reference, Vertical, Product
+
+
+
+SharePoint link first column
+
+Say:
+
+
+
+"Status flips give us accountability. When a deal moves from Proposed to Opportunity or Opportunity to Won, we see exactly when and who made that change — parsed from SharePoint's version history, not a manual log. If someone asks 'who moved this deal?', the answer is here."
+
+What to show — combined workflow (1 min)
+
+Demonstrate a realistic hygiene workflow:
+
+
+
+
+
+Start on Stale queue · 21+ days · filter to one Head Director
+
+
+
+Open a deal in SharePoint from the grid
+
+
+
+Switch to Status flips · Today · show recent activity across the org
+
+
+
+Search for a specific customer name
+
+Say:
+
+
+
+"Governance is not a reporting nice-to-have — it's how we protect forecast quality. Stale deals get challenged before they skew the bridge. Status changes are visible without raising an audit ticket."
+
+
+
+PART 6 — WHAT WE ACHIEVED (2 minutes)
+
+What to say
+
+
+
+"Let me summarize what we've delivered versus what we had before."
+
+
+
+
+
+
+
+Before
+
+
+
+Now
+
+
+
+
+
+SharePoint list exports for every review
+
+
+
+Live dashboard with role-based scope
+
+
+
+
+
+Manual Excel bridge every week
+
+
+
+Automated Performance Bridge from SiteAssets workbook + live pipeline
+
+
+
+
+
+Separate trend reports
+
+
+
+Built-in Trends from same workbook
+
+
+
+
+
+Manual spot-checks for stale deals
+
+
+
+Stale queue with 1/7/15/21-day thresholds and HD→AD→AM drill
+
+
+
+
+
+Audit requests for status change history
+
+
+
+Status flips parsed from SharePoint Version History
+
+
+
+
+
+Multi-step navigation to find a bid
+
+
+
+One click from chart/card/grid → editable SharePoint form
+
+
+
+
+
+Numbers challenged offline
+
+
+
+Numbers challenged live with account cards under every bar
+
+Technical foundation (if asked):
+
+
+
+
+
+Data: SharePoint bid list + GLK workbooks in SiteAssets
+
+
+
+Access: Role-based (Admin, CEO, Head Director, Account Director, Account Manager, Viewer)
+
+
+
+Refresh: Auto-load on menu open; manual refresh available
+
+
+
+Governance scope: Current quarter in-flight deals (excludes Lost, Cancelled, No Bid, wrong activation quarter)
+
+
+
+PART 7 — FUTURE ROADMAP (5–8 minutes)
+
+What to say
+
+
+
+"What you've seen today is the foundation. Here's where we're taking it next — focused on two themes: deeper account-level drill-down, and expanded pipeline hygiene scenarios."
+
+
+
+A. Account-Level Drill-Down (Future)
+
+What exists today
+
+
+
+
+
+Bridge bar → account cards (all fields visible, SharePoint link)
+
+
+
+Bridge search → find any account and see bridge placement
+
+
+
+Dashboard HD → AD → AM → pipeline grid
+
+
+
+Governance HD → AD → AM → deal grid
+
+What we're building next
+
+1. Customer 360° view
+Click any customer name → see all bids for that customer across statuses, products, and quarters in one panel. Today we show one bid per card; the 360° view aggregates the full relationship.
+
+2. Account timeline
+Per customer: chronological view of every Opp Status change, activation date change, and modification — merged from version history across all their bids. Answers: "What's the full story on this account this quarter?"
+
+3. Account-level bridge contribution
+Show how much each customer contributes across multiple bars — e.g. same customer in Won + Top 5 in-flight + Churn. Today each bid appears once; the 360° view shows total account impact on Net Forecast.
+
+4. Click-through from Governance → Bridge
+From a stale deal in Governance, jump directly to where that deal sits on the Performance Bridge (or why it's excluded). Closes the loop between "this deal is stale" and "this deal is inflating the forecast."
+
+5. Account comparison mode
+Select 2–3 accounts and compare side-by-side: status, days stale, bridge value, activation date, ownership. Useful in deal review meetings.
+
+6. Customer search as a first-class entry point
+Global search: type customer name → get pipeline grid results + bridge placement + governance flags (stale? recent flip?) in one result card.
+
+
+
+B. Pipeline Hygiene Scenarios (Future)
+
+What exists today
+
+
+
+
+
+
+
+Scenario
+
+
+
+Where
+
+
+
+What it does
+
+
+
+
+
+Stale deals
+
+
+
+Pipeline Governance → Stale queue
+
+
+
+Deals unchanged on same Opp Status for 1/7/15/21+ days
+
+
+
+
+
+Status flips
+
+
+
+Pipeline Governance → Status flips
+
+
+
+Every Opp Status change with date, from→to, who
+
+
+
+
+
+Overdue activation
+
+
+
+Performance Bridge → Show overdue activation
+
+
+
+Q3 Proposed/Opportunity with expected activation before today
+
+
+
+
+
+Won excluded from bar
+
+
+
+Bridge bar drill-down
+
+
+
+Deals that look Won but fail a filter — shows why excluded
+
+
+
+
+
+Bridge search exclusion reasons
+
+
+
+Bridge search
+
+
+
+Shows why a deal is not on the bridge
+
+What we're building next
+
+1. Backward status flips (anomaly detection)
+Flag deals that moved backward — e.g. Won → Proposed, Billed → Opportunity. These are data quality or process violations. Today we show all flips; next step is a dedicated anomaly filter.
+
+2. Missing mandatory fields
+Queue for in-flight deals missing critical fields: no Expected Activation, no Account Director, no GA Lines/MRC, no Customer Code. Prevents bad data from entering the bridge silently.
+
+3. High-value stale deals
+Combine stale queue with value threshold — e.g. "Proposed > 30 days and MRC > X." Prioritize cleanup by revenue impact, not just age.
+
+4. Activation date integrity
+
+
+
+
+
+Expected activation in the past but still Proposed/Opportunity (partially built — overdue activation)
+
+
+
+Expected activation changed multiple times (version history on activation field)
+
+
+
+Activation in Q3 but Opp Status still Lead/Opportunity
+
+5. Billed without prerequisites
+Deals marked Billed where Contract Signed date is empty, or Expected Activation is still in the future. Catches premature status updates.
+
+6. Duplicate / overlapping bids
+Same customer + same product + same quarter with multiple open bids. Surfaces double-counting risk in the bridge.
+
+7. Ownership gaps
+Deals with missing or changed AD/AM — especially after org changes. Track reassignment via version history on ownership fields.
+
+8. Week-over-week pipeline movement
+Compare pipeline snapshot this week vs last week: what's new, what's gone, what changed value. Shows pipeline velocity, not just point-in-time hygiene.
+
+9. Hygiene scorecards by leader
+Weekly HD/AD/AM scorecard: % of book stale, count of overdue activations, backward flips, missing fields. Drives accountability in QBRs.
+
+10. Automated hygiene alerts (Cursor Automations / email)
+Scheduled digest: "21+ day stale deals in your vertical" or "5 backward flips today" sent to HD/AD. Dashboard finds it; automation pushes it.
+
+
+
+C. Other Future Enhancements
+
+
+
+
+
+
+
+Area
+
+
+
+Enhancement
+
+
+
+
+
+Performance Bridge
+
+
+
+Revenue product family bridge (tab marked "Soon")
+
+
+
+
+
+Performance Bridge
+
+
+
+Fixed Aggregated Revenue QTG/YTG full rollout
+
+
+
+
+
+Trends
+
+
+
+Drill from trend line point → accounts contributing to that quarter
+
+
+
+
+
+Dashboard
+
+
+
+Saved filter presets per role ("My Q3 view")
+
+
+
+
+
+All modules
+
+
+
+Mobile-optimized layout for field teams
+
+
+
+
+
+All modules
+
+
+
+Scheduled auto-refresh overnight so morning reviews are instant
+
+
+
+PART 8 — CLOSE & DISCUSSION (3 minutes)
+
+What to say
+
+
+
+"To recap: we now have one SharePoint-native portal for pipeline overview, quarter performance, historical trends, and pipeline hygiene. Every chart number is traceable to an account. Every hygiene issue is visible before it skews the forecast.
+
+The roadmap focuses on going deeper at the account level — customer 360, timelines, bridge contribution — and expanding hygiene scenarios beyond stale and flips into anomalies, missing data, and automated alerts.
+
+I'd like your input on two things: which hygiene scenario matters most for the next sprint, and whether account 360 or governance-to-bridge linking is the higher priority for your team."
+
+
+
+APPENDIX — PRE-MEETING CHECKLIST
+
+
+
+
+
+Upload GLK-Enterprise-Dashboard.html to SharePoint
+
+
+
+Hard-refresh browser (Cmd+Shift+R)
+
+
+
+Confirm GLK workbook exists in SiteAssets
+
+
+
+Log in with Bridge + Governance access (Admin or HD role)
+
+
+
+Pre-load Performance Bridge (wait for chart to render)
+
+
+
+Pre-load Pipeline Governance (wait for version history progress bar to finish)
+
+
+
+Prepare 2–3 real customer names for search demo
+
+
+
+Pick one bridge bar with 3–8 accounts (clean drill-down)
+
+
+
+Pick one HD with stale deals for governance demo
+
+
+
+Have SharePoint bid list open in another tab as backup if live demo fails
+
+
+
+APPENDIX — LIKELY QUESTIONS
+
+Q: Is this real-time?
+A: Live from SharePoint on each menu open. Manual Refresh re-reads everything. Not a streaming push — refresh on access.
+
+Q: Who can see what?
+A: Admin/CEO = all. Head Director = their verticals. AD = their accounts. AM = their book. Viewer = read-only all.
+
+Q: Where does governance history come from?
+A: SharePoint Version History API + Versions.aspx parsing. Same source as clicking "Version History" on a list item.
+
+Q: Why current quarter in-flight only for governance?
+A: Focuses cleanup on deals that affect this quarter's forecast. Lost/Cancelled/No Bid and wrong-quarter activations are excluded.
+
+Q: Can we export?
+A: Yes — pipeline grid, bridge PowerPoint, mobile product tables Excel, governance grid via AG Grid export.
+
+Q: What if SharePoint is slow?
+A: Governance caches version history in browser localStorage. Second visit is faster. Progress bar shows load status.
+
+
+
+GLK Enterprise Pipeline Dashboard · Full Director Presentation · Sep 2026
