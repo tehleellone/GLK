@@ -352,9 +352,14 @@ body[data-theme="dark"] .status-dot,body[data-theme="duralux-dark"] .status-dot{
 .pg-kpi-card .stat-value{font-size:1.55rem}
 .pg-kpi-card .stat-subtitle{font-size:.72rem;color:var(--t3);font-weight:600;margin-top:.15rem}
 .pg-tab-row{display:flex;flex-wrap:wrap;gap:.65rem;align-items:center;margin-bottom:1rem}
-.pg-flip-filters{display:flex;flex-wrap:wrap;gap:.4rem;align-items:center}
-.pg-flip-chip{padding:.32rem .72rem;border-radius:999px;border:1px solid var(--border);background:var(--bg-secondary);color:var(--t2);font-size:.68rem;font-weight:800;cursor:pointer;font-family:inherit}
-.pg-flip-chip.active{background:var(--nab);border-color:var(--nab2);color:var(--acc)}
+.pg-tab-filters{display:flex;flex-wrap:wrap;gap:.55rem .75rem;align-items:center;margin-bottom:1rem;padding:.75rem 1rem;background:var(--bg-card);border:1px solid var(--border);border-radius:12px;box-shadow:var(--cs)}
+.pg-tab-filters-label{font-size:.62rem;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--t3);margin-right:.15rem}
+.pg-flip-filters,.pg-stale-filters{display:flex;flex-wrap:wrap;gap:.4rem;align-items:center;width:100%}
+.pg-flip-date-row{display:flex;flex-wrap:wrap;gap:.45rem;align-items:center;width:100%}
+.pg-flip-date-row input[type=date]{padding:.35rem .55rem;border-radius:8px;border:1px solid var(--border);background:var(--bg-input);color:var(--t1);font-size:.72rem;font-weight:700;font-family:inherit}
+.pg-flip-chip,.pg-stale-chip{padding:.32rem .72rem;border-radius:999px;border:1px solid var(--border);background:var(--bg-secondary);color:var(--t2);font-size:.68rem;font-weight:800;cursor:pointer;font-family:inherit}
+.pg-flip-chip.active,.pg-stale-chip.active{background:var(--nab);border-color:var(--nab2);color:var(--acc)}
+.pg-flip-chip.preset{background:var(--bg-card)}
 .pg-breadcrumb{display:flex;flex-wrap:wrap;align-items:center;gap:.35rem;margin-bottom:.85rem;font-size:.74rem;font-weight:700;color:var(--t3)}
 .pg-breadcrumb button{background:none;border:none;padding:0;color:var(--acc);font:inherit;font-weight:800;cursor:pointer}
 .pg-breadcrumb button:hover{text-decoration:underline}
@@ -1473,7 +1478,7 @@ body[data-theme="dark"] .badge-warning,body[data-theme="duralux-dark"] .badge-wa
               </button>
             </div>
           </div>
-          <p class="pg-subtitle">SharePoint version history on every pipeline record — who changed Opportunity Status, when, and from what value. Drill from overview → Head Director → Account Director → Account Manager → deal detail.</p>
+          <p class="pg-subtitle"><strong>Status flips</strong> — every Opp Status change from SharePoint version history, filterable by date (today or any range). <strong>Stale queue</strong> — deals sitting on the same Opp Status for 1+, 7+, or 15+ days with current status, days unchanged, and who last changed it.</p>
           <div id="pgProgressBar" class="pg-progress" style="display:none;">
             <div class="pg-progress-track"><div class="pg-progress-fill" id="pgProgressFill"></div></div>
             <div class="pg-progress-text" id="pgProgressText">Loading…</div>
@@ -1501,17 +1506,6 @@ body[data-theme="dark"] .badge-warning,body[data-theme="duralux-dark"] .badge-wa
                 <option value="DataMena">DataMena</option>
               </select>
             </div>
-            <div class="pg-control-block">
-              <span class="pg-control-label">Stale threshold</span>
-              <select id="pgMinDays" class="fb-select" onchange="pgRender()" title="Classifies deals as recently updated vs stale. Does not hide rows — click KPI tiles to filter the grid.">
-                <option value="0">Any (show all activity)</option>
-                <option value="1" selected>1+ days unchanged</option>
-                <option value="3">3+ days unchanged</option>
-                <option value="7">7+ days unchanged</option>
-                <option value="14">14+ days unchanged</option>
-                <option value="21">21+ days unchanged</option>
-              </select>
-            </div>
             <div class="pg-control-block pg-search-block">
               <span class="pg-control-label">Search</span>
               <input type="text" id="pgSearchInp" class="search-box" placeholder="Customer, bid ref, vertical, status…" oninput="pgRender()">
@@ -1523,8 +1517,9 @@ body[data-theme="dark"] .badge-warning,body[data-theme="duralux-dark"] .badge-wa
               <button type="button" id="pgTabStale" class="pf-tab active" onclick="pgSetTab('stale')">Stale queue</button>
               <button type="button" id="pgTabFlips" class="pf-tab" onclick="pgSetTab('flips')">Status flips</button>
             </div>
-            <div id="pgFlipFilters" class="pg-flip-filters" style="display:none;"></div>
           </div>
+          <div id="pgStaleFilters" class="pg-tab-filters"></div>
+          <div id="pgFlipFilters" class="pg-tab-filters" style="display:none;"></div>
           <div id="pgHdSection" class="hd-section pg-drill-section">
             <h2 class="section-title" style="margin-bottom:.75rem;">
               <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
@@ -11450,7 +11445,40 @@ let PG_DRILL_HD=null;
 let PG_DRILL_AD=null;
 let PG_DRILL_AM=null;
 let PG_FLIP_FILTER='all';
+let PG_STALE_DAYS=1;
+let PG_FLIP_FROM_ISO='';
+let PG_FLIP_TO_ISO='';
 let PG_LOAD_STATS={fetched:0,cached:0,fallback:0,hardErrors:0};
+function pgTodayIso(){
+  var d=new Date();
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+function pgParseIsoDate(s){
+  if(!s) return null;
+  var p=String(s).split('-');
+  if(p.length!==3) return null;
+  var dt=new Date(+p[0],+p[1]-1,+p[2],0,0,0,0);
+  return isNaN(dt)?null:dt;
+}
+function pgEndOfIsoDay(d){
+  if(!d) return null;
+  return new Date(d.getFullYear(),d.getMonth(),d.getDate(),23,59,59,999);
+}
+function pgFlipInDateRange(flip,fromDay,toDay){
+  var w=pgParseSpDateTime(flip.when);
+  if(!w) return false;
+  var day=new Date(w.getFullYear(),w.getMonth(),w.getDate());
+  if(fromDay&&day<fromDay) return false;
+  if(toDay&&day>toDay) return false;
+  return true;
+}
+function pgStaleBucketLabel(days){
+  if(days>=21) return '21+ days';
+  if(days>=15) return '15+ days';
+  if(days>=7) return '7+ days';
+  if(days>=1) return '1+ days';
+  return '<1 day';
+}
 function pgNormStatus(s){
   s=String(s||'').trim();
   return (s==='—'||!s)?'':s;
@@ -11715,32 +11743,97 @@ function pgFmtDateTime(iso){
   if(!d) return '—';
   return d.toLocaleString('en-GB',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
 }
+function pgEnsureFlipDates(){
+  if(!PG_FLIP_FROM_ISO&&!PG_FLIP_TO_ISO){
+    var t=pgTodayIso();
+    PG_FLIP_FROM_ISO=t;
+    PG_FLIP_TO_ISO=t;
+  }
+}
+function pgOnFlipDateChange(){
+  var from=el('pgFlipDateFrom'), to=el('pgFlipDateTo');
+  PG_FLIP_FROM_ISO=from?from.value:'';
+  PG_FLIP_TO_ISO=to?to.value:'';
+  pgRender();
+}
 function pgSetTab(tab){
   PG_TAB=tab==='flips'?'flips':'stale';
   el('pgTabStale')?.classList.toggle('active',PG_TAB==='stale');
   el('pgTabFlips')?.classList.toggle('active',PG_TAB==='flips');
-  var ff=el('pgFlipFilters');
+  var sf=el('pgStaleFilters'), ff=el('pgFlipFilters');
+  if(sf) sf.style.display=PG_TAB==='stale'?'flex':'none';
   if(ff) ff.style.display=PG_TAB==='flips'?'flex':'none';
+  if(PG_TAB==='flips') pgEnsureFlipDates();
+  PG_SEL_TILE=null;
   pgRender();
 }
 function pgSetFlipFilter(kind){
   PG_FLIP_FILTER=kind||'all';
-  pgRenderFlipFilterChips();
   pgRender();
 }
-function pgRenderFlipFilterChips(){
+function pgSetStaleDays(days){
+  PG_STALE_DAYS=Math.max(1,parseInt(days,10)||1);
+  PG_SEL_TILE='stale_'+PG_STALE_DAYS;
+  pgRender();
+}
+function pgSetFlipDatePreset(preset){
+  var today=pgTodayIso();
+  if(preset==='today'){
+    PG_FLIP_FROM_ISO=today;
+    PG_FLIP_TO_ISO=today;
+  }else if(preset==='7d'){
+    var d7=new Date();
+    d7.setDate(d7.getDate()-6);
+    PG_FLIP_FROM_ISO=d7.getFullYear()+'-'+String(d7.getMonth()+1).padStart(2,'0')+'-'+String(d7.getDate()).padStart(2,'0');
+    PG_FLIP_TO_ISO=today;
+  }else if(preset==='30d'){
+    var d30=new Date();
+    d30.setDate(d30.getDate()-29);
+    PG_FLIP_FROM_ISO=d30.getFullYear()+'-'+String(d30.getMonth()+1).padStart(2,'0')+'-'+String(d30.getDate()).padStart(2,'0');
+    PG_FLIP_TO_ISO=today;
+  }else if(preset==='all'){
+    PG_FLIP_FROM_ISO='';
+    PG_FLIP_TO_ISO='';
+  }
+  pgRender();
+}
+function pgRenderStaleFilters(){
+  var wrap=el('pgStaleFilters');
+  if(!wrap) return;
+  var buckets=[1,7,15,21];
+  var h='<span class="pg-tab-filters-label">Unchanged for</span>';
+  buckets.forEach(function(d){
+    h+='<button type="button" class="pg-stale-chip'+(PG_STALE_DAYS===d?' active':'')+'" onclick="pgSetStaleDays('+d+')">'+d+'+ days</button>';
+  });
+  h+='<span style="font-size:.72rem;color:var(--t3);font-weight:600;margin-left:.35rem">Grid shows deals on the same Opp Status ≥ selected threshold</span>';
+  wrap.innerHTML=h;
+}
+function pgRenderFlipFilters(){
   var wrap=el('pgFlipFilters');
   if(!wrap) return;
+  pgEnsureFlipDates();
   var chips=[
-    {id:'all',label:'All flips'},
+    {id:'all',label:'All types'},
     {id:'to_opportunity',label:'→ Opportunity'},
     {id:'to_proposed',label:'→ Proposed'},
     {id:'to_billed',label:'→ Billed'},
     {id:'to_won',label:'→ Won'}
   ];
-  wrap.innerHTML=chips.map(function(c){
+  var h='<div class="pg-flip-date-row">';
+  h+='<span class="pg-tab-filters-label">Flip date</span>';
+  h+='<button type="button" class="pg-flip-chip preset" onclick="pgSetFlipDatePreset(\'today\')">Today</button>';
+  h+='<button type="button" class="pg-flip-chip preset" onclick="pgSetFlipDatePreset(\'7d\')">Last 7 days</button>';
+  h+='<button type="button" class="pg-flip-chip preset" onclick="pgSetFlipDatePreset(\'30d\')">Last 30 days</button>';
+  h+='<button type="button" class="pg-flip-chip preset" onclick="pgSetFlipDatePreset(\'all\')">All time</button>';
+  h+='<input type="date" id="pgFlipDateFrom" value="'+PG_FLIP_FROM_ISO+'" onchange="pgOnFlipDateChange()" title="From date">';
+  h+='<span style="font-size:.72rem;color:var(--t3);font-weight:700">to</span>';
+  h+='<input type="date" id="pgFlipDateTo" value="'+PG_FLIP_TO_ISO+'" onchange="pgOnFlipDateChange()" title="To date">';
+  h+='</div><div class="pg-flip-filters"><span class="pg-tab-filters-label">Flip type</span>';
+  h+=chips.map(function(c){
     return '<button type="button" class="pg-flip-chip'+(PG_FLIP_FILTER===c.id?' active':'')+'" onclick="pgSetFlipFilter(\''+c.id+'\')">'+c.label+'</button>';
   }).join('');
+  h+='</div>';
+  wrap.innerHTML=h;
 }
 function pgAmKey(bid){
   return (bid.amEmail&&bid.amEmail!=='—'?bid.amEmail:(bid.amName||'—'));
@@ -11801,14 +11894,31 @@ function pgOnAmFilterChange(){
   pgRender();
 }
 function pgGetFilterVals(){
+  pgEnsureFlipDates();
   return {
     hd:el('pgHdFilter')?el('pgHdFilter').value:'',
     ad:el('pgAdFilter')?el('pgAdFilter').value:'',
     am:el('pgAmFilter')?el('pgAmFilter').value:'',
     pf:el('pgPfFilter')?el('pgPfFilter').value:'',
-    minDays:Math.max(0,parseInt(el('pgMinDays')&&el('pgMinDays').value,10)||1),
+    staleDays:PG_STALE_DAYS||1,
+    flipFrom:PG_FLIP_FROM_ISO?pgParseIsoDate(PG_FLIP_FROM_ISO):null,
+    flipTo:PG_FLIP_TO_ISO?pgParseIsoDate(PG_FLIP_TO_ISO):null,
     search:(el('pgSearchInp')&&el('pgSearchInp').value||'').trim().toLowerCase()
   };
+}
+function pgCountFlipsInRange(rows,f){
+  var n=0;
+  rows.forEach(function(row){
+    (row.analysis.flips||[]).forEach(function(fl){
+      if(PG_FLIP_FILTER!=='all'&&fl.flipKind!==PG_FLIP_FILTER) return;
+      if(!pgFlipInDateRange(fl,f.flipFrom,f.flipTo)) return;
+      n++;
+    });
+  });
+  return n;
+}
+function pgCountStale(rows,minDays){
+  return rows.filter(function(r){ return (r.analysis.daysStale||0)>=minDays; }).length;
 }
 function pgRowMatchesFilters(row,f){
   var b=row.bid;
@@ -11828,29 +11938,9 @@ function pgRowMatchesFilters(row,f){
   }
   return true;
 }
-function pgDaysSinceFlip(row){
-  var best=999;
-  (row.analysis.flips||[]).forEach(function(f){
-    var w=pgParseSpDateTime(f.when);
-    if(!w) return;
-    var dd=mqInclusiveDaysBetween(w,new Date());
-    if(dd<best) best=dd;
-  });
-  return best;
-}
-function pgClassifyRow(row,minDays){
-  var d=row.analysis.daysStale;
-  var flipDays=pgDaysSinceFlip(row);
-  var recentWindow=Math.max(minDays,7);
-  if(flipDays<=recentWindow) return 'healthy';
-  if(d<=recentWindow) return 'healthy';
-  if(d>=21) return 'critical';
-  if(minDays<=0){
-    if(d<=14) return 'stale';
-    return 'critical';
-  }
-  if(d>=minDays) return 'stale';
-  return 'healthy';
+function pgStaleThreshold(f){
+  if(PG_SEL_TILE&&String(PG_SEL_TILE).indexOf('stale_')===0) return parseInt(PG_SEL_TILE.replace('stale_',''),10)||f.staleDays;
+  return f.staleDays||1;
 }
 function pgLoadStatusSnapshot(){
   try{ return JSON.parse(localStorage.getItem(PG_STATUS_SNAPSHOT_LS)||'{}')||{}; }
@@ -11911,11 +12001,23 @@ function pgGetScopedRows(){
   return PG_ANALYSIS.filter(function(row){ return pgRowMatchesFilters(row,f); });
 }
 function pgSelectTile(key){
-  if(key==='flips'){
-    PG_TAB='flips';
-    el('pgTabStale')?.classList.remove('active');
-    el('pgTabFlips')?.classList.add('active');
-    var ff=el('pgFlipFilters'); if(ff) ff.style.display='flex';
+  if(key==='flips'||key==='flips_today'){
+    if(key==='flips_today'){
+      pgSetFlipDatePreset('today');
+    }
+    pgSetTab('flips');
+    PG_SEL_TILE=key;
+    pgRender();
+    return;
+  }
+  if(String(key).indexOf('stale_')===0){
+    PG_STALE_DAYS=parseInt(key.replace('stale_',''),10)||1;
+    PG_TAB='stale';
+    el('pgTabStale')?.classList.add('active');
+    el('pgTabFlips')?.classList.remove('active');
+    var sf=el('pgStaleFilters'), ff=el('pgFlipFilters');
+    if(sf) sf.style.display='flex';
+    if(ff) ff.style.display='none';
   }
   PG_SEL_TILE=PG_SEL_TILE===key?null:key;
   pgRender();
@@ -11926,10 +12028,12 @@ function pgResetAll(clearCache){
   PG_DRILL_AD=null;
   PG_DRILL_AM=null;
   PG_FLIP_FILTER='all';
+  PG_STALE_DAYS=1;
   PG_TAB='stale';
   var ids=['pgHdFilter','pgAdFilter','pgAmFilter','pgPfFilter','pgSearchInp'];
   ids.forEach(function(id){ var n=el(id); if(!n) return; if(n.tagName==='SELECT') n.selectedIndex=0; else n.value=''; });
-  var md=el('pgMinDays'); if(md) md.value='1';
+  PG_FLIP_FROM_ISO='';
+  PG_FLIP_TO_ISO='';
   if(clearCache){ try{ localStorage.removeItem(PG_VERSION_CACHE_LS); }catch(e){} }
   pgSetTab('stale');
   pgRebuildCascadeFilters();
@@ -11958,27 +12062,35 @@ function pgSelectPgAm(amKey){
 function pgRenderKpiTiles(rows,f){
   var wrap=el('pgKpiRow');
   if(!wrap) return;
-  var minDays=f.minDays;
-  var healthy=0, stale=0, critical=0, flips=0;
-  var flipCounts={to_opportunity:0,to_proposed:0,to_billed:0,to_won:0};
-  rows.forEach(function(row){
-    var cls=pgClassifyRow(row,minDays);
-    if(cls==='healthy') healthy++;
-    else if(cls==='stale') stale++;
-    else critical++;
-    row.analysis.flips.forEach(function(fl){
-      flips++;
-      if(flipCounts[fl.flipKind]!=null) flipCounts[fl.flipKind]++;
-    });
-  });
   var live=mqLiveYearQuarter();
-  var defs=[
-    {key:null,label:'QTG In-Flight',value:rows.length,sub:'Q'+live.quarter+' '+live.year+' pipeline',color:'var(--sc)'},
-    {key:'healthy',label:'Recently updated',value:healthy,sub:minDays<=0?'Status changed or stable ≤7 days':'Unchanged less than '+Math.max(minDays,7)+' days',color:'#16a34a'},
-    {key:'stale',label:'Stale queue',value:stale,sub:'Unchanged ≥ '+Math.max(minDays,1)+' days',color:'#ea580c'},
-    {key:'critical',label:'Critical stale',value:critical,sub:'Unchanged ≥ 21 days',color:'#dc2626'},
-    {key:'flips',label:'Status flips',value:flips,sub:'Opp Status changed (SharePoint history + since last refresh)',color:'#7c3aed'}
-  ];
+  var defs;
+  if(PG_TAB==='flips'){
+    var today=pgParseIsoDate(pgTodayIso());
+    var flipsToday=0, flipsRange=pgCountFlipsInRange(rows,f);
+    rows.forEach(function(row){
+      (row.analysis.flips||[]).forEach(function(fl){
+        if(PG_FLIP_FILTER!=='all'&&fl.flipKind!==PG_FLIP_FILTER) return;
+        if(pgFlipInDateRange(fl,today,today)) flipsToday++;
+      });
+    });
+    var rangeLabel=f.flipFrom&&f.flipTo
+      ?(f.flipFrom.getTime()===f.flipTo.getTime()?pgTodayIso()===el('pgFlipDateFrom')?.value?'Today':el('pgFlipDateFrom')?.value:f.flipFrom.toLocaleDateString('en-GB')+' – '+f.flipTo.toLocaleDateString('en-GB'))
+      :'All time';
+    defs=[
+      {key:null,label:'Pipeline',value:rows.length,sub:'Q'+live.quarter+' '+live.year,color:'var(--sc)'},
+      {key:'flips_today',label:'Flips today',value:flipsToday,sub:'Opp Status changed today',color:'#16a34a'},
+      {key:'flips',label:'Flips in range',value:flipsRange,sub:rangeLabel,color:'#7c3aed'}
+    ];
+  }else{
+    var th=f.staleDays;
+    defs=[
+      {key:null,label:'Pipeline',value:rows.length,sub:'Q'+live.quarter+' '+live.year,color:'var(--sc)'},
+      {key:'stale_1',label:'1+ days',value:pgCountStale(rows,1),sub:'Same Opp Status ≥1 day',color:'#ca8a04'},
+      {key:'stale_7',label:'7+ days',value:pgCountStale(rows,7),sub:'Same Opp Status ≥7 days',color:'#ea580c'},
+      {key:'stale_15',label:'15+ days',value:pgCountStale(rows,15),sub:'Same Opp Status ≥15 days',color:'#dc2626'},
+      {key:'stale_21',label:'21+ days',value:pgCountStale(rows,21),sub:'Same Opp Status ≥21 days',color:'#991b1b'}
+    ];
+  }
   wrap.innerHTML='';
   defs.forEach(function(td){
     var card=document.createElement('div');
@@ -11990,32 +12102,31 @@ function pgRenderKpiTiles(rows,f){
     wrap.appendChild(card);
   });
 }
-function pgAggregateGroup(rows,minDays,groupFn){
+function pgAggregateGroup(rows,staleDays,groupFn){
   var map={};
   rows.forEach(function(row){
     var key=groupFn(row);
     if(!key||key==='—'||key==='(Blank)') key='(Unassigned)';
-    if(!map[key]) map[key]={key:key,total:0,healthy:0,stale:0,critical:0,flips:0,ga:0};
+    if(!map[key]) map[key]={key:key,total:0,stale:0,stale7:0,flips:0,ga:0};
     var g=map[key];
     g.total++;
     g.ga+=num(row.bid.gaLines);
-    var cls=pgClassifyRow(row,minDays);
-    if(cls==='healthy') g.healthy++;
-    else if(cls==='stale') g.stale++;
-    else g.critical++;
+    if((row.analysis.daysStale||0)>=staleDays) g.stale++;
+    if((row.analysis.daysStale||0)>=7) g.stale7++;
     g.flips+=row.analysis.flips.length;
   });
-  return Object.keys(map).map(function(k){ return map[k]; }).sort(function(a,b){ return b.stale+b.critical-a.stale-a.critical; });
+  return Object.keys(map).map(function(k){ return map[k]; }).sort(function(a,b){ return b.stale-a.stale; });
 }
-function pgStatsForRows(rows,minDays){
-  var healthy=0,stale=0,critical=0,flips=0,ga=0;
+function pgStatsForRows(rows,staleDays){
+  staleDays=staleDays||PG_STALE_DAYS||1;
+  var stale=0,stale7=0,flips=0,ga=0;
   rows.forEach(function(row){
-    var cls=pgClassifyRow(row,minDays);
-    if(cls==='healthy') healthy++; else if(cls==='stale') stale++; else critical++;
+    if((row.analysis.daysStale||0)>=staleDays) stale++;
+    if((row.analysis.daysStale||0)>=7) stale7++;
     flips+=row.analysis.flips.length;
     ga+=num(row.bid.gaLines);
   });
-  return {total:rows.length,healthy:healthy,stale:stale,critical:critical,flips:flips,ga:ga};
+  return {total:rows.length,stale:stale,stale7:stale7,flips:flips,ga:ga,healthy:rows.length-stale};
 }
 function pgBuildLmTileHtml(name,role,stats,verticals,selected){
   return '<div class="lm-tile'+(selected?' selected':'')+'">'+
@@ -12025,11 +12136,11 @@ function pgBuildLmTileHtml(name,role,stats,verticals,selected){
     '</div>'+
     '<div class="lm-stats-grid">'+
       '<div class="lm-stat-box"><div class="lm-stat-label">QTG deals</div><div class="lm-stat-value">'+stats.total+'</div></div>'+
-      '<div class="lm-stat-box"><div class="lm-stat-label">Stale</div><div class="lm-stat-value" style="color:#ea580c">'+stats.stale+'</div></div>'+
+      '<div class="lm-stat-box"><div class="lm-stat-label">Stale ('+(PG_STALE_DAYS||1)+'+d)</div><div class="lm-stat-value" style="color:#ea580c">'+stats.stale+'</div></div>'+
     '</div>'+
     '<div class="lm-revenue">'+
-      '<div class="lm-revenue-label">Healthy / Critical / Flips</div>'+
-      '<div class="lm-revenue-count">'+stats.healthy+' / '+stats.critical+' / '+stats.flips+'</div>'+
+      '<div class="lm-revenue-label">Fresh / 7+d stale / Flips</div>'+
+      '<div class="lm-revenue-count">'+stats.healthy+' / '+stats.stale7+' / '+stats.flips+'</div>'+
       '<div class="lm-revenue-breakdown">'+
         '<div class="lm-revenue-item"><div class="lm-revenue-item-label">GA Lines</div><div class="lm-revenue-item-value">'+mqFmtProductLines(stats.ga)+'</div></div>'+
       '</div>'+
@@ -12040,14 +12151,14 @@ function pgRenderPgHdTiles(){
   var grid=el('pgHdGrid'), badge=el('pgHdBadge');
   if(!grid) return;
   var f=pgGetFilterVals();
-  var rows=PG_ANALYSIS.filter(function(row){ return pgRowMatchesFilters(row,{hd:'',ad:'',am:'',pf:f.pf,minDays:f.minDays,search:f.search}); });
+  var rows=PG_ANALYSIS.filter(function(row){ return pgRowMatchesFilters(row,{hd:'',ad:'',am:'',pf:f.pf,search:f.search}); });
   var hds=[...new Set(rows.map(function(r){ return r.bid.headDirector; }).filter(function(v){ return v&&v!=='—'&&v!=='(Blank)'; }))].sort();
   if(badge) badge.textContent=hds.length;
   grid.innerHTML='';
   if(!hds.length){ grid.innerHTML='<div class="pg-empty">No head directors in scope.</div>'; return; }
   hds.forEach(function(hd){
     var hdRows=rows.filter(function(r){ return r.bid.headDirector===hd; });
-    var stats=pgStatsForRows(hdRows,f.minDays);
+    var stats=pgStatsForRows(hdRows,f.staleDays);
     var verts=[...new Set(hdRows.map(function(r){ return r.bid.vertical; }).filter(Boolean))].join(', ');
     var tile=document.createElement('div');
     tile.innerHTML=pgBuildLmTileHtml(hd,'Head Director',stats,verts,PG_DRILL_HD===hd);
@@ -12062,7 +12173,7 @@ function pgRenderPgAdTiles(hd){
   if(ctx) ctx.textContent='← '+hd;
   var f=pgGetFilterVals();
   var rows=PG_ANALYSIS.filter(function(r){
-    return r.bid.headDirector===hd&&pgRowMatchesFilters(r,{hd:'',ad:'',am:'',pf:f.pf,minDays:f.minDays,search:f.search});
+    return r.bid.headDirector===hd&&pgRowMatchesFilters(r,{hd:'',ad:'',am:'',pf:f.pf,search:f.search});
   });
   var ads=[...new Set(rows.map(function(r){ return r.bid.accountDirector; }).filter(function(v){ return v&&v!=='—'; }))].sort();
   if(badge) badge.textContent=ads.length;
@@ -12070,7 +12181,7 @@ function pgRenderPgAdTiles(hd){
   if(!ads.length){ grid.innerHTML='<div class="pg-empty">No account directors.</div>'; return; }
   ads.forEach(function(ad){
     var adRows=rows.filter(function(r){ return r.bid.accountDirector===ad; });
-    var stats=pgStatsForRows(adRows,f.minDays);
+    var stats=pgStatsForRows(adRows,f.staleDays);
     var verts=[...new Set(adRows.map(function(r){ return r.bid.vertical; }).filter(Boolean))].join(', ');
     var tile=document.createElement('div');
     tile.innerHTML=pgBuildLmTileHtml(ad,'Account Director',stats,verts,PG_DRILL_AD===ad);
@@ -12085,7 +12196,7 @@ function pgRenderPgAmRows(ad){
   if(ctx) ctx.textContent='← '+PG_DRILL_HD+' · '+ad;
   var f=pgGetFilterVals();
   var rows=PG_ANALYSIS.filter(function(r){
-    return r.bid.headDirector===PG_DRILL_HD&&r.bid.accountDirector===ad&&pgRowMatchesFilters(r,{hd:'',ad:'',am:'',pf:f.pf,minDays:f.minDays,search:f.search});
+    return r.bid.headDirector===PG_DRILL_HD&&r.bid.accountDirector===ad&&pgRowMatchesFilters(r,{hd:'',ad:'',am:'',pf:f.pf,search:f.search});
   });
   var amMap={};
   rows.forEach(function(r){
@@ -12098,7 +12209,7 @@ function pgRenderPgAmRows(ad){
   list.innerHTML='';
   if(!ams.length){ list.innerHTML='<div class="pg-empty">No account managers.</div>'; return; }
   ams.forEach(function(am,i){
-    var stats=pgStatsForRows(am.rows,f.minDays);
+    var stats=pgStatsForRows(am.rows,f.staleDays);
     var row=document.createElement('div');
     row.className='manager-row'+(PG_DRILL_AM===am.key?' selected':'');
     row.innerHTML=
@@ -12106,7 +12217,7 @@ function pgRenderPgAmRows(ad){
       '<div class="manager-name-col"><div class="manager-name">'+mqEscHtml(am.name)+'</div><div class="manager-meta">Account Manager</div></div>'+
       '<div class="manager-stat"><div class="manager-stat-label">Deals</div><div class="manager-stat-value">'+stats.total+'</div></div>'+
       '<div class="manager-stat"><div class="manager-stat-label">Stale</div><div class="manager-stat-value" style="color:#ea580c">'+stats.stale+'</div></div>'+
-      '<div class="manager-stat"><div class="manager-stat-label">Critical</div><div class="manager-stat-value" style="color:#dc2626">'+stats.critical+'</div></div>'+
+      '<div class="manager-stat"><div class="manager-stat-label">7+d</div><div class="manager-stat-value" style="color:#dc2626">'+stats.stale7+'</div></div>'+
       '<div class="manager-stat"><div class="manager-stat-label">Flips</div><div class="manager-stat-value" style="color:#7c3aed">'+stats.flips+'</div></div>';
     row.onclick=function(){ pgSelectPgAm(am.key); };
     list.appendChild(row);
@@ -12124,7 +12235,14 @@ function pgRenderGridData(){
   var rows=pgGetScopedRows();
   var gridRows=PG_TAB==='flips'?pgBuildFlipGridRows(rows,f):pgBuildStaleGridRows(rows,f);
   var gridTitle=el('pgGridTitle'), gridCount=el('pgGridCount');
-  if(gridTitle) gridTitle.textContent=PG_TAB==='flips'?'Status flip detail':'Stale queue detail';
+  if(gridTitle){
+    if(PG_TAB==='flips'){
+      var dl=f.flipFrom&&f.flipTo?(f.flipFrom.getTime()===f.flipTo.getTime()?el('pgFlipDateFrom')?.value||'selected day':el('pgFlipDateFrom')?.value+' → '+el('pgFlipDateTo')?.value):'all time';
+      gridTitle.textContent='Status flips · '+dl;
+    }else{
+      gridTitle.textContent='Stale queue · same Opp Status for '+pgStaleThreshold(f)+'+ days';
+    }
+  }
   if(gridCount) gridCount.textContent=gridRows.length+' row'+(gridRows.length===1?'':'s');
   pgRenderGrid(gridRows);
 }
@@ -12133,14 +12251,15 @@ function pgStatusRenderer(params){
   return '<span class="pg-status-chip '+pgStatusClass(s)+'">'+mqEscHtml(String(s))+'</span>';
 }
 function pgBuildStaleGridRows(rows,f){
+  var threshold=pgStaleThreshold(f);
+  if(PG_SEL_TILE&&String(PG_SEL_TILE).indexOf('stale_')===0) threshold=parseInt(PG_SEL_TILE.replace('stale_',''),10)||threshold;
   var out=[];
   rows.forEach(function(row){
-    var cls=pgClassifyRow(row,f.minDays);
-    if(PG_SEL_TILE==='healthy'&&cls!=='healthy') return;
-    if(PG_SEL_TILE==='stale'&&cls!=='stale') return;
-    if(PG_SEL_TILE==='critical'&&cls!=='critical') return;
-    if(PG_SEL_TILE==='flips') return;
     var b=row.bid, a=row.analysis;
+    var days=a.daysStale||0;
+    if(days<threshold) return;
+    var segs=a.segments||[];
+    var prevStatus=segs.length>1?segs[segs.length-2].status:'—';
     out.push({
       headDirector:b.headDirector||'—',
       accountDirector:b.accountDirector||'—',
@@ -12151,8 +12270,10 @@ function pgBuildStaleGridRows(rows,f){
       productFamily:b.productFamily||'—',
       productCategory:b.productCategory||'—',
       services:b.services||'—',
-      oppStatus:a.currentStatus||'—',
-      daysUnchanged:a.daysStale,
+      currentStatus:a.currentStatus||'—',
+      previousStatus:prevStatus,
+      daysUnchanged:days,
+      staleBucket:pgStaleBucketLabel(days),
       statusSince:pgFmtDateTime(a.statusSince),
       lastChangedBy:a.lastEditor||'—',
       gaLines:num(b.gaLines),
@@ -12161,8 +12282,7 @@ function pgBuildStaleGridRows(rows,f){
       proposedDate:mqFmtBidDate(b.proposedDate),
       modified:mqFmtBidDate(b.modified),
       versionCount:a.versionCount||0,
-      spLink:mqBidEditUrl(b)||'',
-      healthBand:cls
+      spLink:mqBidEditUrl(b)||''
     });
   });
   out.sort(function(a,b){ return b.daysUnchanged-a.daysUnchanged; });
@@ -12170,11 +12290,17 @@ function pgBuildStaleGridRows(rows,f){
 }
 function pgBuildFlipGridRows(rows,f){
   var out=[];
+  var today=pgParseIsoDate(pgTodayIso());
+  var onlyToday=PG_SEL_TILE==='flips_today';
   rows.forEach(function(row){
-    if(PG_SEL_TILE==='healthy'||PG_SEL_TILE==='stale'||PG_SEL_TILE==='critical') return;
     row.analysis.flips.forEach(function(fl){
       if(PG_FLIP_FILTER!=='all'&&fl.flipKind!==PG_FLIP_FILTER) return;
+      if(onlyToday){
+        if(!pgFlipInDateRange(fl,today,today)) return;
+      }else if(!pgFlipInDateRange(fl,f.flipFrom,f.flipTo)) return;
       var b=row.bid;
+      var w=pgParseSpDateTime(fl.when);
+      var daysAgo=w?mqInclusiveDaysBetween(w,new Date()):null;
       out.push({
         headDirector:b.headDirector||'—',
         accountDirector:b.accountDirector||'—',
@@ -12186,6 +12312,7 @@ function pgBuildFlipGridRows(rows,f){
         flipType:pgFlipKindLabel(fl.flipKind),
         flipKind:fl.flipKind,
         when:pgFmtDateTime(fl.when),
+        daysAgo:daysAgo,
         changedBy:fl.editor||'—',
         version:fl.versionLabel||'—',
         flipSource:fl.source==='since_last_refresh'?'Since last refresh':'SharePoint history',
@@ -12194,10 +12321,12 @@ function pgBuildFlipGridRows(rows,f){
         vertical:b.vertical||'—',
         productFamily:b.productFamily||'—',
         daysInCurrent:row.analysis.daysStale,
-        spLink:mqBidEditUrl(b)||''
+        spLink:mqBidEditUrl(b)||'',
+        _sortWhen:w?w.getTime():0
       });
     });
   });
+  out.sort(function(a,b){ return b._sortWhen-a._sortWhen; });
   return out;
 }
 function pgRenderGrid(data){
@@ -12216,8 +12345,9 @@ function pgRenderGrid(data){
       glkCol({field:'fromStatus',headerName:'From Status',width:115,cellRenderer:pgStatusRenderer}),
       glkCol({field:'toStatus',headerName:'To Status',width:115,cellRenderer:pgStatusRenderer}),
       glkCol({field:'flipType',headerName:'Flip type',width:120}),
+      glkCol({field:'when',headerName:'Changed on',width:145}),
+      glkCol({field:'daysAgo',headerName:'Days ago',width:90},'num'),
       glkCol({field:'flipSource',headerName:'Detected via',width:130}),
-      glkCol({field:'when',headerName:'When',width:145}),
       glkCol({field:'changedBy',headerName:'Changed by',width:130}),
       glkCol({field:'version',headerName:'Version',width:80}),
       glkCol({field:'vertical',headerName:'Vertical',width:100}),
@@ -12240,13 +12370,16 @@ function pgRenderGrid(data){
       glkCol({field:'productFamily',headerName:'Product Family',width:115}),
       glkCol({field:'productCategory',headerName:'Product Category',width:130}),
       glkCol({field:'services',headerName:'Services',width:120}),
-      glkCol({field:'oppStatus',headerName:'Opp Status',width:115,cellRenderer:pgStatusRenderer}),
+      glkCol({field:'currentStatus',headerName:'Current Opp Status',width:130,cellRenderer:pgStatusRenderer}),
+      glkCol({field:'previousStatus',headerName:'Previous Status',width:120,cellRenderer:pgStatusRenderer}),
       glkCol({field:'daysUnchanged',headerName:'Days unchanged',width:120,cellStyle:function(p){
-        if(p.value>=21) return {color:'#dc2626',fontWeight:'900'};
-        if(p.value>=14) return {color:'#ea580c',fontWeight:'900'};
+        if(p.value>=21) return {color:'#991b1b',fontWeight:'900'};
+        if(p.value>=15) return {color:'#dc2626',fontWeight:'900'};
+        if(p.value>=7) return {color:'#ea580c',fontWeight:'900'};
         return {fontWeight:'800'};
       }},'num'),
-      glkCol({field:'statusSince',headerName:'Status since',width:145}),
+      glkCol({field:'staleBucket',headerName:'Stale bucket',width:105}),
+      glkCol({field:'statusSince',headerName:'In this status since',width:145}),
       glkCol({field:'lastChangedBy',headerName:'Last changed by',width:130}),
       glkCol({field:'gaLines',headerName:'GA Lines',width:90},'num'),
       glkCol({field:'mrc',headerName:'MRC',width:100,valueFormatter:function(p){ return fmt(p.value); }},'money'),
@@ -12273,7 +12406,11 @@ function pgRenderGrid(data){
 }
 function pgRender(){
   pgRebuildCascadeFilters();
-  pgRenderFlipFilterChips();
+  pgRenderStaleFilters();
+  pgRenderFlipFilters();
+  var sf=el('pgStaleFilters'), ff=el('pgFlipFilters');
+  if(sf) sf.style.display=PG_TAB==='stale'?'flex':'none';
+  if(ff) ff.style.display=PG_TAB==='flips'?'flex':'none';
   var f=pgGetFilterVals();
   var foot=el('pgFootnote'), gridTitle=el('pgGridTitle'), gridCount=el('pgGridCount');
   if(PG_LOADING){
@@ -12297,7 +12434,10 @@ function pgRender(){
   if(foot){
     var live=mqLiveYearQuarter();
     var errNote=PG_LOAD_STATS.hardErrors?(' <span class="pg-error-note">'+PG_LOAD_STATS.hardErrors+' records could not reach SharePoint.</span>'):'';
-    foot.innerHTML='<strong>Recently updated</strong> = Opp Status stable ≤7 days or a flip in the last 7 days · <strong>Status flips</strong> = Opp Status changed between SharePoint versions (same API as OCC). <strong>Shift+Refresh</strong> clears version cache. '+errNote+' · Q'+live.quarter+' '+live.year+' · History read '+PG_LOAD_STATS.fetched+' · Cache '+PG_LOAD_STATS.cached+' · Fallback '+PG_LOAD_STATS.fallback+'.';
+    foot.innerHTML=(PG_TAB==='flips'
+      ?'<strong>Status flips</strong> = each Opp Status change from SharePoint version history · filter by date above · default is <strong>Today</strong>'
+      :'<strong>Stale queue</strong> = deals unchanged on the same Opp Status for the selected threshold (1+, 7+, 15+ days) · columns show current status, previous status, days unchanged, and since when')
+      +' · <strong>Shift+Refresh</strong> clears cache'+errNote+' · Q'+live.quarter+' '+live.year+' · History read '+PG_LOAD_STATS.fetched+' · Fallback '+PG_LOAD_STATS.fallback+'.';
   }
 }
 function pgSetProgress(pct,text){
@@ -12384,7 +12524,6 @@ window.glkShowGovernance=function(){
   el('content').classList.add('mq-view');
   el('dashboardContent').classList.add('mq-full');
   glkSetActiveNav('navGovernance');
-  pgRenderFlipFilterChips();
   if(!PG_ANALYSIS.length&&!PG_LOADING&&ALL_BIDS&&ALL_BIDS.length) pgRefreshFromSharePoint(null);
   else pgRender();
 };
@@ -12393,6 +12532,9 @@ window.pgSetTab=pgSetTab;
 window.pgRender=pgRender;
 window.pgResetAll=pgResetAll;
 window.pgSetFlipFilter=pgSetFlipFilter;
+window.pgSetStaleDays=pgSetStaleDays;
+window.pgSetFlipDatePreset=pgSetFlipDatePreset;
+window.pgOnFlipDateChange=pgOnFlipDateChange;
 window.pgOnHdFilterChange=pgOnHdFilterChange;
 window.pgOnAdFilterChange=pgOnAdFilterChange;
 window.pgOnAmFilterChange=pgOnAmFilterChange;
