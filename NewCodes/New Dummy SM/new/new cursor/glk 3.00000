@@ -1502,13 +1502,14 @@ body[data-theme="dark"] .badge-warning,body[data-theme="duralux-dark"] .badge-wa
               </select>
             </div>
             <div class="pg-control-block">
-              <span class="pg-control-label">Min days unchanged</span>
-              <select id="pgMinDays" class="fb-select" onchange="pgRender()">
-                <option value="3">3+ days</option>
-                <option value="7" selected>7+ days</option>
-                <option value="14">14+ days</option>
-                <option value="21">21+ days</option>
-                <option value="30">30+ days</option>
+              <span class="pg-control-label">Stale threshold</span>
+              <select id="pgMinDays" class="fb-select" onchange="pgRender()" title="Classifies deals as recently updated vs stale. Does not hide rows — click KPI tiles to filter the grid.">
+                <option value="0">Any (show all activity)</option>
+                <option value="1" selected>1+ days unchanged</option>
+                <option value="3">3+ days unchanged</option>
+                <option value="7">7+ days unchanged</option>
+                <option value="14">14+ days unchanged</option>
+                <option value="21">21+ days unchanged</option>
               </select>
             </div>
             <div class="pg-control-block pg-search-block">
@@ -11438,6 +11439,7 @@ function rrTryLoadBundledWorkbook(cb){
 //  PIPELINE GOVERNANCE — SharePoint version history
 // ══════════════════════════════════════════════════════════════════
 const PG_VERSION_CACHE_LS='glk_pg_version_cache_v3';
+const PG_STATUS_SNAPSHOT_LS='glk_pg_status_snap_v1';
 const PG_OPP_FIELD='Opportunity_x0020_Status';
 let PG_TAB='stale';
 let PG_ANALYSIS=[];
@@ -11631,11 +11633,11 @@ function pgFlipKindLabel(kind){
   return '→ Other';
 }
 function pgAnalyzeVersionHistory(bid,versions){
-  versions=(versions||[]).slice().sort(function(a,b){
+  versions=pgFillVersionStatuses((versions||[]).slice().sort(function(a,b){
     var ta=pgParseSpDateTime(a.created), tb=pgParseSpDateTime(b.created);
     if(ta&&tb&&ta!==tb) return ta-tb;
     return (a.versionId||0)-(b.versionId||0);
-  });
+  }));
   var segments=[], lastStatus=null;
   versions.forEach(function(v){
     var st=pgNormStatus(v.oppStatus);
@@ -11647,7 +11649,7 @@ function pgAnalyzeVersionHistory(bid,versions){
   });
   if(!segments.length){
     var cur=pgNormStatus(bid.oppStatus);
-    if(cur) segments.push({status:cur,from:bid.created||bid.modified,editor:'—',versionLabel:'current'});
+    if(cur) segments.push({status:cur,from:bid.modified||bid.created,editor:'—',versionLabel:'current'});
   }
   var current=segments[segments.length-1];
   var daysStale=0, statusSince=null;
@@ -11655,14 +11657,24 @@ function pgAnalyzeVersionHistory(bid,versions){
     statusSince=pgParseSpDateTime(current.from);
     if(statusSince) daysStale=mqInclusiveDaysBetween(statusSince,new Date());
   }
+  var modDt=pgParseSpDateTime(bid.modified);
+  if(modDt){
+    var modDays=mqInclusiveDaysBetween(modDt,new Date());
+    if(modDays<daysStale||!statusSince){
+      daysStale=modDays;
+      statusSince=bid.modified;
+    }
+  }
   var flips=[];
   for(var i=1;i<segments.length;i++){
     var toSt=segments[i].status;
+    if(pgStatusKey(segments[i-1].status)===pgStatusKey(toSt)) continue;
     flips.push({
       from:segments[i-1].status,to:toSt,
       flipKind:pgFlipKind(toSt),
       when:segments[i].from,editor:segments[i].editor||'—',
-      versionLabel:segments[i].versionLabel||''
+      versionLabel:segments[i].versionLabel||'',
+      source:'version_history'
     });
   }
   return {
@@ -11777,7 +11789,7 @@ function pgGetFilterVals(){
     ad:el('pgAdFilter')?el('pgAdFilter').value:'',
     am:el('pgAmFilter')?el('pgAmFilter').value:'',
     pf:el('pgPfFilter')?el('pgPfFilter').value:'',
-    minDays:parseInt(el('pgMinDays')&&el('pgMinDays').value,10)||7,
+    minDays:Math.max(0,parseInt(el('pgMinDays')&&el('pgMinDays').value,10)||1),
     search:(el('pgSearchInp')&&el('pgSearchInp').value||'').trim().toLowerCase()
   };
 }
@@ -11802,8 +11814,72 @@ function pgRowMatchesFilters(row,f){
 function pgClassifyRow(row,minDays){
   var d=row.analysis.daysStale;
   if(d>=21) return 'critical';
+  if(minDays<=0) return d===0?'healthy':'stale';
   if(d>=minDays) return 'stale';
   return 'healthy';
+}
+function pgLoadStatusSnapshot(){
+  try{ return JSON.parse(localStorage.getItem(PG_STATUS_SNAPSHOT_LS)||'{}')||{}; }
+  catch(e){ return {}; }
+}
+function pgSaveStatusSnapshot(analysis){
+  try{
+    var snap={};
+    (analysis||[]).forEach(function(row){
+      if(!row.bid||row.bid.id==null) return;
+      snap[String(row.bid.id)]={oppStatus:pgNormStatus(row.bid.oppStatus),modified:row.bid.modified||''};
+    });
+    localStorage.setItem(PG_STATUS_SNAPSHOT_LS,JSON.stringify(snap));
+  }catch(e){}
+}
+function pgFillVersionStatuses(versions){
+  var last='';
+  return (versions||[]).map(function(v){
+    var st=pgNormStatus(v.oppStatus);
+    if(st) last=st;
+    else if(last) st=last;
+    return Object.assign({},v,{oppStatus:st});
+  });
+}
+function pgApplySnapshotFlips(bid,analysis,priorSnap){
+  if(!priorSnap||!analysis) return;
+  var prev=priorSnap[String(bid.id)];
+  if(!prev) return;
+  var cur=pgNormStatus(bid.oppStatus);
+  var prevSt=pgNormStatus(prev.oppStatus);
+  if(!cur||!prevSt||pgStatusKey(cur)===pgStatusKey(prevSt)) return;
+  var dup=analysis.flips.some(function(f){
+    return pgStatusKey(f.from)===pgStatusKey(prevSt)&&pgStatusKey(f.to)===pgStatusKey(cur);
+  });
+  if(!dup){
+    analysis.flips.push({
+      from:prevSt,to:cur,
+      flipKind:pgFlipKind(cur),
+      when:bid.modified||new Date().toISOString(),
+      editor:bid.userName||'Since last refresh',
+      versionLabel:'live',
+      source:'since_last_refresh'
+    });
+  }
+  var mod=pgParseSpDateTime(bid.modified);
+  if(mod){
+    analysis.statusSince=bid.modified;
+    analysis.daysStale=mqInclusiveDaysBetween(mod,new Date());
+    if(analysis.segments.length){
+      analysis.segments[analysis.segments.length-1].from=bid.modified;
+    }
+  }
+}
+function pgRefreshBidFromSp(bid,cb){
+  var safeList=SP_LIST.replace(/'/g,"''");
+  var url=SP_SITE+"/_api/web/lists/getbytitle('"+safeList+"')/items("+bid.id+")?$select=Id,Modified,"+PG_OPP_FIELD;
+  spGet(url,function(err,data){
+    if(!err&&data&&data.d){
+      bid.modified=data.d.Modified||bid.modified;
+      bid.oppStatus=pgNormStatus(data.d[PG_OPP_FIELD])||bid.oppStatus;
+    }
+    cb();
+  });
 }
 function pgGetScopedRows(){
   var f=pgGetFilterVals();
@@ -11828,7 +11904,7 @@ function pgResetAll(clearCache){
   PG_TAB='stale';
   var ids=['pgHdFilter','pgAdFilter','pgAmFilter','pgPfFilter','pgSearchInp'];
   ids.forEach(function(id){ var n=el(id); if(!n) return; if(n.tagName==='SELECT') n.selectedIndex=0; else n.value=''; });
-  var md=el('pgMinDays'); if(md) md.value='7';
+  var md=el('pgMinDays'); if(md) md.value='1';
   if(clearCache){ try{ localStorage.removeItem(PG_VERSION_CACHE_LS); }catch(e){} }
   pgSetTab('stale');
   pgRebuildCascadeFilters();
@@ -11873,10 +11949,10 @@ function pgRenderKpiTiles(rows,f){
   var live=mqLiveYearQuarter();
   var defs=[
     {key:null,label:'QTG In-Flight',value:rows.length,sub:'Q'+live.quarter+' '+live.year+' pipeline',color:'var(--sc)'},
-    {key:'healthy',label:'Recently updated',value:healthy,sub:'Status changed within '+minDays+' days',color:'#16a34a'},
-    {key:'stale',label:'Stale queue',value:stale,sub:'Unchanged ≥ '+minDays+' days',color:'#ea580c'},
+    {key:'healthy',label:'Recently updated',value:healthy,sub:minDays<=0?'Changed today (click to filter grid)':'Unchanged less than '+minDays+' day'+(minDays===1?'':'s'),color:'#16a34a'},
+    {key:'stale',label:'Stale queue',value:stale,sub:'Unchanged ≥ '+Math.max(minDays,1)+' days',color:'#ea580c'},
     {key:'critical',label:'Critical stale',value:critical,sub:'Unchanged ≥ 21 days',color:'#dc2626'},
-    {key:'flips',label:'Status flips',value:flips,sub:'All recorded changes',color:'#7c3aed'}
+    {key:'flips',label:'Status flips',value:flips,sub:'Opp Status changed (SharePoint history + since last refresh)',color:'#7c3aed'}
   ];
   wrap.innerHTML='';
   defs.forEach(function(td){
@@ -12087,6 +12163,7 @@ function pgBuildFlipGridRows(rows,f){
         when:pgFmtDateTime(fl.when),
         changedBy:fl.editor||'—',
         version:fl.versionLabel||'—',
+        flipSource:fl.source==='since_last_refresh'?'Since last refresh':'SharePoint history',
         gaLines:num(b.gaLines),
         mrc:num(b.mrc),
         vertical:b.vertical||'—',
@@ -12114,6 +12191,7 @@ function pgRenderGrid(data){
       glkCol({field:'fromStatus',headerName:'From Status',width:115,cellRenderer:pgStatusRenderer}),
       glkCol({field:'toStatus',headerName:'To Status',width:115,cellRenderer:pgStatusRenderer}),
       glkCol({field:'flipType',headerName:'Flip type',width:120}),
+      glkCol({field:'flipSource',headerName:'Detected via',width:130}),
       glkCol({field:'when',headerName:'When',width:145}),
       glkCol({field:'changedBy',headerName:'Changed by',width:130}),
       glkCol({field:'version',headerName:'Version',width:80}),
@@ -12194,7 +12272,7 @@ function pgRender(){
   if(foot){
     var live=mqLiveYearQuarter();
     var errNote=PG_LOAD_STATS.hardErrors?(' <span class="pg-error-note">'+PG_LOAD_STATS.hardErrors+' records could not reach SharePoint.</span>'):'';
-    foot.innerHTML='SharePoint list <strong>'+mqEscHtml(SP_LIST)+'</strong> · Opportunity Status version history · Q'+live.quarter+' '+live.year+' QTG in-flight · Loaded: '+PG_LOAD_STATS.fetched+' · Cache: '+PG_LOAD_STATS.cached+' · Fallback (current status only): '+PG_LOAD_STATS.fallback+'.'+errNote+' Hold Shift while refreshing to clear cache.';
+    foot.innerHTML='<strong>Recently updated</strong> = same Opp Status for less than the stale threshold · <strong>Status flips</strong> = Opp Status actually changed (from SharePoint version history, or detected since your last Refresh). After you change a deal in SharePoint, click <strong>Refresh version history</strong> twice (or once if you already refreshed before the change) to see the flip.'+errNote+' · Q'+live.quarter+' '+live.year+' · Loaded '+PG_LOAD_STATS.fetched+' · Cache '+PG_LOAD_STATS.cached+' · Fallback '+PG_LOAD_STATS.fallback+'. Shift+Refresh clears version cache.';
   }
 }
 function pgSetProgress(pct,text){
@@ -12217,6 +12295,7 @@ function pgRefreshFromSharePoint(evt){
   if(force){
     try{ localStorage.removeItem(PG_VERSION_CACHE_LS); }catch(e){}
   }
+  var priorSnapshot=pgLoadStatusSnapshot();
   var candidates=pgGetQtgCandidates();
   if(!candidates.length){
     alert('No QTG in-flight deals (Proposed / Opportunity with activation in the live quarter) in the current pipeline.');
@@ -12228,30 +12307,50 @@ function pgRefreshFromSharePoint(evt){
   PG_ANALYSIS=[];
   PG_LOAD_STATS={fetched:0,cached:0,fallback:0,hardErrors:0};
   pgRender();
-  pgSetProgress(0,'Reading SharePoint version history · 0 / '+candidates.length);
-  var idx=0, concurrency=2, active=0;
-  function pump(){
-    while(active<concurrency&&idx<candidates.length){
+  pgSetProgress(0,'Syncing live Opp Status from SharePoint…');
+  var syncIdx=0, syncActive=0, syncDone=0;
+  function syncPump(onDone){
+    while(syncActive<3&&syncIdx<candidates.length){
       (function(bid){
-        active++;
-        pgFetchItemVersionHistory(bid,function(err,versions,isPartial){
-          active--;
-          if(err&&!versions) PG_LOAD_STATS.hardErrors++;
-          var analysis=pgAnalyzeVersionHistory(bid,versions||pgFallbackVersions(bid));
-          PG_ANALYSIS.push({bid:bid,analysis:analysis,partial:!!isPartial});
-          var done=PG_ANALYSIS.length;
-          pgSetProgress(Math.round((done/candidates.length)*100),'SharePoint version history · '+done+' / '+candidates.length+' · cache '+PG_LOAD_STATS.cached+' · loaded '+PG_LOAD_STATS.fetched);
-          if(done>=candidates.length){
-            PG_LOADING=false;
-            pgHideProgress();
-            PG_ANALYSIS.sort(function(a,b){ return b.analysis.daysStale-a.analysis.daysStale; });
-            pgRender();
-          }else pump();
+        syncActive++;
+        pgRefreshBidFromSp(bid,function(){
+          syncActive--;
+          syncDone++;
+          pgSetProgress(Math.round((syncDone/candidates.length)*40),'Live status sync · '+syncDone+' / '+candidates.length);
+          if(syncDone>=candidates.length) onDone();
+          else syncPump(onDone);
         });
-      })(candidates[idx++]);
+      })(candidates[syncIdx++]);
     }
   }
-  pump();
+  syncPump(function(){
+    pgSetProgress(42,'Reading SharePoint version history…');
+    var idx=0, active=0;
+    function pump(){
+      while(active<2&&idx<candidates.length){
+        (function(bid){
+          active++;
+          pgFetchItemVersionHistory(bid,function(err,versions,isPartial){
+            active--;
+            if(err&&!versions) PG_LOAD_STATS.hardErrors++;
+            var analysis=pgAnalyzeVersionHistory(bid,versions||pgFallbackVersions(bid));
+            pgApplySnapshotFlips(bid,analysis,priorSnapshot);
+            PG_ANALYSIS.push({bid:bid,analysis:analysis,partial:!!isPartial});
+            var done=PG_ANALYSIS.length;
+            pgSetProgress(40+Math.round((done/candidates.length)*60),'Version history · '+done+' / '+candidates.length);
+            if(done>=candidates.length){
+              PG_LOADING=false;
+              pgHideProgress();
+              PG_ANALYSIS.sort(function(a,b){ return b.analysis.daysStale-a.analysis.daysStale; });
+              pgSaveStatusSnapshot(PG_ANALYSIS);
+              pgRender();
+            }else pump();
+          });
+        })(candidates[idx++]);
+      }
+    }
+    pump();
+  });
 }
 window.glkShowGovernance=function(){
   glkHideAllMainViews();
