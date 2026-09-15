@@ -780,7 +780,7 @@ const APPROVAL_STEPS = [
   { key:'hm', label:'Head Of Marketing', statusField:'field11', tsField:'field12' },
   { key:'he', label:'Head of Enterprise Approval', statusField:'Head_x0020_of_x0020_Gov_x0020_LE', tsField:'Head_x0020_of_x0020_Gov_x0020_LE0' },
   { key:'le', label:'Head of Enterprise (Marwan)', defaultPerson: APPROVERS.enterprise.name, defaultEmail: APPROVERS.enterprise.email, autoOnHm: true },
-  { key:'cco', label:'CCCO', statusField:'CCO_x0020_Approval', tsField:'CCOTimestamp', defaultPerson: APPROVERS.ccco.name, defaultEmail: APPROVERS.ccco.email, minValue: CCO_THRESHOLD }
+  { key:'cco', label:'Chief Customer & Channels Officer', statusField:'CCO_x0020_Approval', tsField:'CCOTimestamp', defaultPerson: APPROVERS.ccco.name, defaultEmail: APPROVERS.ccco.email, minValue: CCO_THRESHOLD }
 ];
 
 const F = {
@@ -904,6 +904,14 @@ function getRequiredSteps(item){
   return APPROVAL_STEPS.filter(s => !s.minValue || num(item.value) >= s.minValue);
 }
 
+function getTimelineSteps(){
+  return APPROVAL_STEPS;
+}
+
+function stepBelowThreshold(item, step){
+  return !!(step.minValue && num(item.value) < step.minValue);
+}
+
 function stepRawStatus(item, step, allSteps){
   if(step.autoOnHm){
     const hm = (allSteps||[]).find(function(s){ return s.key==='hm'; });
@@ -935,6 +943,11 @@ function stepCountsAsClosed(item, step, allSteps){
 }
 
 function getStepStatus(item, step, allSteps){
+  if(stepBelowThreshold(item, step)){
+    const raw = step.statusField ? normStatus(item._raw[step.statusField]) : 'pending';
+    if(raw==='approved' || raw==='rejected') return raw;
+    return 'skipped';
+  }
   if(step.autoOnHm){
     const hm = allSteps.find(s=>s.key==='hm');
     if(hm && normStatus(item._raw[hm.statusField])==='approved') return 'approved';
@@ -1069,9 +1082,9 @@ function calcDaysStuck(item){
 }
 
 function buildTimeline(item){
-  const steps = getRequiredSteps(item);
-  return steps.map(s => {
-    let status = getStepStatus(item, s, steps);
+  const req = getRequiredSteps(item);
+  return getTimelineSteps().map(s => {
+    let status = getStepStatus(item, s, req);
     const person = (s.personField && item._raw[s.personField]) || (s.textField && item._raw[s.textField]) || s.defaultPerson || '—';
     const ts = item._raw[s.tsField] || '';
     const raw = s.statusField ? item._raw[s.statusField] : '';
@@ -1079,8 +1092,13 @@ function buildTimeline(item){
     let skipLabel = '';
     if(status==='rejected') note = occStripHtml(item._raw[F.REJECTED]||'');
     else if(status==='skipped'){
-      if(isNotRequiredValue(raw)){ skipLabel = 'Not Required'; note = 'Approval not required'; }
-      else { skipLabel = 'Not recorded'; note = 'Column added later'; }
+      if(isNotRequiredValue(raw) || stepBelowThreshold(item, s)){
+        skipLabel = 'Approval Not Required';
+        note = 'Approval not required';
+      } else {
+        skipLabel = 'Not recorded';
+        note = 'Column added later';
+      }
     }
     return { label:s.label, status, person, timestamp:ts, note, skipLabel };
   });
@@ -2228,14 +2246,14 @@ function approvalBadge(status, labelOverride){
   let cls = 'pending', label = 'Pending';
   if(s==='approved'){ cls='approved'; label='Approved'; }
   else if(s==='rejected'){ cls='rejected'; label='Rejected'; }
-  else if(s==='skipped'){ cls='skipped'; label=labelOverride||'Not Required'; }
+  else if(s==='skipped'){ cls='skipped'; label=labelOverride||'Approval Not Required'; }
   return '<span class="approval-badge '+cls+'">'+(labelOverride||label)+'</span>';
 }
 
 function renderTimelineHtml(item){
   return '<div class="timeline">'+item.timeline.map(function(step){
     const cls = step.status==='approved'?'done':step.status==='rejected'?'rejected':step.status==='skipped'?'skipped':'pending';
-    const statusLabel = step.status==='approved'?'Approved':step.status==='rejected'?'Rejected':step.status==='skipped'?(step.skipLabel||'Not Required'):'Pending';
+    const statusLabel = step.status==='approved'?'Approved':step.status==='rejected'?'Rejected':step.status==='skipped'?(step.skipLabel||'Approval Not Required'):'Pending';
     return '<div class="timeline-step '+cls+'"><div class="timeline-step-head"><div class="timeline-step-title">'+step.label+'</div>'+approvalBadge(step.status, statusLabel)+'</div>'+
       '<div class="timeline-step-meta">'+step.person+(step.timestamp?' · '+fmtDate(step.timestamp):'')+(step.note?' · '+step.note:'')+' · '+statusLabel+'</div></div>';
   }).join('')+'</div>';
