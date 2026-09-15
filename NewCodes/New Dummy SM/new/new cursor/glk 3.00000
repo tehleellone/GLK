@@ -1020,19 +1020,19 @@ body[data-theme="dark"] .badge-warning,body[data-theme="duralux-dark"] .badge-wa
       </div>
       <div class="nav-items">
        <div class="nav-section-label">Overview</div>
-<div class="nav-item" id="navDashboard" onclick="glkShowDashboard();">
+<div class="nav-item" id="navDashboard" onclick="glkShowDashboard();return false;">
   <div class="nav-icon"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></div>
   <div class="nav-label">Dashboard</div>
 </div>
-<div class="nav-item" id="navMobileQtd" style="display:none;" onclick="glkShowMobileQtd();">
+<div class="nav-item" id="navMobileQtd" style="display:none;" onclick="glkShowMobileQtd();return false;">
   <div class="nav-icon"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg></div>
   <div class="nav-label">Performance Bridge</div>
 </div>
-<div class="nav-item" id="navRevenueRec" style="display:none;" onclick="glkShowRevenueRec();">
+<div class="nav-item" id="navRevenueRec" style="display:none;" onclick="glkShowRevenueRec();return false;">
   <div class="nav-icon"><svg viewBox="0 0 24 24"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 8 12 3 7 8"/></svg></div>
   <div class="nav-label">Trends</div>
 </div>
-<div class="nav-item" id="navGovernance" style="display:none;" onclick="glkShowGovernance();">
+<div class="nav-item" id="navGovernance" style="display:none;" onclick="glkShowGovernance();return false;">
   <div class="nav-icon"><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg></div>
   <div class="nav-label">Pipeline Governance</div>
 </div>
@@ -1465,10 +1465,13 @@ body[data-theme="dark"] .badge-warning,body[data-theme="duralux-dark"] .badge-wa
               <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>
               Pipeline Governance &amp; Cleanup
             </h2>
-            <button type="button" class="export-btn" id="pgRefreshBtn" onclick="pgRefreshFromSharePoint(event)" style="font-size:.72rem;padding:.4rem .75rem;">
-              <svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
-              Refresh version history
-            </button>
+            <div style="display:flex;gap:.5rem;flex-wrap:wrap;">
+              <button type="button" class="reset-btn" onclick="pgResetAll(false)" style="font-size:.72rem;padding:.4rem .75rem;">Reset all</button>
+              <button type="button" class="export-btn" id="pgRefreshBtn" onclick="pgRefreshFromSharePoint(event)" style="font-size:.72rem;padding:.4rem .75rem;">
+                <svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+                Refresh version history
+              </button>
+            </div>
           </div>
           <p class="pg-subtitle">SharePoint version history on every pipeline record — who changed Opportunity Status, when, and from what value. Drill from overview → Head Director → Account Director → Account Manager → deal detail.</p>
           <div id="pgProgressBar" class="pg-progress" style="display:none;">
@@ -1486,7 +1489,7 @@ body[data-theme="dark"] .badge-warning,body[data-theme="duralux-dark"] .badge-wa
             </div>
             <div class="pg-control-block">
               <span class="pg-control-label">Account manager</span>
-              <select id="pgAmFilter" class="fb-select" onchange="pgRender()"><option value="">All</option></select>
+              <select id="pgAmFilter" class="fb-select" onchange="pgOnAmFilterChange()"><option value="">All</option></select>
             </div>
             <div class="pg-control-block">
               <span class="pg-control-label">Product family</span>
@@ -1521,8 +1524,32 @@ body[data-theme="dark"] .badge-warning,body[data-theme="duralux-dark"] .badge-wa
             </div>
             <div id="pgFlipFilters" class="pg-flip-filters" style="display:none;"></div>
           </div>
-          <div id="pgBreadcrumb" class="pg-breadcrumb"></div>
-          <div id="pgDrillSection" class="pg-drill-section"></div>
+          <div id="pgHdSection" class="hd-section pg-drill-section">
+            <h2 class="section-title" style="margin-bottom:.75rem;">
+              <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+              Head Director — Pipeline hygiene
+              <span id="pgHdBadge" style="background:var(--nab);border:1px solid var(--nab2);color:var(--acc);padding:2px 10px;border-radius:20px;font-size:.75rem;font-weight:700;">0</span>
+            </h2>
+            <div class="hd-grid" id="pgHdGrid"></div>
+          </div>
+          <div id="pgAdSection" class="ad-section pg-drill-section" style="display:none;margin-top:1rem;">
+            <h2 class="section-title" style="margin-bottom:.75rem;">
+              <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M6 20v-2a6 6 0 0 1 12 0v2"/></svg>
+              Account Directors
+              <span id="pgAdBadge" style="background:var(--nab);border:1px solid var(--nab2);color:var(--acc);padding:2px 10px;border-radius:20px;font-size:.75rem;font-weight:700;">0</span>
+              <span id="pgAdContext" style="font-size:.78rem;color:var(--t3);font-weight:400;"></span>
+            </h2>
+            <div class="ad-grid" id="pgAdGrid"></div>
+          </div>
+          <div id="pgAmSection" class="am-section pg-drill-section" style="display:none;margin-top:1rem;">
+            <h2 class="section-title" style="margin-bottom:.75rem;">
+              <svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+              Account Managers
+              <span id="pgAmBadge" style="background:var(--nab);border:1px solid var(--nab2);color:var(--acc);padding:2px 10px;border-radius:20px;font-size:.75rem;font-weight:700;">0</span>
+              <span id="pgAmContext" style="font-size:.78rem;color:var(--t3);font-weight:400;"></span>
+            </h2>
+            <div class="manager-list" id="pgAmList"></div>
+          </div>
           <div class="pg-grid-panel">
             <div class="pg-grid-head">
               <div class="pg-grid-title" id="pgGridTitle">Deal detail</div>
@@ -2942,6 +2969,7 @@ function loadData(){
         remapBlankHD();
         buildFilters();
         applyAll();
+        glkRestoreActiveNav();
         glkHideLoader();
         if(window._glkClearLoaderSafety) window._glkClearLoaderSafety();
         return;
@@ -2957,6 +2985,7 @@ function loadData(){
         remapBlankHD();
         buildFilters();
         applyAll();
+        glkRestoreActiveNav();
         glkHideLoader();
         if(window._glkClearLoaderSafety) window._glkClearLoaderSafety();
       }
@@ -5035,10 +5064,16 @@ function applyTheme(base,dark){
     '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>':
     '<circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>';
 }
+let GLK_ACTIVE_NAV='navDashboard';
 function glkSetActiveNav(navId){
-  document.querySelectorAll('.nav-item').forEach(function(n){ n.classList.remove('active'); });
-  var nav=navId?el(navId):null;
-  if(nav) nav.classList.add('active');
+  GLK_ACTIVE_NAV=navId||'navDashboard';
+  ['navDashboard','navMobileQtd','navRevenueRec','navGovernance'].forEach(function(id){
+    var n=el(id);
+    if(n) n.classList.toggle('active',id===GLK_ACTIVE_NAV);
+  });
+}
+function glkRestoreActiveNav(){
+  glkSetActiveNav(GLK_ACTIVE_NAV);
 }
 function glkHideAllMainViews(){
   el('dashboard-view').style.display='none';
@@ -11402,7 +11437,7 @@ function rrTryLoadBundledWorkbook(cb){
 // ══════════════════════════════════════════════════════════════════
 //  PIPELINE GOVERNANCE — SharePoint version history
 // ══════════════════════════════════════════════════════════════════
-const PG_VERSION_CACHE_LS='glk_pg_version_cache_v2';
+const PG_VERSION_CACHE_LS='glk_pg_version_cache_v3';
 const PG_OPP_FIELD='Opportunity_x0020_Status';
 let PG_TAB='stale';
 let PG_ANALYSIS=[];
@@ -11468,37 +11503,57 @@ function pgEditorFromRow(d){
 function pgFallbackVersions(bid){
   return [{versionId:1,versionLabel:'current',created:bid.modified||bid.created,oppStatus:pgNormStatus(bid.oppStatus),editor:bid.userName||'—'}];
 }
+function pgStatusKey(s){
+  return String(s||'').trim().toLowerCase();
+}
+function pgExtractOppFromVersionPayload(d){
+  if(!d) return '';
+  var opp=pgNormStatus(d[PG_OPP_FIELD]);
+  if(opp) return opp;
+  var fvt=d.FieldValuesAsText;
+  if(fvt){
+    opp=pgNormStatus(fvt[PG_OPP_FIELD]||fvt.Opportunity_x0020_Status);
+    if(opp) return opp;
+    try{
+      Object.keys(fvt).forEach(function(k){
+        if(opp) return;
+        if(/opportunity/i.test(k)&&/status/i.test(k)) opp=pgNormStatus(fvt[k]);
+      });
+    }catch(e){}
+  }
+  return opp||'';
+}
+function pgParseVersionPayload(d,rowMeta){
+  return {
+    versionId:rowMeta.VersionId,
+    versionLabel:rowMeta.VersionLabel||d.VersionLabel||String(rowMeta.VersionId||''),
+    created:d.Modified||d.Created||rowMeta.Modified||rowMeta.Created,
+    oppStatus:pgExtractOppFromVersionPayload(d)||pgNormStatus(rowMeta[PG_OPP_FIELD]),
+    editor:pgEditorFromRow(rowMeta)||pgEditorFromRow(d)
+  };
+}
 function pgFetchOneVersion(itemId,rowMeta,cb){
   var safeList=SP_LIST.replace(/'/g,"''");
-  var sel=encodeURIComponent(PG_OPP_FIELD+',Modified,Created');
+  var base=SP_SITE+"/_api/web/lists/getbytitle('"+safeList+"')/items("+itemId+")/versions";
   var vid=rowMeta.VersionId;
   var vlabel=rowMeta.VersionLabel;
+  var vl=vlabel!=null?String(vlabel).replace(/'/g,"''"):'';
+  var sel=encodeURIComponent(PG_OPP_FIELD+',Modified,Created,VersionLabel');
   var urls=[];
-  if(vid!=null) urls.push(SP_SITE+"/_api/web/lists/getbytitle('"+safeList+"')/items("+itemId+")/versions("+vid+")?$select="+sel);
-  if(vlabel!=null&&String(vlabel)!==String(vid)){
-    var vl=String(vlabel).replace(/'/g,"''");
-    urls.push(SP_SITE+"/_api/web/lists/getbytitle('"+safeList+"')/items("+itemId+")/versions('"+vl+"')?$select="+sel);
-    urls.push(SP_SITE+"/_api/web/lists/getbytitle('"+safeList+"')/items("+itemId+")/versions("+vl+")?$select="+sel);
-  }
+  if(vl) urls.push(base+"('"+vl+"')/FieldValuesAsText");
+  if(vid!=null) urls.push(base+"("+vid+")/FieldValuesAsText");
+  if(vl) urls.push(base+"("+vl+")?$select="+sel);
+  if(vid!=null&&String(vid)!==vl) urls.push(base+"("+vid+")?$select="+sel);
+  if(vl) urls.push(base+"("+vl+")");
+  if(vid!=null&&String(vid)!==vl) urls.push(base+"("+vid+")");
   var ci=0;
   function tryNext(){
-    if(ci>=urls.length){
-      return cb({
-        versionId:vid,versionLabel:vlabel||String(vid||''),
-        created:rowMeta.Modified||rowMeta.Created,
-        oppStatus:pgNormStatus(rowMeta[PG_OPP_FIELD]),
-        editor:pgEditorFromRow(rowMeta)
-      });
-    }
+    if(ci>=urls.length) return cb(pgParseVersionPayload(rowMeta,rowMeta));
     spGet(urls[ci++],function(err,data){
       if(err||!data||!data.d) return tryNext();
-      var d=data.d;
-      cb({
-        versionId:vid,versionLabel:vlabel||d.VersionLabel||String(vid||''),
-        created:d.Modified||d.Created||rowMeta.Modified||rowMeta.Created,
-        oppStatus:pgNormStatus(d[PG_OPP_FIELD]),
-        editor:pgEditorFromRow(rowMeta)||pgEditorFromRow(d)
-      });
+      var parsed=pgParseVersionPayload(data.d,rowMeta);
+      if(parsed.oppStatus) return cb(parsed);
+      tryNext();
     });
   }
   tryNext();
@@ -11517,24 +11572,47 @@ function pgFetchItemVersionHistory(bid,cb){
   var cached=pgGetCachedVersions(bid);
   if(cached){ PG_LOAD_STATS.cached++; return cb(null,cached,false); }
   var safeList=SP_LIST.replace(/'/g,"''");
-  var listUrl=SP_SITE+"/_api/web/lists/getbytitle('"+safeList+"')/items("+bid.id+")/versions";
+  var listUrl=SP_SITE+"/_api/web/lists/getbytitle('"+safeList+"')/items("+bid.id+")/versions?$select=VersionId,VersionLabel,Created,Modified,"+PG_OPP_FIELD;
   spGet(listUrl,function(err,data){
     var rows=(!err&&data&&data.d&&data.d.results)?data.d.results:[];
     if(!rows.length){
-      var fb=pgFallbackVersions(bid);
-      pgSaveVersionCacheEntry(bid.id,{modified:bid.modified,savedAt:Date.now(),versions:fb,partial:true});
-      PG_LOAD_STATS.fallback++;
-      return cb(null,fb,true);
+      spGet(SP_SITE+"/_api/web/lists/getbytitle('"+safeList+"')/items("+bid.id+")/versions",function(err2,data2){
+        rows=(!err2&&data2&&data2.d&&data2.d.results)?data2.d.results:[];
+        pgContinueVersionRows(bid,rows,cb);
+      });
+      return;
     }
-    rows.sort(function(a,b){ return (a.VersionId||0)-(b.VersionId||0); });
-    pgFetchVersionChain(bid,rows,0,[],function(out){
-      if(!out.length||!out.some(function(v){ return v.oppStatus; })){
-        out=pgFallbackVersions(bid);
-        PG_LOAD_STATS.fallback++;
-      }else PG_LOAD_STATS.fetched++;
-      pgSaveVersionCacheEntry(bid.id,{modified:bid.modified,savedAt:Date.now(),versions:out});
-      cb(null,out,false);
-    });
+    pgContinueVersionRows(bid,rows,cb);
+  });
+}
+function pgContinueVersionRows(bid,rows,cb){
+  if(!rows.length){
+    var fb=pgFallbackVersions(bid);
+    pgSaveVersionCacheEntry(bid.id,{modified:bid.modified,savedAt:Date.now(),versions:fb,partial:true});
+    PG_LOAD_STATS.fallback++;
+    return cb(null,fb,true);
+  }
+  rows.sort(function(a,b){ return parseFloat(a.VersionLabel||a.VersionId||0)-parseFloat(b.VersionLabel||b.VersionId||0); });
+  var quick=rows.map(function(row){
+    return {
+      versionId:row.VersionId,versionLabel:row.VersionLabel||String(row.VersionId||''),
+      created:row.Modified||row.Created,
+      oppStatus:pgNormStatus(row[PG_OPP_FIELD]),
+      editor:pgEditorFromRow(row)
+    };
+  });
+  if(quick.filter(function(v){ return v.oppStatus; }).length>=2){
+    PG_LOAD_STATS.fetched++;
+    pgSaveVersionCacheEntry(bid.id,{modified:bid.modified,savedAt:Date.now(),versions:quick});
+    return cb(null,quick,false);
+  }
+  pgFetchVersionChain(bid,rows,0,[],function(out){
+    if(!out.length||out.filter(function(v){ return v.oppStatus; }).length<2){
+      out=pgFallbackVersions(bid);
+      PG_LOAD_STATS.fallback++;
+    }else PG_LOAD_STATS.fetched++;
+    pgSaveVersionCacheEntry(bid.id,{modified:bid.modified,savedAt:Date.now(),versions:out});
+    cb(null,out,false);
   });
 }
 function pgFlipKind(toStatus){
@@ -11562,7 +11640,7 @@ function pgAnalyzeVersionHistory(bid,versions){
   versions.forEach(function(v){
     var st=pgNormStatus(v.oppStatus);
     if(!st) return;
-    if(st!==lastStatus){
+    if(pgStatusKey(st)!==pgStatusKey(lastStatus)){
       segments.push({status:st,from:v.created,editor:v.editor||'—',versionLabel:v.versionLabel||''});
       lastStatus=st;
     }
@@ -11669,18 +11747,28 @@ function pgRebuildCascadeFilters(){
   fill(amSel,Object.keys(ams),true);
 }
 function pgOnHdFilterChange(){
+  var hd=el('pgHdFilter')?el('pgHdFilter').value:'';
   var adSel=el('pgAdFilter'), amSel=el('pgAmFilter');
   if(adSel) adSel.value='';
   if(amSel) amSel.value='';
-  PG_DRILL_HD=null; PG_DRILL_AD=null; PG_DRILL_AM=null;
+  PG_DRILL_HD=hd||null;
+  PG_DRILL_AD=null;
+  PG_DRILL_AM=null;
   pgRebuildCascadeFilters();
   pgRender();
 }
 function pgOnAdFilterChange(){
+  var ad=el('pgAdFilter')?el('pgAdFilter').value:'';
   var amSel=el('pgAmFilter');
   if(amSel) amSel.value='';
-  PG_DRILL_AD=null; PG_DRILL_AM=null;
+  PG_DRILL_AD=ad||null;
+  PG_DRILL_AM=null;
   pgRebuildCascadeFilters();
+  pgRender();
+}
+function pgOnAmFilterChange(){
+  var am=el('pgAmFilter')?el('pgAmFilter').value:'';
+  PG_DRILL_AM=am||null;
   pgRender();
 }
 function pgGetFilterVals(){
@@ -11731,22 +11819,38 @@ function pgSelectTile(key){
   PG_SEL_TILE=PG_SEL_TILE===key?null:key;
   pgRender();
 }
-function pgDrillReset(level){
-  if(level==='overview'){ PG_DRILL_HD=null; PG_DRILL_AD=null; PG_DRILL_AM=null; }
-  else if(level==='hd'){ PG_DRILL_AD=null; PG_DRILL_AM=null; }
-  else if(level==='ad'){ PG_DRILL_AM=null; }
+function pgResetAll(clearCache){
+  PG_SEL_TILE=null;
+  PG_DRILL_HD=null;
+  PG_DRILL_AD=null;
+  PG_DRILL_AM=null;
+  PG_FLIP_FILTER='all';
+  PG_TAB='stale';
+  var ids=['pgHdFilter','pgAdFilter','pgAmFilter','pgPfFilter','pgSearchInp'];
+  ids.forEach(function(id){ var n=el(id); if(!n) return; if(n.tagName==='SELECT') n.selectedIndex=0; else n.value=''; });
+  var md=el('pgMinDays'); if(md) md.value='7';
+  if(clearCache){ try{ localStorage.removeItem(PG_VERSION_CACHE_LS); }catch(e){} }
+  pgSetTab('stale');
+  pgRebuildCascadeFilters();
   pgRender();
 }
-function pgDrillSelectFromTile(node){
-  if(!node) return;
-  var level=node.getAttribute('data-pg-level');
-  var key=decodeURIComponent(node.getAttribute('data-pg-key')||'');
-  pgDrillSelect(level,key);
+function pgHidePgAd(){ var s=el('pgAdSection'); if(s) s.style.display='none'; PG_DRILL_AD=null; }
+function pgHidePgAm(){ var s=el('pgAmSection'); if(s) s.style.display='none'; PG_DRILL_AM=null; }
+function pgSelectPgHd(hd){
+  if(PG_DRILL_HD===hd){ PG_DRILL_HD=null; PG_DRILL_AD=null; PG_DRILL_AM=null; pgHidePgAd(); pgHidePgAm(); var h=el('pgHdFilter'); if(h) h.value=''; }
+  else{ PG_DRILL_HD=hd; PG_DRILL_AD=null; PG_DRILL_AM=null; var hf=el('pgHdFilter'); if(hf) hf.value=hd; pgHidePgAm(); }
+  pgRebuildCascadeFilters();
+  pgRender();
 }
-function pgDrillSelect(level,key){
-  if(level==='hd'){ PG_DRILL_HD=key; PG_DRILL_AD=null; PG_DRILL_AM=null; var h=el('pgHdFilter'); if(h) h.value=key; }
-  else if(level==='ad'){ PG_DRILL_AD=key; PG_DRILL_AM=null; var a=el('pgAdFilter'); if(a) a.value=key; }
-  else if(level==='am'){ PG_DRILL_AM=key; var m=el('pgAmFilter'); if(m) m.value=key; }
+function pgSelectPgAd(ad){
+  if(PG_DRILL_AD===ad){ PG_DRILL_AD=null; PG_DRILL_AM=null; pgHidePgAm(); var a=el('pgAdFilter'); if(a) a.value=''; }
+  else{ PG_DRILL_AD=ad; PG_DRILL_AM=null; var af=el('pgAdFilter'); if(af) af.value=ad; }
+  pgRebuildCascadeFilters();
+  pgRender();
+}
+function pgSelectPgAm(amKey){
+  if(PG_DRILL_AM===amKey){ PG_DRILL_AM=null; var m=el('pgAmFilter'); if(m) m.value=''; }
+  else{ PG_DRILL_AM=amKey; var mf=el('pgAmFilter'); if(mf) mf.value=amKey; }
   pgRebuildCascadeFilters();
   pgRender();
 }
@@ -11802,59 +11906,126 @@ function pgAggregateGroup(rows,minDays,groupFn){
   });
   return Object.keys(map).map(function(k){ return map[k]; }).sort(function(a,b){ return b.stale+b.critical-a.stale-a.critical; });
 }
-function pgRenderDrill(rows,f){
-  var sec=el('pgDrillSection');
-  if(!sec) return;
-  if(PG_DRILL_AM){
-    sec.innerHTML='';
-    sec.style.display='none';
-    return;
-  }
-  sec.style.display='block';
-  var minDays=f.minDays;
-  var groups, title, level;
-  if(!PG_DRILL_HD){
-    groups=pgAggregateGroup(rows,minDays,function(r){ return r.bid.headDirector; });
-    title='Head Directors — click to drill down';
-    level='hd';
-  }else if(!PG_DRILL_AD){
-    groups=pgAggregateGroup(rows.filter(function(r){ return r.bid.headDirector===PG_DRILL_HD; }),minDays,function(r){ return r.bid.accountDirector; });
-    title='Account Directors under '+PG_DRILL_HD;
-    level='ad';
-  }else{
-    groups=pgAggregateGroup(rows.filter(function(r){ return r.bid.headDirector===PG_DRILL_HD&&r.bid.accountDirector===PG_DRILL_AD; }),minDays,function(r){ return r.bid.amName||pgAmKey(r.bid); });
-    title='Account Managers under '+PG_DRILL_AD;
-    level='am';
-  }
-  var h='<h3 class="section-title" style="margin:0 0 .75rem;font-size:.95rem;">'+mqEscHtml(title)+'</h3><div class="pg-drill-grid">';
-  if(!groups.length) h+='<div class="pg-empty" style="grid-column:1/-1;">No records for this level.</div>';
-  groups.forEach(function(g){
-    var sel=(level==='hd'&&PG_DRILL_HD===g.key)||(level==='ad'&&PG_DRILL_AD===g.key)||(level==='am'&&PG_DRILL_AM===g.key);
-    h+='<div class="pg-drill-tile'+(sel?' selected':'')+'" data-pg-level="'+level+'" data-pg-key="'+encodeURIComponent(g.key)+'" onclick="pgDrillSelectFromTile(this)">';
-    h+='<h4>'+mqEscHtml(g.key)+'</h4><div class="pg-drill-meta">'+(level==='hd'?'Head Director':level==='ad'?'Account Director':'Account Manager')+'</div>';
-    h+='<div class="pg-drill-metrics">';
-    h+='<div class="pg-drill-metric"><div class="lbl">Total</div><div class="val">'+g.total+'</div></div>';
-    h+='<div class="pg-drill-metric"><div class="lbl">Stale</div><div class="val stale">'+g.stale+'</div></div>';
-    h+='<div class="pg-drill-metric"><div class="lbl">Critical</div><div class="val crit">'+g.critical+'</div></div>';
-    h+='</div></div>';
+function pgStatsForRows(rows,minDays){
+  var healthy=0,stale=0,critical=0,flips=0,ga=0;
+  rows.forEach(function(row){
+    var cls=pgClassifyRow(row,minDays);
+    if(cls==='healthy') healthy++; else if(cls==='stale') stale++; else critical++;
+    flips+=row.analysis.flips.length;
+    ga+=num(row.bid.gaLines);
   });
-  h+='</div>';
-  sec.innerHTML=h;
+  return {total:rows.length,healthy:healthy,stale:stale,critical:critical,flips:flips,ga:ga};
 }
-function pgRenderBreadcrumb(f){
-  var bc=el('pgBreadcrumb');
-  if(!bc) return;
-  var parts=['<button type="button" onclick="pgDrillReset(\'overview\')">Overview</button>'];
-  if(PG_DRILL_HD||f.hd){
-    var hk=encodeURIComponent(PG_DRILL_HD||f.hd);
-    parts.push('<span class="pg-crumb-sep">›</span><button type="button" data-pg-level="hd" data-pg-key="'+hk+'" onclick="pgDrillSelectFromTile(this)">'+mqEscHtml(PG_DRILL_HD||f.hd)+'</button>');
-  }
-  if(PG_DRILL_AD||f.ad){
-    var ak=encodeURIComponent(PG_DRILL_AD||f.ad);
-    parts.push('<span class="pg-crumb-sep">›</span><button type="button" data-pg-level="ad" data-pg-key="'+ak+'" onclick="pgDrillSelectFromTile(this)">'+mqEscHtml(PG_DRILL_AD||f.ad)+'</button>');
-  }
-  if(PG_DRILL_AM||f.am) parts.push('<span class="pg-crumb-sep">›</span><span>'+mqEscHtml(PG_DRILL_AM||f.am)+'</span>');
-  bc.innerHTML=parts.join(' ');
+function pgBuildLmTileHtml(name,role,stats,verticals,selected){
+  return '<div class="lm-tile'+(selected?' selected':'')+'">'+
+    '<div class="lm-header" style="flex-direction:row;justify-content:space-between;align-items:flex-start">'+
+      '<div><h3>'+mqEscHtml(name)+'</h3><div class="lm-meta">'+mqEscHtml(role)+'</div></div>'+
+      '<div style="font-size:.65rem;font-weight:700;color:var(--acc);background:var(--nab);border:1px solid var(--nab2);padding:2px 7px;border-radius:20px;white-space:nowrap;max-width:110px;overflow:hidden;text-overflow:ellipsis">'+mqEscHtml(verticals||'—')+'</div>'+
+    '</div>'+
+    '<div class="lm-stats-grid">'+
+      '<div class="lm-stat-box"><div class="lm-stat-label">QTG deals</div><div class="lm-stat-value">'+stats.total+'</div></div>'+
+      '<div class="lm-stat-box"><div class="lm-stat-label">Stale</div><div class="lm-stat-value" style="color:#ea580c">'+stats.stale+'</div></div>'+
+    '</div>'+
+    '<div class="lm-revenue">'+
+      '<div class="lm-revenue-label">Healthy / Critical / Flips</div>'+
+      '<div class="lm-revenue-count">'+stats.healthy+' / '+stats.critical+' / '+stats.flips+'</div>'+
+      '<div class="lm-revenue-breakdown">'+
+        '<div class="lm-revenue-item"><div class="lm-revenue-item-label">GA Lines</div><div class="lm-revenue-item-value">'+mqFmtProductLines(stats.ga)+'</div></div>'+
+      '</div>'+
+    '</div>'+
+  '</div>';
+}
+function pgRenderPgHdTiles(){
+  var grid=el('pgHdGrid'), badge=el('pgHdBadge');
+  if(!grid) return;
+  var f=pgGetFilterVals();
+  var rows=PG_ANALYSIS.filter(function(row){ return pgRowMatchesFilters(row,{hd:'',ad:'',am:'',pf:f.pf,minDays:f.minDays,search:f.search}); });
+  var hds=[...new Set(rows.map(function(r){ return r.bid.headDirector; }).filter(function(v){ return v&&v!=='—'&&v!=='(Blank)'; }))].sort();
+  if(badge) badge.textContent=hds.length;
+  grid.innerHTML='';
+  if(!hds.length){ grid.innerHTML='<div class="pg-empty">No head directors in scope.</div>'; return; }
+  hds.forEach(function(hd){
+    var hdRows=rows.filter(function(r){ return r.bid.headDirector===hd; });
+    var stats=pgStatsForRows(hdRows,f.minDays);
+    var verts=[...new Set(hdRows.map(function(r){ return r.bid.vertical; }).filter(Boolean))].join(', ');
+    var tile=document.createElement('div');
+    tile.innerHTML=pgBuildLmTileHtml(hd,'Head Director',stats,verts,PG_DRILL_HD===hd);
+    tile.firstChild.onclick=function(){ pgSelectPgHd(hd); };
+    grid.appendChild(tile.firstChild);
+  });
+}
+function pgRenderPgAdTiles(hd){
+  var sec=el('pgAdSection'), grid=el('pgAdGrid'), badge=el('pgAdBadge'), ctx=el('pgAdContext');
+  if(!sec||!grid||!hd){ if(sec) sec.style.display='none'; return; }
+  sec.style.display='block';
+  if(ctx) ctx.textContent='← '+hd;
+  var f=pgGetFilterVals();
+  var rows=PG_ANALYSIS.filter(function(r){
+    return r.bid.headDirector===hd&&pgRowMatchesFilters(r,{hd:'',ad:'',am:'',pf:f.pf,minDays:f.minDays,search:f.search});
+  });
+  var ads=[...new Set(rows.map(function(r){ return r.bid.accountDirector; }).filter(function(v){ return v&&v!=='—'; }))].sort();
+  if(badge) badge.textContent=ads.length;
+  grid.innerHTML='';
+  if(!ads.length){ grid.innerHTML='<div class="pg-empty">No account directors.</div>'; return; }
+  ads.forEach(function(ad){
+    var adRows=rows.filter(function(r){ return r.bid.accountDirector===ad; });
+    var stats=pgStatsForRows(adRows,f.minDays);
+    var verts=[...new Set(adRows.map(function(r){ return r.bid.vertical; }).filter(Boolean))].join(', ');
+    var tile=document.createElement('div');
+    tile.innerHTML=pgBuildLmTileHtml(ad,'Account Director',stats,verts,PG_DRILL_AD===ad);
+    tile.firstChild.onclick=function(){ pgSelectPgAd(ad); };
+    grid.appendChild(tile.firstChild);
+  });
+}
+function pgRenderPgAmRows(ad){
+  var sec=el('pgAmSection'), list=el('pgAmList'), badge=el('pgAmBadge'), ctx=el('pgAmContext');
+  if(!sec||!list||!ad||!PG_DRILL_HD){ if(sec) sec.style.display='none'; return; }
+  sec.style.display='block';
+  if(ctx) ctx.textContent='← '+PG_DRILL_HD+' · '+ad;
+  var f=pgGetFilterVals();
+  var rows=PG_ANALYSIS.filter(function(r){
+    return r.bid.headDirector===PG_DRILL_HD&&r.bid.accountDirector===ad&&pgRowMatchesFilters(r,{hd:'',ad:'',am:'',pf:f.pf,minDays:f.minDays,search:f.search});
+  });
+  var amMap={};
+  rows.forEach(function(r){
+    var k=pgAmKey(r.bid);
+    if(!amMap[k]) amMap[k]={key:k,name:r.bid.amName||k,rows:[]};
+    amMap[k].rows.push(r);
+  });
+  var ams=Object.keys(amMap).map(function(k){ return amMap[k]; }).sort(function(a,b){ return b.rows.length-a.rows.length; });
+  if(badge) badge.textContent=ams.length;
+  list.innerHTML='';
+  if(!ams.length){ list.innerHTML='<div class="pg-empty">No account managers.</div>'; return; }
+  ams.forEach(function(am,i){
+    var stats=pgStatsForRows(am.rows,f.minDays);
+    var row=document.createElement('div');
+    row.className='manager-row'+(PG_DRILL_AM===am.key?' selected':'');
+    row.innerHTML=
+      '<div class="rank-badge rank-'+(i<3?i+1:'other')+'">'+(i+1)+'</div>'+
+      '<div class="manager-name-col"><div class="manager-name">'+mqEscHtml(am.name)+'</div><div class="manager-meta">Account Manager</div></div>'+
+      '<div class="manager-stat"><div class="manager-stat-label">Deals</div><div class="manager-stat-value">'+stats.total+'</div></div>'+
+      '<div class="manager-stat"><div class="manager-stat-label">Stale</div><div class="manager-stat-value" style="color:#ea580c">'+stats.stale+'</div></div>'+
+      '<div class="manager-stat"><div class="manager-stat-label">Critical</div><div class="manager-stat-value" style="color:#dc2626">'+stats.critical+'</div></div>'+
+      '<div class="manager-stat"><div class="manager-stat-label">Flips</div><div class="manager-stat-value" style="color:#7c3aed">'+stats.flips+'</div></div>';
+    row.onclick=function(){ pgSelectPgAm(am.key); };
+    list.appendChild(row);
+  });
+}
+function pgRenderDrillSections(rows,f){
+  pgRenderPgHdTiles();
+  if(PG_DRILL_HD) pgRenderPgAdTiles(PG_DRILL_HD);
+  else pgHidePgAd();
+  if(PG_DRILL_HD&&PG_DRILL_AD) pgRenderPgAmRows(PG_DRILL_AD);
+  else pgHidePgAm();
+}
+function pgRenderGridData(){
+  var f=pgGetFilterVals();
+  var rows=pgGetScopedRows();
+  var gridRows=PG_TAB==='flips'?pgBuildFlipGridRows(rows,f):pgBuildStaleGridRows(rows,f);
+  var gridTitle=el('pgGridTitle'), gridCount=el('pgGridCount');
+  if(gridTitle) gridTitle.textContent=PG_TAB==='flips'?'Status flip detail':'Stale queue detail';
+  if(gridCount) gridCount.textContent=gridRows.length+' row'+(gridRows.length===1?'':'s');
+  pgRenderGrid(gridRows);
 }
 function pgStatusRenderer(params){
   var s=params.value||'—';
@@ -12010,20 +12181,16 @@ function pgRender(){
   }
   if(!PG_ANALYSIS.length){
     el('pgKpiRow').innerHTML='';
-    el('pgDrillSection').innerHTML='';
-    el('pgBreadcrumb').innerHTML='';
+    var pgHdGrid=el('pgHdGrid'); if(pgHdGrid) pgHdGrid.innerHTML='';
+    pgHidePgAd(); pgHidePgAm();
     el('pgGrid').innerHTML='<div class="pg-empty">Click <strong>Refresh version history</strong> to load SharePoint audit data for QTG in-flight deals.</div>';
     if(foot) foot.textContent='';
     return;
   }
   var rows=pgGetScopedRows();
   pgRenderKpiTiles(rows,f);
-  pgRenderBreadcrumb(f);
-  pgRenderDrill(rows,f);
-  var gridRows=PG_TAB==='flips'?pgBuildFlipGridRows(rows,f):pgBuildStaleGridRows(rows,f);
-  if(gridTitle) gridTitle.textContent=PG_TAB==='flips'?'Status flip detail':'Stale queue detail';
-  if(gridCount) gridCount.textContent=gridRows.length+' row'+(gridRows.length===1?'':'s');
-  pgRenderGrid(gridRows);
+  pgRenderDrillSections(rows,f);
+  pgRenderGridData();
   if(foot){
     var live=mqLiveYearQuarter();
     var errNote=PG_LOAD_STATS.hardErrors?(' <span class="pg-error-note">'+PG_LOAD_STATS.hardErrors+' records could not reach SharePoint.</span>'):'';
@@ -12100,10 +12267,14 @@ window.glkShowGovernance=function(){
 window.pgRefreshFromSharePoint=pgRefreshFromSharePoint;
 window.pgSetTab=pgSetTab;
 window.pgRender=pgRender;
-window.pgDrillSelectFromTile=pgDrillSelectFromTile;
+window.pgResetAll=pgResetAll;
 window.pgSetFlipFilter=pgSetFlipFilter;
 window.pgOnHdFilterChange=pgOnHdFilterChange;
 window.pgOnAdFilterChange=pgOnAdFilterChange;
+window.pgOnAmFilterChange=pgOnAmFilterChange;
+window.pgSelectPgHd=pgSelectPgHd;
+window.pgSelectPgAd=pgSelectPgAd;
+window.pgSelectPgAm=pgSelectPgAm;
 
 // ══════════════════════════════════════════════════════════════════
 //  INIT
