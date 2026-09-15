@@ -11433,7 +11433,7 @@ function rrTryLoadBundledWorkbook(cb){
 // ══════════════════════════════════════════════════════════════════
 //  PIPELINE GOVERNANCE — SharePoint version history
 // ══════════════════════════════════════════════════════════════════
-const PG_VERSION_CACHE_LS='glk_pg_version_cache_v7';
+const PG_VERSION_CACHE_LS='glk_pg_version_cache_v8';
 const PG_OPP_FIELD='Opportunity_x0020_Status';
 let PG_TAB='stale';
 let PG_ANALYSIS=[];
@@ -11447,7 +11447,7 @@ let PG_FLIP_FILTER='all';
 let PG_STALE_DAYS=1;
 let PG_FLIP_FROM_ISO='';
 let PG_FLIP_TO_ISO='';
-let PG_LOAD_STATS={fetched:0,cached:0,fallback:0,hardErrors:0,totalFlips:0,dealsWithFlips:0,aspxReads:0};
+let PG_LOAD_STATS={fetched:0,cached:0,fallback:0,hardErrors:0,totalFlips:0,dealsWithFlips:0,aspxReads:0,detailReads:0,aspxParseHits:0};
 function pgTodayIso(){
   var d=new Date();
   return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
@@ -11712,14 +11712,18 @@ function pgDiffOppFromRawFields(prevFields,curFields){
   if(!oldSt||!newSt||pgStatusKey(oldSt)===pgStatusKey(newSt)) return null;
   return {from:oldSt,to:newSt};
 }
-function pgListGuidBrace(){
+function pgListGuidRaw(){
   if(!window._PG_LIST_GUID) return '';
-  var g=String(window._PG_LIST_GUID).replace(/[{}]/g,'');
-  return '{'+g+'}';
+  return String(window._PG_LIST_GUID).replace(/[{}]/g,'');
+}
+function pgListGuidBrace(){
+  var g=pgListGuidRaw();
+  return g?'{'+g+'}':'';
 }
 function pgFetchHtml(url,cb){
   var xhr=new XMLHttpRequest();
   xhr.open('GET',url,true);
+  xhr.withCredentials=true;
   xhr.onreadystatechange=function(){
     if(xhr.readyState!==4) return;
     if(xhr.status>=200&&xhr.status<300) cb(null,xhr.responseText);
@@ -11728,14 +11732,29 @@ function pgFetchHtml(url,cb){
   xhr.onerror=function(){ cb(new Error('Network error'),null); };
   xhr.send();
 }
+function pgTryHtmlUrls(urls,cb){
+  var i=0;
+  function next(){
+    if(i>=urls.length) return cb(null,'');
+    pgFetchHtml(urls[i++],function(err,html){
+      if(!err&&html&&html.length>200) cb(null,html);
+      else next();
+    });
+  }
+  next();
+}
 function pgExtractOppChangeFromText(text){
   text=pgStripHtml(text);
   if(!/opportunity/i.test(text)||!/status/i.test(text)) return null;
   var wasNow=text.match(/Opportunity\s+Status\s+was\s+(.+?)\s+now\s+(.+?)(?:\.|$)/i);
   if(wasNow) return {from:pgCleanFieldVal(wasNow[1]),to:pgCleanFieldVal(wasNow[2])};
-  var setTo=text.match(/Opportunity\s+Status\s+Set\s+to\s+(.+?)(?:\.|$|;)/i);
+  var setTo=text.match(/Opportunity(?:\s+|_x0020_)?Status\s+Set\s+to\s+(.+?)(?:\.|$|;|\n)/i);
   if(setTo) return {to:pgCleanFieldVal(setTo[1])};
-  var chFrom=text.match(/Opportunity\s+Status[^.]{0,80}?(?:from|changed from)\s+(.+?)\s+to\s+(.+?)(?:\.|$)/i);
+  if(/opportunity/i.test(text)&&/status/i.test(text)){
+    var solo=text.match(/set\s+to\s+(.+?)(?:\.|$|;|\n)/i);
+    if(solo) return {to:pgCleanFieldVal(solo[1])};
+  }
+  var chFrom=text.match(/Opportunity(?:\s+|_x0020_)?Status[^.]{0,120}?(?:from|changed from)\s+(.+?)\s+to\s+(.+?)(?:\.|$)/i);
   if(chFrom) return {from:pgCleanFieldVal(chFrom[1]),to:pgCleanFieldVal(chFrom[2])};
   return null;
 }
@@ -11763,59 +11782,117 @@ function pgParseVersionsAspxOppFlips(html){
   if(!html) return [];
   var doc=new DOMParser().parseFromString(html,'text/html');
   var entries=[], cur=null;
-  var table=doc.querySelector('table.ms-settingsframe')||doc.querySelector('table[id*="versions"]')||doc.querySelector('table.ms-formtable');
-  var rows=table?table.querySelectorAll('tr'):doc.querySelectorAll('tr');
+  var rows=doc.querySelectorAll('tr');
   for(var i=0;i<rows.length;i++){
-    var cells=rows[i].querySelectorAll(':scope>td');
-    if(cells.length>=2){
+    var row=rows[i];
+    var cells=row.cells;
+    if(cells&&cells.length>=2){
       var first=pgStripHtml(cells[0].innerHTML).replace(/\s*View\s*$/i,'').trim();
       var vm=first.match(/^(\d+\.\d+)/);
       if(vm&&!/^no\.?$/i.test(first)){
         cur={versionLabel:vm[1],created:pgStripHtml(cells[1]?cells[1].innerHTML:''),editor:pgStripHtml(cells[2]?cells[2].innerHTML:'')||'—',oppFrom:null,oppTo:null};
         entries.push(cur);
-        continue;
       }
     }
     if(!cur) continue;
-    var change=pgExtractOppChangeFromText(rows[i].innerHTML);
+    var change=pgExtractOppChangeFromText(row.innerHTML);
     if(change){
       if(change.from) cur.oppFrom=change.from;
       if(change.to) cur.oppTo=change.to;
     }
-    var innerCells=rows[i].querySelectorAll('td');
-    for(var j=0;j<innerCells.length-1;j++){
-      var lbl=pgStripHtml(innerCells[j].innerHTML);
-      if(!/opportunity/i.test(lbl)||!/status/i.test(lbl)) continue;
-      var val=pgStripHtml(innerCells[j+1].innerHTML);
-      var c2=pgExtractOppChangeFromText(lbl+' '+val);
-      if(!c2&&val){
-        var sm=val.match(/set\s+to\s+(.+)/i);
-        if(sm) c2={to:pgCleanFieldVal(sm[1])};
-      }
-      if(c2){
-        if(c2.from) cur.oppFrom=c2.from;
-        if(c2.to) cur.oppTo=c2.to;
-      }
-    }
   }
-  if(!entries.length){
-    var text=pgStripHtml(html);
-    var re=/(\d+\.\d+)[\s\S]{0,1200}?Opportunity\s+Status\s+Set\s+to\s+([^.;]+)/gi;
-    var m;
-    while((m=re.exec(text))){
-      entries.push({versionLabel:m[1],created:'',editor:'—',oppTo:pgCleanFieldVal(m[2]),oppFrom:null});
-    }
+  var plain=pgStripHtml(html);
+  var setRe=/Opportunity(?:\s+|_x0020_)?Status\s+Set\s+to\s+([^.;<\n]+)/gi;
+  var sm,setHits=[];
+  while((sm=setRe.exec(plain))) setHits.push(pgCleanFieldVal(sm[1]));
+  if(setHits.length&&!entries.length){
+    setHits.forEach(function(st,idx){
+      entries.push({versionLabel:String(idx+1)+'.0',created:'',editor:'—',oppTo:st,oppFrom:null});
+    });
+  }else if(setHits.length&&entries.length){
+    var si=0;
+    entries.forEach(function(e){
+      if(!e.oppTo&&si<setHits.length){ e.oppTo=setHits[si++]; }
+    });
   }
-  return pgBuildFlipsFromVersionEntries(entries);
+  var flips=pgBuildFlipsFromVersionEntries(entries);
+  if(flips.length) PG_LOAD_STATS.aspxParseHits++;
+  return flips;
+}
+function pgVersionsAspxUrls(bid){
+  var br=pgListGuidBrace(), raw=pgListGuidRaw(), id=bid.id;
+  var urls=[];
+  if(br) urls.push(SP_SITE+'/_layouts/15/Versions.aspx?list='+encodeURIComponent(br)+'&ID='+id);
+  if(raw) urls.push(SP_SITE+'/_layouts/15/Versions.aspx?list='+encodeURIComponent(raw)+'&ID='+id);
+  if(br) urls.push(SP_SITE+'/_layouts/15/Versions.aspx?List='+encodeURIComponent(br)+'&ID='+id);
+  return urls;
 }
 function pgFetchVersionsAspxFlips(bid,cb){
-  var guid=pgListGuidBrace();
-  if(!guid) return cb([]);
-  var url=SP_SITE+'/_layouts/15/Versions.aspx?list='+encodeURIComponent(guid)+'&ID='+bid.id;
-  pgFetchHtml(url,function(err,html){
+  var urls=pgVersionsAspxUrls(bid);
+  if(!urls.length) return cb([]);
+  pgTryHtmlUrls(urls,function(err,html){
     PG_LOAD_STATS.aspxReads++;
-    if(err||!html) return cb([]);
+    if(!html) return cb([]);
     cb(pgParseVersionsAspxOppFlips(html));
+  });
+}
+function pgParseVersionDetailOpp(html,verMeta){
+  if(!html) return null;
+  var change=pgExtractOppChangeFromText(html);
+  if(change){
+    return {
+      versionLabel:verMeta.versionLabel||'',
+      created:verMeta.created,editor:verMeta.editor||'—',
+      oppFrom:change.from||null,oppTo:change.to||null
+    };
+  }
+  var doc=new DOMParser().parseFromString(html,'text/html');
+  var rows=doc.querySelectorAll('tr');
+  for(var i=0;i<rows.length;i++){
+    var cells=rows[i].cells;
+    if(!cells||cells.length<2) continue;
+    var lbl=pgStripHtml(cells[0].innerHTML);
+    if(!/opportunity/i.test(lbl)||!/status/i.test(lbl)) continue;
+    if(cells.length>=3){
+      var from=pgCleanFieldVal(cells[1].innerHTML);
+      var to=pgCleanFieldVal(cells[2].innerHTML);
+      if(from&&to&&pgStatusKey(from)!==pgStatusKey(to)){
+        return {versionLabel:verMeta.versionLabel,created:verMeta.created,editor:verMeta.editor,oppFrom:from,oppTo:to};
+      }
+    }
+    var val=pgStripHtml(cells[1].innerHTML);
+    var sm=val.match(/set\s+to\s+(.+)/i);
+    if(sm) return {versionLabel:verMeta.versionLabel,created:verMeta.created,editor:verMeta.editor,oppTo:pgCleanFieldVal(sm[1])};
+  }
+  return null;
+}
+function pgVersionDetailUrls(bid,versionLabel){
+  var br=pgListGuidBrace(), raw=pgListGuidRaw();
+  var vl=encodeURIComponent(versionLabel||'');
+  var urls=[];
+  [br,raw].forEach(function(g){
+    if(!g) return;
+    urls.push(SP_SITE+'/_layouts/15/versiondetail.aspx?List='+encodeURIComponent(g)+'&ID='+bid.id+'&Version='+vl);
+    urls.push(SP_SITE+'/_layouts/15/VersionDetail.aspx?List='+encodeURIComponent(g)+'&ID='+bid.id+'&Version='+vl);
+  });
+  return urls;
+}
+function pgFetchFlipsFromVersionDetails(bid,versions,cb){
+  if(!versions||!versions.length) return cb([]);
+  var entries=new Array(versions.length), pending=versions.length;
+  versions.forEach(function(v,idx){
+    var urls=pgVersionDetailUrls(bid,v.versionLabel);
+    pgTryHtmlUrls(urls,function(err,html){
+      PG_LOAD_STATS.detailReads++;
+      entries[idx]=pgParseVersionDetailOpp(html,v);
+      pending--;
+      if(!pending){
+        var mapped=entries.filter(Boolean).map(function(e){
+          return {versionLabel:e.versionLabel,created:e.created,editor:e.editor,oppFrom:e.oppFrom,oppTo:e.oppTo};
+        });
+        cb(pgBuildFlipsFromVersionEntries(mapped));
+      }
+    });
   });
 }
 function pgApplyFlipsToAnalysis(bid,out,flips,baseAnalysis){
@@ -11843,15 +11920,22 @@ function pgApplyFlipsToAnalysis(bid,out,flips,baseAnalysis){
 }
 function pgFinishVersionHistory(bid,out,cb){
   var restAnalysis=pgAnalyzeVersionHistory(bid,out);
-  if(out.length<2||!window._PG_LIST_GUID){
+  if(out.length<2){
     return cb(null,out,restAnalysis,restAnalysis.flips.length===0);
   }
-  pgFetchVersionsAspxFlips(bid,function(aspxFlips){
+  function done(flips){
     var analysis=restAnalysis;
-    if(aspxFlips.length>=restAnalysis.flips.length){
-      analysis=pgApplyFlipsToAnalysis(bid,out,aspxFlips,restAnalysis);
+    if(flips&&flips.length){
+      analysis=pgApplyFlipsToAnalysis(bid,out,flips,restAnalysis);
     }
-    cb(null,out,analysis,analysis.flips.length===0);
+    cb(null,out,analysis,!(flips&&flips.length));
+  }
+  if(!window._PG_LIST_GUID){
+    return done([]);
+  }
+  pgFetchVersionsAspxFlips(bid,function(aspxFlips){
+    if(aspxFlips.length) return done(aspxFlips);
+    pgFetchFlipsFromVersionDetails(bid,out,done);
   });
 }
 function pgFlipKind(toStatus){
@@ -12602,7 +12686,7 @@ function pgRender(){
     foot.innerHTML=(PG_TAB==='flips'
       ?'<strong>Status flips</strong> = every Opp Status change from SharePoint version history on live Q'+live.quarter+' '+live.year+' pipeline · default range = whole quarter'
       :'<strong>Stale queue</strong> = same Opp Status unchanged for 1+/7+/15+ days · days counted from last status change in version history')
-      +' · Flips parsed from SharePoint Versions.aspx (same screen as Version History dialog)'+errNote+' · Q'+live.quarter+' pipeline '+PG_ANALYSIS.length+' · Version lists '+PG_LOAD_STATS.fetched+' · Versions.aspx reads '+PG_LOAD_STATS.aspxReads+' · <strong>'+PG_LOAD_STATS.totalFlips+' flips</strong> on '+PG_LOAD_STATS.dealsWithFlips+' deals.';
+      +' · Flips from SharePoint Version History pages (Versions.aspx + versiondetail.aspx)'+errNote+' · Q'+live.quarter+' pipeline '+PG_ANALYSIS.length+' · Version lists '+PG_LOAD_STATS.fetched+' · aspx '+PG_LOAD_STATS.aspxReads+' (parsed '+PG_LOAD_STATS.aspxParseHits+') · detail pages '+PG_LOAD_STATS.detailReads+' · <strong>'+PG_LOAD_STATS.totalFlips+' flips</strong> on '+PG_LOAD_STATS.dealsWithFlips+' deals.';
   }
 }
 function pgSetProgress(pct,text){
@@ -12631,7 +12715,7 @@ function pgRefreshFromSharePoint(evt){
   }
   PG_LOADING=true;
   PG_ANALYSIS=[];
-  PG_LOAD_STATS={fetched:0,cached:0,fallback:0,hardErrors:0,totalFlips:0,dealsWithFlips:0,aspxReads:0};
+  PG_LOAD_STATS={fetched:0,cached:0,fallback:0,hardErrors:0,totalFlips:0,dealsWithFlips:0,aspxReads:0,detailReads:0,aspxParseHits:0};
   pgRender();
   pgSetProgress(0,'Syncing live Opp Status from SharePoint…');
   var syncIdx=0, syncActive=0, syncDone=0;
