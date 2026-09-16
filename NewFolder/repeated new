@@ -1,5 +1,5 @@
 // ============================================================
-// repeated-calls.js — Repeated Calls Module v1.8.1
+// repeated-calls.js — Repeated Calls Module v1.8.2
 // List: Repeated_Calls | Agents: Account Mapping (CTI match, all teams)
 // SP fields: RC_Status, Upload_Date, Assignment_Date, Reassign_Date, Resolved_Date, Assigned_To
 // ============================================================
@@ -18,7 +18,7 @@ var rcCharts        = {};
 var rcGrids         = { dash: null, assign: null, assigned: null, agentQueue: null, agentRecords: null };
 var rcUploadRows    = []; 
 var rcSelectedAgent = null;
-window.RC_MODULE_VERSION = '1.8.1';
+window.RC_MODULE_VERSION = '1.8.2';
 
 var RC_DELETE_ALL_EMAILS = ['tehleel.lone@du.ae', 'ubaid.mir@du.ae'];
 var RC_MIN_REPEAT_CALLS = 3;
@@ -216,12 +216,45 @@ function rcDedupeUniqueCallers(items) {
     return Object.keys(byMsisdn).map(function (m) { return byMsisdn[m]; });
 }
 
+function rcPickRepresentativeCallerRow(pool) {
+    if (!pool || !pool.length) return null;
+    var inProg = pool.filter(function (it) { return rcDisplayStatus(it) === RC_STATUS.INPROGRESS; });
+    if (inProg.length) return rcPickLatestItem(inProg);
+    var pending = pool.filter(function (it) { return rcDisplayStatus(it) === RC_STATUS.PENDING; });
+    if (pending.length) return rcPickLatestItem(pending);
+    return rcPickLatestItem(pool);
+}
+
+function rcDedupeUniqueCallersByWorkflow(items) {
+    var byMsisdn = {};
+    (items || []).forEach(function (it) {
+        var m = rcMsisdnKey(it);
+        if (!m) return;
+        if (!byMsisdn[m]) byMsisdn[m] = [];
+        byMsisdn[m].push(it);
+    });
+    return Object.keys(byMsisdn).map(function (m) {
+        return rcPickRepresentativeCallerRow(byMsisdn[m]);
+    }).filter(Boolean);
+}
+
 function rcRepeatCallerItems(items) {
     return (items || []).filter(function (it) { return rcIsRepeatMsisdn(it.MSISDN); });
 }
 
 function rcUniqueRepeatCallers(items) {
-    return rcDedupeUniqueCallers(rcRepeatCallerItems(items));
+    return rcDedupeUniqueCallersByWorkflow(rcRepeatCallerItems(items));
+}
+
+function rcCallerDisplayStatus(it, items) {
+    items = items || rcAllItems;
+    if (!it) return RC_STATUS.PENDING;
+    if (rcIsRepeatMsisdn(it.MSISDN)) return rcCanonicalUniqueCallerStatus(it.MSISDN, items);
+    return rcDisplayStatus(it);
+}
+
+function rcInProgressSiblingIds(msisdn) {
+    return rcItemsForMsisdnStatus(msisdn, RC_STATUS.INPROGRESS).map(function (it) { return it.ID; });
 }
 
 function rcCanonicalUniqueCallerStatus(msisdn, items) {
@@ -1876,6 +1909,13 @@ function rcKpiTile(label, value, subtitle, color, key) {
         (subtitle ? '<div class="stat-subtitle">' + rcEsc(subtitle) + '</div>' : '') + '</div>';
 }
 
+function rcClickTile(label, value, subtitle, color, onclick) {
+    return '<div class="stat-card rc-stat-clickable" onclick="' + onclick + '" title="Click to filter">' +
+        '<div class="stat-label">' + rcEsc(label) + '</div>' +
+        '<div class="stat-value"' + (color ? ' style="color:' + color + ';"' : '') + '>' + rcEsc(String(value)) + '</div>' +
+        (subtitle ? '<div class="stat-subtitle">' + rcEsc(subtitle) + '</div>' : '') + '</div>';
+}
+
 function rcRepeatCallersPanelHTML(items) {
     var rows = rcRepeatCallersList(items);
     if (!rows.length) {
@@ -1987,7 +2027,7 @@ function rcMapRow(it) {
         callBackStatus: vBlank(it.Call_Back_Status),
         pendingWith: vBlank(it.Pending_With),
         resolutionStatus: vBlank(it.Resolution_Status),
-        rcStatus: rcDisplayStatus(it) || '—',
+        rcStatus: rcCallerDisplayStatus(it) || '—',
         assignedTo: v(it.AssignedToName),
         uploadDate: it.UploadDate || null,
         assignmentDate: it.AssignmentDate || null,
@@ -2158,10 +2198,11 @@ function rcIsCallbackNotReachable(v) {
 }
 
 function rcIsIssueResolved(resVal) {
-    var s = String(resVal || '').trim().toLowerCase();
-    if (!s) return false;
-    if (/not\s*resolved|issue not resolved/i.test(s)) return false;
-    return /issue resolved|resolved/i.test(s);
+    var raw = String(resVal || '').trim();
+    if (!raw) return false;
+    var s = raw.toLowerCase();
+    if (/not/.test(s) && /resolved/.test(s)) return false;
+    return s === 'issue resolved';
 }
 
 function rcResolutionChoicesForCallback(callbackVal, currentVal) {
@@ -2355,12 +2396,16 @@ window.rcSaveEditModal = async function () {
     }
     rcShowBusy('Saving…', 'Updating record');
     try {
-        await rcUpdateItem(rcEditModalId, fields, digest);
-        if (rcIsCallbackReachable(callbackVal) && rcIsIssueResolved(resolutionVal)) {
-            var ids = rcExpandResolveIds(rcEditModalId);
+        var activeIds = rcInProgressSiblingIds(item.MSISDN);
+        if (!activeIds.length) activeIds = [rcEditModalId];
+        var updateIds = activeIds.indexOf(rcEditModalId) >= 0 ? activeIds.slice() : activeIds.concat([rcEditModalId]);
+        for (var u = 0; u < updateIds.length; u++) {
+            await rcUpdateItem(updateIds[u], fields, digest);
+        }
+        if (rcIsCallbackReachable(callbackVal) && rcIsIssueResolved(resolutionVal) && activeIds.length) {
             var now = new Date().toISOString();
-            for (var i = 0; i < ids.length; i++) {
-                await rcUpdateItem(ids[i], rcSpFields({ RCStatus: RC_STATUS.RESOLVED, CompletedDate: now }), digest);
+            for (var i = 0; i < activeIds.length; i++) {
+                await rcUpdateItem(activeIds[i], rcSpFields({ RCStatus: RC_STATUS.RESOLVED, CompletedDate: now }), digest);
             }
         }
         rcToast('Record updated', 'success');
