@@ -1738,9 +1738,23 @@
         /* ═══════ LANDING ════════════════════════════════════════════════════════ */
         .landing-page {
             min-height: 100vh;
-            display: flex !important;
-            flex-direction: row !important;
-            background: var(--bg-body)
+            display: flex;
+            flex-direction: row;
+            background: var(--bg-body);
+            position: relative;
+            overflow: hidden;
+        }
+        #landingPage.sm-hidden {
+            display: none !important;
+            visibility: hidden !important;
+            pointer-events: none !important;
+        }
+        #smLandingFsBtn {
+            position: fixed;
+            top: 16px;
+            right: 16px;
+            z-index: 2147483001;
+            background: var(--bg-card);
         }
 
         .landing-left,
@@ -2315,6 +2329,58 @@
     <!-- ======================================================================================== -->
     <!-- SHAREPOINT COMPATIBILITY: All CSS in body since SharePoint strips <head> section -->
     <!-- ======================================================================================== -->
+    <style id="sm-rc-psd-fix">
+        html.sm-fullpage #landingPage:not(.sm-hidden),
+        html.sm-fullpage #dashboardContent.sm-visible-shell {
+            position: fixed !important;
+            inset: 0 !important;
+            width: 100vw !important;
+            height: 100vh !important;
+            z-index: 2147483000 !important;
+            margin: 0 !important;
+            max-width: none !important;
+        }
+        #smAppRoot #dashboardContent.sm-visible-shell,
+        #dashboardContent.sm-visible-shell {
+            display: flex !important;
+            flex-direction: column !important;
+            height: 100% !important;
+            overflow: hidden !important;
+            width: 100% !important;
+            max-width: none !important;
+            margin: 0 !important;
+        }
+        .content.rc-full-mode,
+        .content.psd-full-mode {
+            display: block !important;
+            width: 100% !important;
+            max-width: none !important;
+            margin: 0 !important;
+            padding: 0.75rem 1rem 1.25rem !important;
+            overflow-y: auto !important;
+            overflow-x: hidden !important;
+            min-height: 0 !important;
+            flex: 1 1 auto !important;
+        }
+        .content.rc-full-mode > *:not(#rcView),
+        .content.psd-full-mode > *:not(#psdView) {
+            display: none !important;
+            width: 0 !important;
+            height: 0 !important;
+            overflow: hidden !important;
+        }
+        .content.rc-full-mode #rcView,
+        .content.rc-full-mode #rcView #rcContainer,
+        .content.rc-full-mode #rcView .rc-root,
+        .content.psd-full-mode #psdView,
+        .content.psd-full-mode #psdView #psdContainer {
+            display: block !important;
+            width: 100% !important;
+            max-width: none !important;
+            margin: 0 !important;
+            float: none !important;
+        }
+    </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
     <script src="http://sharedspaces:8086/sites/SM/Shared%20Documents/lucide.min.js"></script>
 
@@ -2322,6 +2388,9 @@
 
     <!-- ===== LANDING PAGE ===== -->
     <div id="landingPage" class="landing-page" style="display: none;">
+        <button type="button" class="theme-toggle sm-fs-btn" id="smLandingFsBtn" onclick="smToggleFullscreen();return false;" title="Minimize">
+            <svg viewBox="0 0 24 24" style="width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;"><polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/><line x1="14" y1="10" x2="21" y2="3"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
+        </button>
         <!-- Animated background gradients -->
         <div class="landing-bg-gradient"></div>
         <div class="landing-bg-orbs">
@@ -6253,19 +6322,23 @@ else if (USER_CONTEXT.role === 'Account Manager' || USER_CONTEXT.role === 'Accou
         }
 
         function showDashboard() {
-            const landing = document.getElementById('landingPage');
-            if (landing) {
-                landing.style.display = 'none';
-                landing.style.visibility = 'hidden';
-                landing.style.position = 'absolute';
-                landing.style.zIndex = '-9999';
+            if (typeof smHideLanding === 'function') smHideLanding();
+            else {
+                const landing = document.getElementById('landingPage');
+                if (landing) {
+                    landing.classList.add('sm-hidden');
+                    landing.style.setProperty('display', 'none', 'important');
+                }
             }
-
-            var dash = document.getElementById('dashboardContent');
-            if (dash) {
-                dash.style.display = 'flex';
-                dash.style.flexDirection = 'column';
-                dash.style.height = '100%';
+            if (typeof smShowDashboardShell === 'function') smShowDashboardShell();
+            else {
+                var dash = document.getElementById('dashboardContent');
+                if (dash) {
+                    dash.classList.add('sm-visible-shell');
+                    dash.style.setProperty('display', 'flex', 'important');
+                    dash.style.flexDirection = 'column';
+                    dash.style.height = '100%';
+                }
             }
             if (typeof smEnterFullscreen === 'function') smEnterFullscreen();
 
@@ -8942,21 +9015,41 @@ ${USER_CONTEXT.userName}`
             if (root && root.parentNode) root.parentNode.removeChild(root);
         }
 
+        function smHideLanding() {
+            var landing = document.getElementById('landingPage');
+            if (!landing) return;
+            landing.classList.add('sm-hidden');
+            landing.style.setProperty('display', 'none', 'important');
+        }
+
+        function smShowLanding() {
+            var landing = document.getElementById('landingPage');
+            if (!landing) return;
+            landing.classList.remove('sm-hidden');
+            landing.style.setProperty('display', 'flex', 'important');
+        }
+
+        function smShowDashboardShell() {
+            var dash = document.getElementById('dashboardContent');
+            if (!dash) return;
+            dash.classList.add('sm-visible-shell');
+            dash.style.setProperty('display', 'flex', 'important');
+            dash.style.flexDirection = 'column';
+            dash.style.height = '100%';
+        }
+
+        function smHideDashboardShell() {
+            var dash = document.getElementById('dashboardContent');
+            if (!dash) return;
+            dash.classList.remove('sm-visible-shell');
+            dash.style.setProperty('display', 'none', 'important');
+        }
+
         function smEnterFullscreen() {
             window._smFullPage = true;
             document.documentElement.classList.add('sm-fullpage');
             smMountOverlay();
             smSyncFullscreenBtn();
-            var node = document.documentElement;
-            var req = node.requestFullscreen || node.webkitRequestFullscreen;
-            if (!req || smFullscreenElement()) return;
-            window._smWantNativeFs = true;
-            try {
-                var p = req.call(node);
-                if (p && p.catch) p.catch(function () { window._smWantNativeFs = false; });
-            } catch (e) {
-                window._smWantNativeFs = false;
-            }
         }
 
         function smMinimizeFullscreen() {
@@ -9459,8 +9552,10 @@ else if (sectionId === 'rcView') {
                 // ✅ ALWAYS show landing page for ALL users (even without access)
                 console.log('[INFO] User:', USER_CONTEXT.userName, '| Role:', USER_CONTEXT.role);
 
-                // Show landing page ALWAYS — SharePoint chrome stays so the page can be saved
-                document.getElementById('landingPage').style.display = 'grid';
+                // GLK-style: landing covers SharePoint; minimize button reveals SP chrome
+                document.getElementById('landingPage').style.setProperty('display', 'flex', 'important');
+                document.getElementById('landingPage').classList.remove('sm-hidden');
+                if (typeof smEnterFullscreen === 'function') smEnterFullscreen();
 
                 // Load data for all roles with access (Account_Search_Viewer uses same init as Admin)
               if (hasAccess) {
@@ -11117,15 +11212,22 @@ else if (sectionId === 'rcView') {
         // ========================================
 
         function showAccountSearch() {
-            const landing = document.getElementById('landingPage');
-            if (landing) {
-                landing.style.display = 'none';
-                landing.style.visibility = 'hidden';
-                landing.style.position = 'absolute';
-                landing.style.zIndex = '-1';
+            if (typeof smHideLanding === 'function') smHideLanding();
+            else {
+                const landing = document.getElementById('landingPage');
+                if (landing) {
+                    landing.classList.add('sm-hidden');
+                    landing.style.setProperty('display', 'none', 'important');
+                }
             }
-            const dc = document.getElementById('dashboardContent');
-            if (dc) dc.style.display = 'none';
+            if (typeof smHideDashboardShell === 'function') smHideDashboardShell();
+            else {
+                const dc = document.getElementById('dashboardContent');
+                if (dc) {
+                    dc.classList.remove('sm-visible-shell');
+                    dc.style.setProperty('display', 'none', 'important');
+                }
+            }
 
             document.getElementById('accountSearchView').style.display = 'block';
             window.scrollTo(0, 0);
@@ -11253,12 +11355,13 @@ else if (sectionId === 'rcView') {
 
         function backToLanding() {
             document.getElementById('accountSearchView').style.display = 'none';
-            const landing = document.getElementById('landingPage');
-            if (landing) {
-                landing.style.position = '';
-                landing.style.visibility = '';
-                landing.style.zIndex = '';
-                landing.style.display = 'grid';
+            if (typeof smShowLanding === 'function') smShowLanding();
+            else {
+                const landing = document.getElementById('landingPage');
+                if (landing) {
+                    landing.classList.remove('sm-hidden');
+                    landing.style.setProperty('display', 'flex', 'important');
+                }
             }
 
             // Clear search results
@@ -11800,7 +11903,7 @@ else if (sectionId === 'rcView') {
     <script src="http://sharedspaces:8086/sites/SM/Shared%20Documents/processdocs.js"></script>
     <script src="http://sharedspaces:8086/sites/SM/Shared%20Documents/qualityassurance.js"></script>
     <script src="http://sharedspaces:8086/sites/SM/Shared%20Documents/psd__assignment.js?v=1.2.0"></script>
-    <script src="http://sharedspaces:8086/sites/SM/Shared%20Documents/repeated-calls.js?v=1.9.4"></script>
+    <script src="http://sharedspaces:8086/sites/SM/Shared%20Documents/repeated-calls.js?v=1.9.5"></script>
     <script src="http://sharedspaces:8086/sites/SM/Shared%20Documents/rnps.js"></script>
   <script src="http://sharedspaces:8086/sites/SM/Shared%20Documents/semailbox.js"></script>
   <script src="http://sharedspaces:8086/sites/SM/Shared%20Documents/tsm-se.js?v=4fix1"></script>
