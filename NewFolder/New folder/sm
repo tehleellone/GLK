@@ -173,12 +173,37 @@
             background: var(--bg-body);
         }
 
-        /* GLK-style full-page immersive mode */
+        /* GLK-style full-page immersive mode — hide SharePoint chrome, keep inner scroll */
         html.sm-fullpage,
         html.sm-fullpage body {
-            overflow: hidden !important;
             height: 100% !important;
             max-height: 100vh !important;
+            overflow: hidden !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+
+        html.sm-fullpage #suiteBarDelta,
+        html.sm-fullpage #suiteBarTop,
+        html.sm-fullpage #s4-ribbonrow,
+        html.sm-fullpage #s4-titlerow,
+        html.sm-fullpage #titlerow,
+        html.sm-fullpage #sideNavBox,
+        html.sm-fullpage #DeltaPlaceHolderLeftNavBar,
+        html.sm-fullpage .ms-cui-topBar2,
+        html.sm-fullpage #DeltaSuiteBar,
+        html.sm-fullpage #suiteNavDelta {
+            display: none !important;
+        }
+
+        html.sm-fullpage #s4-workspace,
+        html.sm-fullpage #s4-bodyContainer {
+            width: 100% !important;
+            max-width: none !important;
+            height: 100% !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            overflow: hidden !important;
         }
 
         html.sm-fullpage #landingPage,
@@ -186,15 +211,17 @@
             position: fixed !important;
             inset: 0 !important;
             width: 100vw !important;
-            height: 100vh !important;
+            height: 100% !important;
+            max-height: 100vh !important;
             z-index: 2147483000 !important;
             margin: 0 !important;
         }
 
         html.sm-fullpage #dashboardContent {
             display: flex !important;
-            flex-direction: column;
+            flex-direction: column !important;
             background: var(--bg-body);
+            overflow: hidden !important;
         }
 
         html.sm-fullpage .portal-shell {
@@ -202,18 +229,32 @@
             width: 100% !important;
             min-height: 0 !important;
             height: 100% !important;
-            flex: 1;
+            flex: 1 1 auto;
+        }
+
+        html.sm-fullpage .header {
+            flex-shrink: 0;
         }
 
         html.sm-fullpage .main-container {
-            flex: 1;
-            min-height: 0;
+            display: flex !important;
+            flex: 1 1 auto !important;
+            min-height: 0 !important;
+            overflow: hidden !important;
         }
 
         html.sm-fullpage .content {
-            flex: 1;
-            min-height: 0;
-            overflow-y: auto;
+            flex: 1 1 auto !important;
+            min-height: 0 !important;
+            overflow-y: auto !important;
+            overflow-x: hidden !important;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        html.sm-fullpage #rcView,
+        html.sm-fullpage #rcView #rcContainer,
+        html.sm-fullpage #rcView .rc-root {
+            overflow: visible;
         }
 
         #dashboardContent:fullscreen,
@@ -223,6 +264,7 @@
             width: 100%;
             height: 100%;
             background: var(--bg-body);
+            overflow: hidden;
         }
 
         .sm-fs-btn {
@@ -6185,8 +6227,14 @@ else if (USER_CONTEXT.role === 'Account Manager' || USER_CONTEXT.role === 'Accou
                 landing.style.zIndex = '-9999';
             }
 
-            document.getElementById('dashboardContent').style.display = 'block';
-            if (typeof smEnterFullPage === 'function') smEnterFullPage();
+            var dash = document.getElementById('dashboardContent');
+            if (dash) {
+                dash.style.display = 'flex';
+                dash.style.flexDirection = 'column';
+                dash.style.height = '100%';
+            }
+            if (typeof smEnterFullscreen === 'function') smEnterFullscreen();
+            else if (typeof smEnterFullPage === 'function') smEnterFullPage();
 
             // Auditor: jump straight to QA view
             if (USER_CONTEXT.role === 'Auditor') {
@@ -8825,15 +8873,43 @@ ${USER_CONTEXT.userName}`
             smSyncFullscreenBtn();
         }
 
+        function smFsRoot() {
+            try {
+                if (window.top && window.top.document && window.top.document.documentElement) {
+                    return window.top.document.documentElement;
+                }
+            } catch (e) {}
+            return document.documentElement;
+        }
+
         function smEnterFullscreen() {
             smEnterFullPage();
-            var node = document.documentElement;
+            if (smFullscreenElement()) return;
+            var node = smFsRoot();
             var req = node.requestFullscreen || node.webkitRequestFullscreen;
-            if (!req || smFullscreenElement()) return;
+            if (!req) return;
             window._smWantNativeFs = true;
-            var p = req.call(node);
-            if (p && p.catch) p.catch(function () { window._smWantNativeFs = false; });
+            try {
+                var p = req.call(node);
+                if (p && p.catch) p.catch(function () { window._smWantNativeFs = false; });
+            } catch (e) {
+                window._smWantNativeFs = false;
+            }
         }
+
+        function smBindFullscreenOnGesture() {
+            if (window._smFsGestureBound) return;
+            window._smFsGestureBound = true;
+            function go(e) {
+                if (window._smFullPage === false) return;
+                if (smFullscreenElement()) return;
+                if (e && e.target && e.target.closest && e.target.closest('.sm-fs-btn')) return;
+                smEnterFullscreen();
+            }
+            document.addEventListener('pointerdown', go, true);
+            document.addEventListener('keydown', go, true);
+        }
+        smBindFullscreenOnGesture();
 
         function smMinimizeFullscreen() {
             window._smFullPage = false;
@@ -11661,7 +11737,7 @@ else if (sectionId === 'rcView') {
     <script src="http://sharedspaces:8086/sites/SM/Shared%20Documents/processdocs.js"></script>
     <script src="http://sharedspaces:8086/sites/SM/Shared%20Documents/qualityassurance.js"></script>
     <script src="http://sharedspaces:8086/sites/SM/Shared%20Documents/psd__assignment.js?v=1.2.0"></script>
-    <script src="http://sharedspaces:8086/sites/SM/Shared%20Documents/repeated-calls.js?v=1.9.0"></script>
+    <script src="http://sharedspaces:8086/sites/SM/Shared%20Documents/repeated-calls.js?v=1.9.2"></script>
     <script src="http://sharedspaces:8086/sites/SM/Shared%20Documents/rnps.js"></script>
   <script src="http://sharedspaces:8086/sites/SM/Shared%20Documents/semailbox.js"></script>
   <script src="http://sharedspaces:8086/sites/SM/Shared%20Documents/tsm-se.js?v=4fix1"></script>
