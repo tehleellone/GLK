@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="glk-fullpage">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -192,8 +192,18 @@ body[data-theme="dark"] .status-dot,body[data-theme="duralux-dark"] .status-dot{
 .theme-toggle:hover{border-color:var(--border-s)}
 .theme-toggle svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2}
 .theme-toggle.active-fs{border-color:var(--nab2);background:var(--nab);color:var(--acc)}
-#dashboardContent:fullscreen,#dashboardContent:-webkit-full-screen{
-  width:100%;height:100%;display:flex;flex-direction:column;background:var(--bg-body);
+#glkLandingFsBtn{position:fixed;top:16px;right:16px;z-index:100002;background:var(--bg-card)}
+html.glk-fullpage,html.glk-fullpage body{overflow:hidden!important;height:100%!important;max-height:100vh!important}
+html.glk-fullpage #landingPage,
+html.glk-fullpage #dashboardContent{
+  position:fixed!important;inset:0!important;width:100vw!important;height:100vh!important;
+  z-index:2147483000!important;margin:0!important;
+}
+html.glk-fullpage #dashboardContent{display:flex;flex-direction:column;background:var(--bg-body)}
+html.glk-fullpage #glkLoader{z-index:2147483600}
+#dashboardContent:fullscreen,#dashboardContent:-webkit-full-screen,
+html:fullscreen,html:-webkit-full-screen{
+  width:100%;height:100%;background:var(--bg-body);
 }
 
 /* ═══════ SIDEBAR ═══════════════════════════════════════════════════════ */
@@ -929,6 +939,9 @@ body[data-theme="dark"] .live-badge,body[data-theme="duralux-dark"] .live-badge{
 
 <!-- ═══════ LANDING PAGE ══════════════════════════════════════════════ -->
 <div id="landingPage" class="landing-page" style="display:none;">
+  <div class="theme-toggle active-fs glk-fs-btn" id="glkLandingFsBtn" onclick="glkToggleFullscreen();return false;" title="Minimize">
+    <svg id="glkLandingFsIcon" viewBox="0 0 24 24"><polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/><line x1="14" y1="10" x2="21" y2="3"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
+  </div>
   <div class="landing-bg-gradient"></div>
   <!-- LEFT — Branding -->
   <div class="landing-left animate-fade-in">
@@ -1061,7 +1074,7 @@ body[data-theme="dark"] .live-badge,body[data-theme="duralux-dark"] .live-badge{
         <option value="magenta">&#9670; Magenta</option>
         <option value="duralux">&#9670; Duralux</option>
       </select>
-      <div class="theme-toggle active-fs" id="glkFullscreenBtn" onclick="glkToggleFullscreen()" title="Minimize">
+      <div class="theme-toggle active-fs glk-fs-btn" id="glkFullscreenBtn" onclick="glkToggleFullscreen()" title="Minimize">
         <svg id="glkFullscreenIcon" viewBox="0 0 24 24"><polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/><line x1="14" y1="10" x2="21" y2="3"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
       </div>
       <div class="theme-toggle" onclick="toggleTheme()" title="Light/Dark">
@@ -5310,7 +5323,9 @@ function toggleTheme(){
 function glkFullscreenElement(){
   return document.fullscreenElement||document.webkitFullscreenElement||null;
 }
-function glkIsFullscreen(){ return !!glkFullscreenElement(); }
+function glkIsFullscreen(){
+  return !!(window._glkFullPage!==false || glkFullscreenElement());
+}
 function glkResizeAfterFullscreen(){
   setTimeout(function(){
     try{ renderCharts(); }catch(e){}
@@ -5323,38 +5338,56 @@ function glkResizeAfterFullscreen(){
   },280);
 }
 function glkSyncFullscreenBtn(){
-  var on=glkIsFullscreen();
-  var btn=el('glkFullscreenBtn');
-  var icon=el('glkFullscreenIcon');
-  if(btn){
+  var on=window._glkFullPage!==false || !!glkFullscreenElement();
+  document.querySelectorAll('.glk-fs-btn').forEach(function(btn){
     btn.classList.toggle('active-fs',on);
     btn.title=on?'Minimize':'Full screen';
-  }
-  if(icon){
+    var icon=btn.querySelector('svg');
+    if(!icon) return;
     icon.innerHTML=on
       ?'<polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/><line x1="14" y1="10" x2="21" y2="3"/><line x1="3" y1="21" x2="10" y2="14"/>'
       :'<polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/>';
-  }
+  });
 }
 function glkOnFullscreenChange(){
+  if(!glkFullscreenElement()&&window._glkWantNativeFs) window._glkWantNativeFs=false;
   glkSyncFullscreenBtn();
   glkResizeAfterFullscreen();
 }
+function glkExitNativeFullscreen(){
+  var exitFn=document.exitFullscreen||document.webkitExitFullscreen;
+  if(exitFn&&glkFullscreenElement()) exitFn.call(document);
+}
 function glkEnterFullscreen(){
-  if(glkIsFullscreen()) return;
-  var node=el('dashboardContent')||document.documentElement;
+  window._glkFullPage=true;
+  document.documentElement.classList.add('glk-fullpage');
+  glkSyncFullscreenBtn();
+  var node=document.documentElement;
   var req=node.requestFullscreen||node.webkitRequestFullscreen;
-  if(!req) return;
+  if(!req||glkFullscreenElement()) return;
+  window._glkWantNativeFs=true;
   var p=req.call(node);
-  if(p&&p.catch) p.catch(function(err){ console.warn('[GLK] Fullscreen:',err&&err.message); });
+  if(p&&p.catch) p.catch(function(){ window._glkWantNativeFs=false; });
+}
+function glkMinimizeFullscreen(){
+  window._glkFullPage=false;
+  document.documentElement.classList.remove('glk-fullpage');
+  glkExitNativeFullscreen();
+  glkSyncFullscreenBtn();
+  glkResizeAfterFullscreen();
 }
 function glkToggleFullscreen(){
-  if(glkIsFullscreen()){
-    var exitFn=document.exitFullscreen||document.webkitExitFullscreen;
-    if(exitFn) exitFn.call(document);
-    return;
+  if(window._glkFullPage!==false || glkFullscreenElement()) glkMinimizeFullscreen();
+  else glkEnterFullscreen();
+}
+function glkBindFullscreenOnGesture(){
+  function go(e){
+    if(e&&e.target&&e.target.closest&&e.target.closest('.glk-fs-btn')) return;
+    if(window._glkFullPage===false) return;
+    glkEnterFullscreen();
   }
-  glkEnterFullscreen();
+  document.addEventListener('pointerdown',go,true);
+  document.addEventListener('keydown',go,true);
 }
 document.addEventListener('fullscreenchange',glkOnFullscreenChange);
 document.addEventListener('webkitfullscreenchange',glkOnFullscreenChange);
@@ -13402,6 +13435,8 @@ window.pgSelectPgAm=pgSelectPgAm;
 //  INIT
 // ══════════════════════════════════════════════════════════════════
 window.addEventListener('load',function(){
+  window._glkFullPage=true;
+  document.documentElement.classList.add('glk-fullpage');
   el('landingPage').style.display='flex';
   try{
     const bt=localStorage.getItem('glk_base_theme')||'magenta';
@@ -13411,6 +13446,9 @@ window.addEventListener('load',function(){
   }catch(e){}
   mqInitWowPriorStore();
   initAccess();
+  glkSyncFullscreenBtn();
+  glkEnterFullscreen();
+  glkBindFullscreenOnGesture();
 });
 </script>
 </body>
