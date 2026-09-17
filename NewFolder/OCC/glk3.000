@@ -1061,8 +1061,8 @@ body[data-theme="dark"] .live-badge,body[data-theme="duralux-dark"] .live-badge{
         <option value="magenta">&#9670; Magenta</option>
         <option value="duralux">&#9670; Duralux</option>
       </select>
-      <div class="theme-toggle" id="glkFullscreenBtn" onclick="glkToggleFullscreen()" title="Full screen">
-        <svg id="glkFullscreenIcon" viewBox="0 0 24 24"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
+      <div class="theme-toggle active-fs" id="glkFullscreenBtn" onclick="glkToggleFullscreen()" title="Minimize">
+        <svg id="glkFullscreenIcon" viewBox="0 0 24 24"><polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/><line x1="14" y1="10" x2="21" y2="3"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
       </div>
       <div class="theme-toggle" onclick="toggleTheme()" title="Light/Dark">
         <svg id="themeIcon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
@@ -2837,6 +2837,7 @@ function launchDashboard(){
   glkShowDashboard();
   loadData();
   rrInitView(true);
+  glkEnterFullscreen();
 
   setTimeout(function(){
     if(USER.email.toLowerCase()==='tehleel.lone@du.ae') glkInitViewAs();
@@ -2997,6 +2998,7 @@ function glkLaunchSpoofed(){
   glkShowDashboard();
   loadData();
   rrInitView(true);
+  glkEnterFullscreen();
 
   // Re-show the View-As panel with restore button visible
   setTimeout(function(){
@@ -5326,7 +5328,7 @@ function glkSyncFullscreenBtn(){
   var icon=el('glkFullscreenIcon');
   if(btn){
     btn.classList.toggle('active-fs',on);
-    btn.title=on?'Exit full screen':'Full screen';
+    btn.title=on?'Minimize':'Full screen';
   }
   if(icon){
     icon.innerHTML=on
@@ -5338,20 +5340,21 @@ function glkOnFullscreenChange(){
   glkSyncFullscreenBtn();
   glkResizeAfterFullscreen();
 }
+function glkEnterFullscreen(){
+  if(glkIsFullscreen()) return;
+  var node=el('dashboardContent')||document.documentElement;
+  var req=node.requestFullscreen||node.webkitRequestFullscreen;
+  if(!req) return;
+  var p=req.call(node);
+  if(p&&p.catch) p.catch(function(err){ console.warn('[GLK] Fullscreen:',err&&err.message); });
+}
 function glkToggleFullscreen(){
   if(glkIsFullscreen()){
     var exitFn=document.exitFullscreen||document.webkitExitFullscreen;
     if(exitFn) exitFn.call(document);
     return;
   }
-  var node=el('dashboardContent')||document.documentElement;
-  var req=node.requestFullscreen||node.webkitRequestFullscreen;
-  if(!req){
-    alert('Full screen is not available in this browser.');
-    return;
-  }
-  var p=req.call(node);
-  if(p&&p.catch) p.catch(function(err){ console.warn('[GLK] Fullscreen:',err&&err.message); });
+  glkEnterFullscreen();
 }
 document.addEventListener('fullscreenchange',glkOnFullscreenChange);
 document.addEventListener('webkitfullscreenchange',glkOnFullscreenChange);
