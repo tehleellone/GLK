@@ -1,5 +1,5 @@
 // ============================================================
-// repeated-calls.js — Repeated Calls Module v1.9.0
+// repeated-calls.js — Repeated Calls Module v1.9.2
 // List: Repeated_Calls | Agents: Account Mapping (CTI match, all teams)
 // SP fields: RC_Status, Upload_Date, Assignment_Date, Reassign_Date, Resolved_Date, Assigned_To
 // ============================================================
@@ -18,7 +18,7 @@ var rcCharts        = {};
 var rcGrids         = { dash: null, assign: null, assigned: null, agentQueue: null, agentRecords: null };
 var rcUploadRows    = []; 
 var rcSelectedAgent = null;
-window.RC_MODULE_VERSION = '1.9.0';
+window.RC_MODULE_VERSION = '1.9.2';
 
 var RC_DELETE_ALL_EMAILS = ['tehleel.lone@du.ae', 'ubaid.mir@du.ae'];
 var RC_MIN_REPEAT_CALLS = 3;
@@ -92,6 +92,7 @@ function rcExcelSerialToIso(serial) {
 
 var rcDashFilters   = { status: [], language: [], lob: [], segment: [], agent: [], search: '' };
 var rcDashTileFilter = 'all';
+var rcTreeFilter = { node: '', value: '' };
 var rcChartPluginsRegistered = false;
 var rcMsisdnCounts  = {};
 var rcRepeatVisible = false;
@@ -269,17 +270,82 @@ function rcCanonicalUniqueCallerStatus(msisdn, items) {
     return latest ? rcDisplayStatus(latest) : RC_STATUS.PENDING;
 }
 
+function rcCallerTreeKind(it, items) {
+    var rec = rcGetCallerWorkflowRecord(it.MSISDN, items) || it;
+    var cb = String(rec.Call_Back_Status || '').trim();
+    if (!cb) return { kind: 'ip', driver: '', pending: '' };
+    if (rcIsCallbackNotReachable(cb)) return { kind: 'nr', driver: '', pending: '' };
+    if (rcIsCallbackReachable(cb)) {
+        var res = String(rec.Resolution_Status || '').trim();
+        if (rcIsIssueResolved(res)) {
+            return { kind: 'resolved', driver: String(rec.Call_Driver || '').trim() || 'Not set', pending: '' };
+        }
+        if (rcIsIssueNotResolved(res)) {
+            return { kind: 'nres', driver: '', pending: String(rec.Pending_With || '').trim() || 'Not set' };
+        }
+        return { kind: 'reach', driver: '', pending: '' };
+    }
+    return { kind: 'ip', driver: '', pending: '' };
+}
+
+function rcMatchesTreeFilter(it, items) {
+    var f = rcTreeFilter || {};
+    if (!f.node || f.node === 'root') return true;
+    var b = rcCallerTreeKind(it, items);
+    if (f.node === 'nr') return b.kind === 'nr';
+    if (f.node === 'ip') return b.kind === 'ip';
+    if (f.node === 'reach') return b.kind === 'reach' || b.kind === 'resolved' || b.kind === 'nres';
+    if (f.node === 'resolved') return b.kind === 'resolved';
+    if (f.node === 'nres') return b.kind === 'nres';
+    if (f.node === 'driver') {
+        if (b.kind !== 'resolved') return false;
+        if (f.value === 'Others') {
+            var data = rcBuildContactTreeData(items);
+            var top = rcTopNPairs(data.drivers, 5).filter(function (p) { return p.label !== 'Others'; }).map(function (p) { return p.label; });
+            return top.indexOf(b.driver) < 0;
+        }
+        return b.driver === f.value;
+    }
+    if (f.node === 'pending') {
+        if (b.kind !== 'nres') return false;
+        if (f.value === 'Others') {
+            var pdata = rcBuildContactTreeData(items);
+            var ptop = rcTopNPairs(pdata.pendingWith, 5).filter(function (p) { return p.label !== 'Others'; }).map(function (p) { return p.label; });
+            return ptop.indexOf(b.pending) < 0;
+        }
+        return b.pending === f.value;
+    }
+    return true;
+}
+
+function rcTreeFilterTitle() {
+    var f = rcTreeFilter || {};
+    if (!f.node || f.node === 'root') return 'Repeat Callers';
+    var names = {
+        nr: 'Not Reachable',
+        reach: 'Reachable',
+        ip: 'In Progress · not edited',
+        resolved: 'Resolved',
+        nres: 'Issue Not Resolved',
+        driver: 'Driver · ' + (f.value || ''),
+        pending: 'Pending With · ' + (f.value || '')
+    };
+    return 'Repeat Callers · ' + (names[f.node] || f.node);
+}
+
 function rcDashboardGridItems(items) {
     var unique = rcUniqueRepeatCallers(items);
     var f = rcDashTileFilter || 'all';
-    if (f === 'all' || f === 'volume' || f === 'callers') return unique;
-    return unique.filter(function (it) {
-        var st = rcCanonicalUniqueCallerStatus(it.MSISDN, items);
-        if (f === 'pending') return st === RC_STATUS.PENDING;
-        if (f === 'inprogress') return st === RC_STATUS.INPROGRESS;
-        if (f === 'resolved') return st === RC_STATUS.RESOLVED;
-        return true;
-    });
+    if (f === 'pending' || f === 'inprogress' || f === 'resolved') {
+        unique = unique.filter(function (it) {
+            var st = rcCanonicalUniqueCallerStatus(it.MSISDN, items);
+            if (f === 'pending') return st === RC_STATUS.PENDING;
+            if (f === 'inprogress') return st === RC_STATUS.INPROGRESS;
+            if (f === 'resolved') return st === RC_STATUS.RESOLVED;
+            return true;
+        });
+    }
+    return unique.filter(function (it) { return rcMatchesTreeFilter(it, items); });
 }
 
 function rcAssignQueueItems() {
@@ -779,17 +845,16 @@ function rcBuildTrendChartData(items) {
 function rcBuildCallDriverChartData(items) {
     var counts = {};
     rcUniqueRepeatCallers(items).forEach(function (it) {
-        var d = it.Call_Driver != null ? String(it.Call_Driver).trim() : '';
+        var rec = rcGetCallerWorkflowRecord(it.MSISDN, items) || it;
+        var d = rec.Call_Driver != null ? String(rec.Call_Driver).trim() : '';
         if (!d) d = 'Not set';
         counts[d] = (counts[d] || 0) + 1;
     });
-    var labels = Object.keys(counts).sort(function (a, b) {
-        return counts[b] - counts[a] || a.localeCompare(b);
-    });
-    if (!labels.length) return { labels: ['No data'], values: [0] };
+    var pairs = rcTopNPairs(counts, 5);
+    if (!pairs.length) return { labels: ['No data'], values: [0] };
     return {
-        labels: labels,
-        values: labels.map(function (l) { return counts[l]; })
+        labels: pairs.map(function (p) { return p.label; }),
+        values: pairs.map(function (p) { return p.count; })
     };
 }
 
@@ -1323,26 +1388,31 @@ function rcInjectStyles() {
         '.rc-ms .multiselect-option:hover{background:var(--bg-hover,rgba(148,163,184,.12))}' +
         '.rc-ms .multiselect-option input[type=checkbox]{margin-right:10px;width:15px;height:15px;cursor:pointer;accent-color:var(--acc)}' +
         '.rc-ms .multiselect-option label{cursor:pointer;flex:1;font-size:.8rem;color:var(--t1);margin:0}' +
-        '.rc-tree-board{overflow-x:auto;padding:.35rem .15rem .5rem}' +
-        '.rc-tree-row{display:flex;align-items:stretch;gap:1rem;min-width:980px}' +
-        '.rc-tree-children{display:flex;flex-direction:column;gap:.75rem;border-left:3px solid rgba(99,102,241,.25);padding-left:1rem;margin:.15rem 0}' +
-        '.rc-tree-branch{display:flex;align-items:center;gap:.85rem;flex-wrap:nowrap}' +
-        '.rc-tree-leaf-group{display:flex;flex-wrap:wrap;gap:.55rem;align-items:stretch;padding-top:.15rem}' +
-        '.rc-tree-node{min-width:118px;padding:.7rem .85rem;border-radius:12px;text-align:center;box-shadow:var(--cs);border:1px solid var(--border)}' +
-        '.rc-tree-node-label{font-size:.68rem;font-weight:800;text-transform:uppercase;letter-spacing:.04em;line-height:1.25}' +
-        '.rc-tree-node-count{font-size:1.35rem;font-weight:900;line-height:1.1;margin-top:.25rem}' +
-        '.rc-tree-node-sub{font-size:.62rem;color:var(--t3);margin-top:.2rem;font-weight:600}' +
-        '.rc-tree-root{background:linear-gradient(135deg,#2563eb,#1d4ed8);color:#fff;border-color:#1e40af;min-width:150px;align-self:center}' +
-        '.rc-tree-root .rc-tree-node-label,.rc-tree-root .rc-tree-node-count{color:#fff}' +
-        '.rc-tree-l1{background:linear-gradient(135deg,#fb923c,#f97316);color:#fff;border-color:#ea580c}' +
-        '.rc-tree-l1 .rc-tree-node-label,.rc-tree-l1 .rc-tree-node-count,.rc-tree-l1 .rc-tree-node-sub{color:#fff}' +
-        '.rc-tree-l2{background:linear-gradient(135deg,#64748b,#475569);color:#fff;border-color:#334155;min-width:130px}' +
-        '.rc-tree-l2 .rc-tree-node-label,.rc-tree-l2 .rc-tree-node-count{color:#fff}' +
-        '.rc-tree-leaf{min-width:108px;padding:.55rem .7rem}' +
-        '.rc-tree-driver{background:linear-gradient(135deg,#fbbf24,#eab308);color:#1f2937;border-color:#ca8a04}' +
-        '.rc-tree-pending{background:linear-gradient(135deg,#fde68a,#fcd34d);color:#1f2937;border-color:#f59e0b}' +
-        '.rc-tree-note{font-size:.72rem;color:var(--t3);font-weight:600;padding-left:.25rem}' +
-        '.rc-tree-foot{margin-top:.85rem;font-size:.72rem;color:var(--t3);line-height:1.45;border-top:1px dashed var(--border);padding-top:.65rem}';
+        '.rc-flow{position:relative;overflow:auto;padding:8px 4px 12px;min-height:460px}' +
+        '.rc-flow-svg{position:absolute;left:0;top:0;pointer-events:none;z-index:0;overflow:visible}' +
+        '.rc-flow-grid{position:relative;z-index:1;display:grid;grid-template-columns:minmax(150px,170px) 56px minmax(150px,170px) 56px minmax(150px,170px) 56px minmax(170px,1fr);grid-template-rows:auto auto auto auto auto;gap:10px 0;align-items:center;min-width:920px}' +
+        '.rc-flow-node{position:relative;z-index:2;padding:.7rem .8rem;border-radius:12px;text-align:center;box-shadow:var(--cs);border:1px solid var(--border);background:var(--bg-card);color:var(--t1);cursor:pointer;transition:transform .15s,box-shadow .15s}' +
+        '.rc-flow-node:hover{transform:translateY(-1px);box-shadow:var(--ch)}' +
+        '.rc-flow-node.rc-flow-active{box-shadow:0 0 0 3px var(--acc),var(--ch)}' +
+        '.rc-flow-label{font-size:.66rem;font-weight:800;letter-spacing:.04em;text-transform:uppercase;line-height:1.25;color:inherit}' +
+        '.rc-flow-count{font-size:1.32rem;font-weight:900;line-height:1.1;margin-top:.2rem}' +
+        '.rc-flow-sub{font-size:.62rem;opacity:.88;margin-top:.15rem;font-weight:600}' +
+        '.rc-flow-root{grid-column:1;grid-row:1/6;align-self:center;background:var(--grad);color:#fff;border-color:var(--nab2)}' +
+        '.rc-flow-l1{background:var(--acc);color:#fff;border-color:var(--nab2)}' +
+        '.rc-flow-l2{background:var(--acc2);color:#fff;border-color:var(--nab2)}' +
+        '.rc-flow-l2-alt{background:var(--t3);color:#fff;border-color:var(--border-s)}' +
+        '.rc-flow-nr{grid-column:3;grid-row:1}' +
+        '.rc-flow-reach{grid-column:3;grid-row:2/5}' +
+        '.rc-flow-ip{grid-column:3;grid-row:5}' +
+        '.rc-flow-res{grid-column:5;grid-row:2}' +
+        '.rc-flow-nres{grid-column:5;grid-row:4}' +
+        '.rc-flow-drivers{grid-column:7;grid-row:1/3;display:flex;flex-direction:column;gap:8px}' +
+        '.rc-flow-pending{grid-column:7;grid-row:3/6;display:flex;flex-direction:column;gap:8px}' +
+        '.rc-flow-leaf{background:var(--bg-card);color:var(--t1);border:1.5px solid var(--acc);padding:.5rem .7rem}' +
+        '.rc-flow-leaf .rc-flow-count{color:var(--acc);font-size:1.05rem}' +
+        '.rc-flow-leaf .rc-flow-label{color:var(--t2);text-transform:none;letter-spacing:.01em;font-size:.72rem}' +
+        '.rc-flow-foot{margin-top:.75rem;font-size:.72rem;color:var(--t3);line-height:1.45;border-top:1px dashed var(--border);padding-top:.6rem}' +
+        '.rc-tree-note{font-size:.72rem;color:var(--t3);font-weight:600}';
     document.head.appendChild(s);
 }
 
@@ -1757,14 +1827,37 @@ window.rcApplyDashboardFilters = function () {
 window.rcResetDashboardFilters = function () {
     rcDashFilters = { status: [], language: [], lob: [], segment: [], agent: [], search: '' };
     rcDashTileFilter = 'all';
+    rcTreeFilter = { node: '', value: '' };
     rcResetDateFiltersState();
     rcSelectedAgent = null;
     rcRenderTabBody();
 };
 
 window.rcKpiTileClick = function (key) {
+    rcTreeFilter = { node: '', value: '' };
     rcDashTileFilter = (rcDashTileFilter === key) ? 'all' : key;
     rcRefreshDashboardContent();
+    setTimeout(function () {
+        var grid = document.getElementById('rcGrid');
+        if (grid) grid.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 180);
+};
+
+window.rcTreeNodeClick = function (node, value) {
+    node = String(node || '');
+    value = value == null ? '' : String(value);
+    var same = rcTreeFilter.node === node && (rcTreeFilter.value || '') === value;
+    if (same || node === 'root') {
+        rcTreeFilter = { node: '', value: '' };
+    } else {
+        rcTreeFilter = { node: node, value: value };
+        rcDashTileFilter = 'all';
+    }
+    rcRefreshDashboardContent();
+    setTimeout(function () {
+        var grid = document.getElementById('rcGrid');
+        if (grid) grid.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 180);
 };
 
 window.rcShowTop10Callers = function () {
@@ -2310,41 +2403,125 @@ function rcBuildContactTreeData(items) {
     return data;
 }
 
-function rcTreeLeafNodes(map, leafClass) {
-    return Object.keys(map).sort(function (a, b) { return map[b] - map[a] || a.localeCompare(b); }).map(function (k) {
-        return '<div class="rc-tree-node ' + leafClass + '"><div class="rc-tree-node-label">' + rcEsc(k) + '</div><div class="rc-tree-node-count">' + map[k] + '</div></div>';
+function rcTopNPairs(map, n) {
+    n = n || 5;
+    var keys = Object.keys(map || {}).sort(function (a, b) {
+        return (map[b] - map[a]) || a.localeCompare(b);
+    });
+    var top = keys.slice(0, n);
+    var rest = keys.slice(n);
+    var out = top.map(function (k) { return { label: k, count: map[k] }; });
+    var other = rest.reduce(function (s, k) { return s + (map[k] || 0); }, 0);
+    if (other) out.push({ label: 'Others', count: other });
+    return out;
+}
+
+function rcFlowNodeHTML(id, extraClass, label, count, sub, filterNode, filterValue) {
+    filterNode = filterNode || id;
+    filterValue = filterValue || '';
+    var active = (rcTreeFilter.node === filterNode && (rcTreeFilter.value || '') === filterValue) ? ' rc-flow-active' : '';
+    var nEnc = encodeURIComponent(filterNode);
+    var vEnc = encodeURIComponent(filterValue);
+    return '<div class="rc-flow-node ' + extraClass + active + '" data-rc-node="' + rcEsc(id) + '" role="button" title="Click to filter the grid · click again to clear" onclick="rcTreeNodeClick(decodeURIComponent(\'' + nEnc + '\'), decodeURIComponent(\'' + vEnc + '\'))">' +
+        '<div class="rc-flow-label">' + rcEsc(label) + '</div>' +
+        '<div class="rc-flow-count">' + rcEsc(String(count)) + '</div>' +
+        (sub ? '<div class="rc-flow-sub">' + rcEsc(sub) + '</div>' : '') +
+        '</div>';
+}
+
+function rcFlowLeafStackHTML(pairs, prefix, filterNode) {
+    if (!pairs.length) {
+        return rcFlowNodeHTML(prefix + '0', 'rc-flow-leaf', 'None yet', 0, '', filterNode, 'None yet');
+    }
+    return pairs.map(function (p, i) {
+        return rcFlowNodeHTML(prefix + i, 'rc-flow-leaf', p.label, p.count, '', filterNode, p.label);
     }).join('');
 }
 
 function rcContactTreeHTML(items) {
     var d = rcBuildContactTreeData(items);
-    var driverLeaves = rcTreeLeafNodes(d.drivers, 'rc-tree-leaf rc-tree-driver');
-    var pendingLeaves = rcTreeLeafNodes(d.pendingWith, 'rc-tree-leaf rc-tree-pending');
-    var openNote = d.reachableOpen ? ('<div class="rc-tree-note">Reachable · awaiting resolution: ' + d.reachableOpen + '</div>') : '';
-    return '<div class="rc-tree-board">' +
-        '<div class="rc-tree-row">' +
-            '<div class="rc-tree-node rc-tree-root"><div class="rc-tree-node-label">Repeated Contacts</div><div class="rc-tree-node-count">' + d.total + '</div></div>' +
-            '<div class="rc-tree-children rc-tree-l1-group">' +
-                '<div class="rc-tree-branch"><div class="rc-tree-node rc-tree-l1"><div class="rc-tree-node-label">Not Reachable</div><div class="rc-tree-node-count">' + d.notReachable + '</div></div></div>' +
-                '<div class="rc-tree-branch">' +
-                    '<div class="rc-tree-node rc-tree-l1"><div class="rc-tree-node-label">Reachable</div><div class="rc-tree-node-count">' + d.reachable + '</div></div>' +
-                    '<div class="rc-tree-children rc-tree-l2-group">' +
-                        '<div class="rc-tree-branch">' +
-                            '<div class="rc-tree-node rc-tree-l2"><div class="rc-tree-node-label">Resolved</div><div class="rc-tree-node-count">' + d.resolved + '</div></div>' +
-                            '<div class="rc-tree-children rc-tree-leaf-group">' + (driverLeaves || '<div class="rc-tree-node rc-tree-leaf rc-tree-driver"><div class="rc-tree-node-label">No drivers yet</div><div class="rc-tree-node-count">0</div></div>') + '</div>' +
-                        '</div>' +
-                        '<div class="rc-tree-branch">' +
-                            '<div class="rc-tree-node rc-tree-l2"><div class="rc-tree-node-label">Issue Not Resolved</div><div class="rc-tree-node-count">' + d.notResolved + '</div></div>' +
-                            '<div class="rc-tree-children rc-tree-leaf-group">' + (pendingLeaves || '<div class="rc-tree-node rc-tree-leaf rc-tree-pending"><div class="rc-tree-node-label">No pending team yet</div><div class="rc-tree-node-count">0</div></div>') + '</div>' +
-                        '</div>' +
-                    '</div>' +
-                    openNote +
-                '</div>' +
-                '<div class="rc-tree-branch"><div class="rc-tree-node rc-tree-l1"><div class="rc-tree-node-label">In Progress</div><div class="rc-tree-node-count">' + d.inProgress + '</div><div class="rc-tree-node-sub">Not edited yet</div></div></div>' +
-            '</div>' +
+    var drivers = rcTopNPairs(d.drivers, 5);
+    var pending = rcTopNPairs(d.pendingWith, 5);
+    var openNote = d.reachableOpen ? ('Reachable awaiting resolution: ' + d.reachableOpen) : '';
+    return '<div class="rc-flow" id="rcTreeBoard">' +
+        '<svg class="rc-flow-svg" id="rcTreeSvg" aria-hidden="true"></svg>' +
+        '<div class="rc-flow-grid">' +
+            rcFlowNodeHTML('root', 'rc-flow-root', 'Repeated Contacts', d.total) +
+            rcFlowNodeHTML('nr', 'rc-flow-l1 rc-flow-nr', 'Not Reachable', d.notReachable) +
+            rcFlowNodeHTML('reach', 'rc-flow-l1 rc-flow-reach', 'Reachable', d.reachable) +
+            rcFlowNodeHTML('ip', 'rc-flow-l1 rc-flow-ip', 'In Progress', d.inProgress, 'Not edited yet') +
+            rcFlowNodeHTML('resolved', 'rc-flow-l2 rc-flow-res', 'Resolved', d.resolved) +
+            rcFlowNodeHTML('nres', 'rc-flow-l2 rc-flow-l2-alt rc-flow-nres', 'Issue Not Resolved', d.notResolved) +
+            '<div class="rc-flow-drivers" id="rcFlowDrivers">' + rcFlowLeafStackHTML(drivers, 'd', 'driver') + '</div>' +
+            '<div class="rc-flow-pending" id="rcFlowPending">' + rcFlowLeafStackHTML(pending, 'p', 'pending') + '</div>' +
         '</div>' +
-        '<div class="rc-tree-foot">In Progress = no Call Back Status saved yet · Reachable splits into Resolved (Call Driver) or Issue Not Resolved (Pending With)</div>' +
+        '<div class="rc-flow-foot">Lines show the callback path. Leaves are Top 5 only' + (openNote ? ' · ' + rcEsc(openNote) : '') + '.</div>' +
     '</div>';
+}
+
+function rcTreeAnchor(board, el, side) {
+    var br = board.getBoundingClientRect();
+    var r = el.getBoundingClientRect();
+    var x = r.left - br.left + board.scrollLeft;
+    var y = r.top - br.top + board.scrollTop;
+    if (side === 'right') return { x: x + r.width, y: y + r.height / 2 };
+    return { x: x, y: y + r.height / 2 };
+}
+
+window.rcPaintContactTree = function () {
+    var board = document.getElementById('rcTreeBoard');
+    var svg = document.getElementById('rcTreeSvg');
+    if (!board || !svg) return;
+    var w = Math.max(board.scrollWidth, board.clientWidth, 1);
+    var h = Math.max(board.scrollHeight, board.clientHeight, 1);
+    svg.setAttribute('width', w);
+    svg.setAttribute('height', h);
+    svg.setAttribute('viewBox', '0 0 ' + w + ' ' + h);
+    var acc = rcCssVar('--acc') || '#a855f7';
+    svg.innerHTML = '<defs><marker id="rcArrowHead" markerWidth="11" markerHeight="11" refX="9" refY="3.5" orient="auto">' +
+        '<polygon points="0 0, 10 3.5, 0 7" fill="' + acc + '"></polygon></marker></defs>';
+
+    function node(id) { return board.querySelector('[data-rc-node="' + id + '"]'); }
+    function connect(fromId, toId) {
+        var a = node(fromId), b = node(toId);
+        if (!a || !b) return;
+        var p1 = rcTreeAnchor(board, a, 'right');
+        var p2 = rcTreeAnchor(board, b, 'left');
+        var mx = (p1.x + p2.x) / 2;
+        var path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        path.setAttribute('d', 'M ' + p1.x + ' ' + p1.y + ' C ' + mx + ' ' + p1.y + ', ' + mx + ' ' + p2.y + ', ' + p2.x + ' ' + p2.y);
+        path.setAttribute('fill', 'none');
+        path.setAttribute('stroke', acc);
+        path.setAttribute('stroke-width', '2.25');
+        path.setAttribute('marker-end', 'url(#rcArrowHead)');
+        svg.appendChild(path);
+    }
+
+    connect('root', 'nr');
+    connect('root', 'reach');
+    connect('root', 'ip');
+    connect('reach', 'resolved');
+    connect('reach', 'nres');
+    board.querySelectorAll('#rcFlowDrivers [data-rc-node]').forEach(function (el) {
+        connect('resolved', el.getAttribute('data-rc-node'));
+    });
+    board.querySelectorAll('#rcFlowPending [data-rc-node]').forEach(function (el) {
+        connect('nres', el.getAttribute('data-rc-node'));
+    });
+};
+
+function rcSchedulePaintContactTree() {
+    requestAnimationFrame(function () {
+        requestAnimationFrame(function () { window.rcPaintContactTree(); });
+    });
+}
+
+if (!window._rcTreeResizeBound) {
+    window._rcTreeResizeBound = true;
+    window.addEventListener('resize', function () {
+        clearTimeout(window._rcTreeResizeT);
+        window._rcTreeResizeT = setTimeout(function () { window.rcPaintContactTree(); }, 120);
+    });
 }
 
 function rcBuildEditFieldHTML(field, value, extraAttrs) {
@@ -2934,7 +3111,7 @@ function rcDashboardMainHTML(dateFiltered, items, s, gridItems) {
             rcChartCard('SLA Distribution', 'rcChartAging', 'Days assign → done/now', false) +
             '</div></div>' +
         rcUploadSectionHTML() +
-        rcGridSectionHTML('Repeat Callers', 'rcGrid', 'rcDashCount', 'rcDashSearch', 'rcExportDashCsv()', gridItems.length);
+        rcGridSectionHTML(rcTreeFilterTitle(), 'rcGrid', 'rcDashCount', 'rcDashSearch', 'rcExportDashCsv()', gridItems.length);
 }
 
 function rcRefreshDashboardContent() {
@@ -3115,6 +3292,8 @@ window.rcToggleCharts = function () {
         if (!rcChartsBuilt && rcLastChartItems) {
             rcBuildDashboardCharts(rcLastChartItems, rcLastChartSummary || rcSummary(rcLastChartItems));
             rcChartsBuilt = true;
+        } else {
+            rcSchedulePaintContactTree();
         }
     } else {
         section.style.display = 'none';
@@ -3362,6 +3541,7 @@ function rcBuildDashboardCharts(items, s) {
         options: { responsive: true, maintainAspectRatio: false, layout: rcChartLayoutPadding(), plugins: { legend: { display: false }, tooltip: rcChartTooltip() },
             scales: { x: { grid: { display: false } }, y: { beginAtZero: true, grid: { color: grid }, ticks: { precision: 0 } } } }
     });
+    rcSchedulePaintContactTree();
 }
 
 // ── Report export (PPT / PDF) ─────────────────────────────────
@@ -3579,13 +3759,13 @@ window.rcExportPpt = async function () {
             s7.addText(String(row[1]), { x: 3.9, y: 1.35 + i * 0.52, w: 1, h: 0.28, fontSize: 14, bold: true, color: C.blue, fontFace: 'Arial' });
         });
         var yLeaf = 1.35;
-        s7.addText('Call Drivers (Resolved)', { x: 5.2, y: yLeaf, w: 4.2, h: 0.25, fontSize: 10, bold: true, color: C.amber, fontFace: 'Arial' });
-        Object.keys(tree.drivers).sort(function (a, b) { return tree.drivers[b] - tree.drivers[a]; }).slice(0, 6).forEach(function (k, i) {
-            s7.addText(k + ' · ' + tree.drivers[k], { x: 5.2, y: yLeaf + 0.32 + i * 0.34, w: 4.2, h: 0.25, fontSize: 9.5, color: C.deep, fontFace: 'Arial' });
+        s7.addText('Call Drivers · Top 5 (Resolved)', { x: 5.2, y: yLeaf, w: 4.2, h: 0.25, fontSize: 10, bold: true, color: C.amber, fontFace: 'Arial' });
+        rcTopNPairs(tree.drivers, 5).forEach(function (p, i) {
+            s7.addText(p.label + ' · ' + p.count, { x: 5.2, y: yLeaf + 0.32 + i * 0.34, w: 4.2, h: 0.25, fontSize: 9.5, color: C.deep, fontFace: 'Arial' });
         });
-        s7.addText('Pending With (Not Resolved)', { x: 5.2, y: 3.55, w: 4.2, h: 0.25, fontSize: 10, bold: true, color: C.amber, fontFace: 'Arial' });
-        Object.keys(tree.pendingWith).sort(function (a, b) { return tree.pendingWith[b] - tree.pendingWith[a]; }).slice(0, 6).forEach(function (k, i) {
-            s7.addText(k + ' · ' + tree.pendingWith[k], { x: 5.2, y: 3.87 + i * 0.34, w: 4.2, h: 0.25, fontSize: 9.5, color: C.deep, fontFace: 'Arial' });
+        s7.addText('Pending With · Top 5 (Not Resolved)', { x: 5.2, y: 3.55, w: 4.2, h: 0.25, fontSize: 10, bold: true, color: C.amber, fontFace: 'Arial' });
+        rcTopNPairs(tree.pendingWith, 5).forEach(function (p, i) {
+            s7.addText(p.label + ' · ' + p.count, { x: 5.2, y: 3.87 + i * 0.34, w: 4.2, h: 0.25, fontSize: 9.5, color: C.deep, fontFace: 'Arial' });
         });
 
         await pptx.writeFile({ fileName: fileName });
