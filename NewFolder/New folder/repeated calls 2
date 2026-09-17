@@ -1,5 +1,5 @@
 // ============================================================
-// repeated-calls.js — Repeated Calls Module v1.9.6
+// repeated-calls.js — Repeated Calls Module v1.9.7
 // List: Repeated_Calls | Agents: Account Mapping (CTI match, all teams)
 // SP fields: RC_Status, Upload_Date, Assignment_Date, Reassign_Date, Resolved_Date, Assigned_To
 // ============================================================
@@ -18,7 +18,7 @@ var rcCharts        = {};
 var rcGrids         = { dash: null, assign: null, assigned: null, agentQueue: null, agentRecords: null };
 var rcUploadRows    = []; 
 var rcSelectedAgent = null;
-window.RC_MODULE_VERSION = '1.9.6';
+window.RC_MODULE_VERSION = '1.9.7';
 
 var RC_DELETE_ALL_EMAILS = ['tehleel.lone@du.ae', 'ubaid.mir@du.ae'];
 var RC_MIN_REPEAT_CALLS = 3;
@@ -1397,7 +1397,7 @@ function rcInjectStyles() {
         '.rc-ms .multiselect-option label{cursor:pointer;flex:1;font-size:.8rem;color:var(--t1);margin:0}' +
         '.rc-flow{position:relative;overflow:auto;padding:16px 12px 18px;min-height:540px;background:var(--bg-card);border:1px solid var(--border);border-radius:14px;box-shadow:var(--cs)}' +
         '.rc-flow-svg{position:absolute;left:0;top:0;pointer-events:none;z-index:0;overflow:visible}' +
-        '.rc-flow-grid{position:relative;z-index:1;display:grid;grid-template-columns:minmax(168px,190px) 80px minmax(168px,190px) 80px minmax(168px,190px) 80px minmax(200px,1fr);grid-template-rows:auto auto auto auto auto;column-gap:0;row-gap:16px;align-items:center;min-width:1040px}' +
+        '.rc-flow-grid{position:relative;z-index:1;display:grid;grid-template-columns:minmax(168px,190px) 80px minmax(168px,190px) 80px minmax(168px,190px) 80px minmax(200px,1fr);grid-template-rows:auto auto auto auto auto;column-gap:0;row-gap:16px;align-items:center;min-width:0;width:100%;max-width:100%}' +
         '.rc-flow-node{position:relative;z-index:2;padding:.75rem .85rem;border-radius:12px;text-align:center;box-shadow:var(--cs);border:1px solid transparent;background:var(--bg-card);color:var(--t1);cursor:pointer;transition:transform .15s,box-shadow .15s}' +
         '.rc-flow-node:hover{transform:translateY(-1px);box-shadow:var(--ch)}' +
         '.rc-flow-node.rc-flow-active{box-shadow:0 0 0 3px var(--acc),var(--ch)}' +
@@ -1425,7 +1425,7 @@ function rcInjectStyles() {
 }
 
 function rcSetFullLayout(on) {
-    /* no-op: layout handled by switchDashboardSection like RNPS */
+    if (typeof smClearModuleLayoutModes === 'function') smClearModuleLayoutModes();
 }
 
 function rcCssVar(name) { return getComputedStyle(document.body).getPropertyValue(name).trim() || '#a855f7'; }
@@ -1661,7 +1661,7 @@ window.rcInit = async function () {
         try {
             rcInjectStyles();
             if (typeof injectAGGridThemeStyles === 'function') injectAGGridThemeStyles();
-            rcSetFullLayout(true);
+            if (typeof smClearModuleLayoutModes === 'function') smClearModuleLayoutModes();
             if (loadingEl) {
                 loadingEl.style.display = 'block';
                 loadingEl.innerHTML = rcSpinnerBlock('Loading Repeated Calls…', 'Fetching records and agents');
