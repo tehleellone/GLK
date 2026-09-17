@@ -1,5 +1,5 @@
 // ============================================================
-// repeated-calls.js — Repeated Calls Module v1.9.4
+// repeated-calls.js — Repeated Calls Module v1.9.5
 // List: Repeated_Calls | Agents: Account Mapping (CTI match, all teams)
 // SP fields: RC_Status, Upload_Date, Assignment_Date, Reassign_Date, Resolved_Date, Assigned_To
 // ============================================================
@@ -18,7 +18,7 @@ var rcCharts        = {};
 var rcGrids         = { dash: null, assign: null, assigned: null, agentQueue: null, agentRecords: null };
 var rcUploadRows    = []; 
 var rcSelectedAgent = null;
-window.RC_MODULE_VERSION = '1.9.4';
+window.RC_MODULE_VERSION = '1.9.5';
 
 var RC_DELETE_ALL_EMAILS = ['tehleel.lone@du.ae', 'ubaid.mir@du.ae'];
 var RC_MIN_REPEAT_CALLS = 3;
@@ -1278,15 +1278,21 @@ async function rcRunPool(items, worker, options) {
     return { ok: ok, fail: fail };
 }
 
-// ── Chart theme ───────────────────────────────────────────────
-var RC_CHART_PALETTE = {
-    pending:    { from: '#64748b', to: '#94a3b8' },
-    inprogress: { from: '#c2410c', to: '#fb923c' },
-    completed:  { from: '#047857', to: '#34d399' },
-    agents:     ['#7c3aed', '#6366f1', '#0891b2', '#db2777', '#059669', '#d97706'],
-    categories: ['#0284c7', '#0d9488', '#7c3aed', '#db2777', '#ca8a04', '#dc2626'],
-    aging:      ['#22c55e', '#84cc16', '#eab308', '#f97316', '#ef4444']
-};
+// ── Chart theme (always pulled from SM CSS tokens) ───────────
+function rcThemePalette() {
+    var acc = (typeof rcCssVar === 'function' ? rcCssVar('--acc') : '') || '#a855f7';
+    var acc2 = (typeof rcCssVar === 'function' ? rcCssVar('--acc2') : '') || '#c724b1';
+    var t3 = (typeof rcCssVar === 'function' ? rcCssVar('--t3') : '') || '#8b7aad';
+    return {
+        pending:    { from: t3, to: acc },
+        inprogress: { from: acc, to: acc2 },
+        completed:  { from: acc2, to: acc },
+        agents:     [acc, acc2, t3, '#6366f1', '#0891b2', '#059669'],
+        categories: [acc, acc2, t3, '#6366f1', '#0891b2', '#d97706'],
+        aging:      [acc, acc2, t3, '#f59e0b', '#ef4444']
+    };
+}
+var RC_CHART_PALETTE = rcThemePalette();
 
 function rcInjectStyles() {
     var existing = document.getElementById('rc-module-styles');
@@ -1294,7 +1300,7 @@ function rcInjectStyles() {
     var s = document.createElement('style');
     s.id = 'rc-module-styles';
     s.textContent =
-        '.rc-root{width:100%;max-width:none;box-sizing:border-box}' +
+        '.rc-root{width:100%!important;max-width:none!important;box-sizing:border-box}' +
         '.rc-chart-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem;margin-top:1rem;width:100%}' +
         '@media(max-width:1100px){.rc-chart-grid{grid-template-columns:1fr}.rc-chart-card.rc-chart-wide{grid-column:span 1}}' +
         '.rc-chart-card.rc-chart-wide{grid-column:span 2}' +
@@ -1862,6 +1868,17 @@ window.rcTreeNodeClick = function (node, value) {
     }, 180);
 };
 
+if (!window._rcTreeClickBound) {
+    window._rcTreeClickBound = true;
+    document.addEventListener('click', function (e) {
+        var n = e.target && e.target.closest ? e.target.closest('.rc-flow-node') : null;
+        if (!n) return;
+        e.preventDefault();
+        e.stopPropagation();
+        window.rcTreeNodeClick(n.getAttribute('data-rc-filter-node') || n.getAttribute('data-rc-node'), n.getAttribute('data-rc-filter-value') || '');
+    }, true);
+}
+
 window.rcShowTop10Callers = function () {
     rcRepeatVisible = true;
     rcChartsBuilt = true;
@@ -2410,21 +2427,14 @@ function rcTopNPairs(map, n) {
     var keys = Object.keys(map || {}).sort(function (a, b) {
         return (map[b] - map[a]) || a.localeCompare(b);
     });
-    var top = keys.slice(0, n);
-    var rest = keys.slice(n);
-    var out = top.map(function (k) { return { label: k, count: map[k] }; });
-    var other = rest.reduce(function (s, k) { return s + (map[k] || 0); }, 0);
-    if (other) out.push({ label: 'Others', count: other });
-    return out;
+    return keys.slice(0, n).map(function (k) { return { label: k, count: map[k] }; });
 }
 
 function rcFlowNodeHTML(id, extraClass, label, count, sub, filterNode, filterValue) {
     filterNode = filterNode || id;
     filterValue = filterValue || '';
     var active = (rcTreeFilter.node === filterNode && (rcTreeFilter.value || '') === filterValue) ? ' rc-flow-active' : '';
-    var nEnc = encodeURIComponent(filterNode);
-    var vEnc = encodeURIComponent(filterValue);
-    return '<div class="rc-flow-node ' + extraClass + active + '" data-rc-node="' + rcEsc(id) + '" role="button" title="Click to filter the grid · click again to clear" onclick="rcTreeNodeClick(decodeURIComponent(\'' + nEnc + '\'), decodeURIComponent(\'' + vEnc + '\'))">' +
+    return '<div class="rc-flow-node ' + extraClass + active + '" data-rc-node="' + rcEsc(id) + '" data-rc-filter-node="' + rcEsc(filterNode) + '" data-rc-filter-value="' + rcEsc(filterValue) + '" role="button" title="Click to filter the grid · click again to clear">' +
         '<div class="rc-flow-label">' + rcEsc(label) + '</div>' +
         '<div class="rc-flow-count">' + rcEsc(String(count)) + '</div>' +
         (sub ? '<div class="rc-flow-sub">' + rcEsc(sub) + '</div>' : '') +
@@ -3435,6 +3445,7 @@ function rcBuildTrendChart(items) {
 
 function rcBuildDashboardCharts(items, s) {
     if (typeof Chart === 'undefined') return;
+    RC_CHART_PALETTE = rcThemePalette();
     rcEnsureChartPlugins();
     Chart.defaults.color = rcCssVar('--t2');
     Chart.defaults.font.family = 'Inter,sans-serif';
