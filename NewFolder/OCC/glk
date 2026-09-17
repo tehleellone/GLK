@@ -1059,6 +1059,10 @@ body[data-theme="dark"] .live-badge,body[data-theme="duralux-dark"] .live-badge{
       </div>
       <div class="nav-items">
        <div class="nav-section-label">Portal</div>
+<div class="nav-item active" id="navDashboard" data-glk-nav="navDashboard" onclick="glkShowDashboard();return false;">
+  <div class="nav-icon"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></div>
+  <div class="nav-label">Pipeline Dashboard</div>
+</div>
 <div class="nav-item" id="navMobileQtd" data-glk-nav="navMobileQtd" style="display:none;" onclick="glkShowMobileQtd();return false;">
   <div class="nav-icon"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg></div>
   <div class="nav-label">Performance Bridge</div>
@@ -1070,10 +1074,6 @@ body[data-theme="dark"] .live-badge,body[data-theme="duralux-dark"] .live-badge{
 <div class="nav-item" id="navGovernance" data-glk-nav="navGovernance" style="display:none;" onclick="glkShowGovernance();return false;">
   <div class="nav-icon"><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg></div>
   <div class="nav-label">Pipeline Governance</div>
-</div>
-<div class="nav-item" id="navDashboard" data-glk-nav="navDashboard" onclick="glkShowDashboard();return false;">
-  <div class="nav-icon"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></div>
-  <div class="nav-label">Pipeline Dashboard</div>
 </div>
       </div>
     </div>
@@ -2636,8 +2636,14 @@ function glkSpLoadMobileReport(cb){
 function glkFinishMobileReportLoad(err,opts){
   opts=opts||{};
   window._glkMobileSpRefreshing=false;
+  window._GLK_BRIDGE_MENU_LOADED=true;
   var refreshBtn=el('mobileReportRefreshBtn');
   if(refreshBtn) refreshBtn.disabled=false;
+  glkHideLoader();
+  if(window._glkClearLoaderSafety){
+    clearTimeout(window._glkClearLoaderSafety);
+    window._glkClearLoaderSafety=null;
+  }
   glkMobileQtdRefreshUI();
   try{ if(mqGetActiveReport()) renderMobileQtdBridge(); }catch(e){ console.error('[GLK] Bridge render after refresh:',e); }
   if(window._glkMobileSpRefreshAfterNav){
@@ -2673,6 +2679,9 @@ window.glkMobileReportRefreshFromSharePoint=function(){
   var refreshBtn=el('mobileReportRefreshBtn');
   if(metaEl) metaEl.textContent='Refreshing from SharePoint…';
   if(refreshBtn) refreshBtn.disabled=true;
+  glkShowLoader('Loading GLK report from SharePoint…');
+  if(window._glkClearLoaderSafety) clearTimeout(window._glkClearLoaderSafety);
+  window._glkClearLoaderSafety=setTimeout(function(){ glkHideLoader(); },65000);
   try{
     glkSpLoadMobileReport(function(err){
       glkFinishMobileReportLoad(err,{alertOnError:true});
@@ -2767,15 +2776,25 @@ function glkHideDashboardLoading(){
   var o=el('dashboardLoadingOverlay'); if(o) o.style.display='none';
 }
 function glkOnPipelineLoadProgress(count){
-  if(GLK_ACTIVE_NAV!=='navDashboard') return;
+  var lt=el('glkLoaderText');
+  if(lt&&count) lt.textContent='Loading your pipeline… '+count+' records';
   var t=el('dashboardLoadingText');
   if(t&&count) t.textContent='Loading pipeline from SharePoint… '+count+' records';
 }
 function glkOnPipelineReady(){
   glkHideDashboardLoading();
+  glkHideLoader();
+  if(window._glkClearLoaderSafety){
+    clearTimeout(window._glkClearLoaderSafety);
+    window._glkClearLoaderSafety=null;
+  }
 }
 function launchDashboard(){
   saveLastVisit();
+  glkShowLoader('Loading your pipeline…');
+  if(window._glkClearLoaderSafety) clearTimeout(window._glkClearLoaderSafety);
+  window._glkClearLoaderSafety=setTimeout(function(){ glkHideLoader(); },65000);
+
   document.getElementById('landingPage').style.cssText='display:none!important';
   el('dashboardContent').style.display='flex';
   el('dashboardContent').style.flexDirection='column';
@@ -2788,16 +2807,16 @@ function launchDashboard(){
     const sel=el('colorSchemeSelector'); if(sel) sel.value=bt;
     applyTheme(bt,dm);
   }catch(e){}
+
   window._glkPipelineReady=false;
   window._glkPipelineLoading=false;
   window._glkPipelineLoadStarted=false;
   window._GLK_BRIDGE_MENU_LOADED=false;
-  window._glkBridgePreloadStarted=false;
+  window._GLK_TRENDS_SP_LOADED=false;
+
   glkShowDashboard();
   loadData();
   rrInitView(true);
-  glkMobileQtdInit(true);
-  glkPreloadBridgeReportAsync();
 
   setTimeout(function(){
     if(USER.email.toLowerCase()==='tehleel.lone@du.ae') glkInitViewAs();
@@ -2951,15 +2970,13 @@ function glkLaunchSpoofed(){
   window._glkPipelineLoading=false;
   window._glkPipelineLoadStarted=false;
   window._GLK_BRIDGE_MENU_LOADED=false;
-  window._glkBridgePreloadStarted=false;
+  window._GLK_TRENDS_SP_LOADED=false;
   resetAll();
   buildFilters();
   applyRoleLocks();
   glkShowDashboard();
   loadData();
   rrInitView(true);
-  glkMobileQtdInit(true);
-  glkPreloadBridgeReportAsync();
 
   // Re-show the View-As panel with restore button visible
   setTimeout(function(){
@@ -3028,10 +3045,10 @@ window.loginAs=function(email,role){
 //  LOAD DATA
 // ══════════════════════════════════════════════════════════════════
 function loadData(){
-  if(window._glkPipelineLoading) return;
   window._glkPipelineLoadStarted=true;
   window._glkPipelineReady=false;
   window._glkPipelineLoading=true;
+  glkShowLoader('Loading your pipeline…');
   const select=[
     'Id','Title','Type_x0020_of_x0020_Request','Type_x0020_of_x0020_Contract',
     'Segment','Account_x0020_Director','Solution_x0020_Manager','Head_x0020_Director',
@@ -3089,6 +3106,9 @@ function loadData(){
         }
         if(GLK_ACTIVE_NAV==='navMobileQtd'){
           try{ if(mqGetActiveReport()) renderMobileQtdBridge(); }catch(e){}
+        }
+        if(GLK_ACTIVE_NAV==='navRevenueRec'){
+          try{ glkPaintTrends(); }catch(e){}
         }
       }
     });
@@ -5167,7 +5187,7 @@ function applyTheme(base,dark){
     '<circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>';
 }
 let GLK_ACTIVE_NAV='navDashboard';
-var GLK_NAV_IDS=['navMobileQtd','navRevenueRec','navGovernance','navDashboard'];
+var GLK_NAV_IDS=['navDashboard','navMobileQtd','navRevenueRec','navGovernance'];
 function glkSetActiveNav(navId){
   navId=navId||'navDashboard';
   if(GLK_NAV_IDS.indexOf(navId)<0) navId='navDashboard';
@@ -5191,20 +5211,19 @@ function glkRestoreActiveNav(){
   glkSetActiveNav(GLK_ACTIVE_NAV);
 }
 function glkHideAllMainViews(){
-  el('dashboard-view').style.display='none';
-  el('mobile-qtd-view').style.display='none';
-  el('revenue-rec-view').style.display='none';
-  el('governance-view').style.display='none';
+  ['dashboard-view','mobile-qtd-view','revenue-rec-view','governance-view'].forEach(function(id){
+    var n=el(id); if(n) n.style.display='none';
+  });
 }
 function glkShowDashboard(){
   glkHideAllMainViews();
-  el('dashboard-view').style.display='block';
-  el('table-nav').style.display='block';
-  el('content').classList.remove('mq-view');
-  el('dashboardContent').classList.remove('mq-full');
+  var dv=el('dashboard-view'); if(dv) dv.style.display='block';
+  var tn=el('table-nav'); if(tn) tn.style.display='block';
+  var ct=el('content'); if(ct) ct.classList.remove('mq-view');
+  var dc=el('dashboardContent'); if(dc) dc.classList.remove('mq-full');
   glkSetActiveNav('navDashboard');
   if(!window._glkPipelineReady){
-    glkShowDashboardLoading(window._glkPipelineLoading?'Loading pipeline from SharePoint…':undefined);
+    glkShowDashboardLoading(window._glkPipelineLoading?'Loading pipeline from SharePoint…':'Loading pipeline from SharePoint…');
   }else{
     glkHideDashboardLoading();
   }
@@ -5216,19 +5235,18 @@ function glkPaintMobileQtd(){
 }
 function glkShowMobileQtd(){
   glkHideAllMainViews();
-  el('table-nav').style.display='none';
-  el('mobile-qtd-view').style.display='block';
-  el('content').classList.add('mq-view');
-  el('dashboardContent').classList.add('mq-full');
+  var tn=el('table-nav'); if(tn) tn.style.display='none';
+  var mv=el('mobile-qtd-view'); if(mv) mv.style.display='block';
+  var ct=el('content'); if(ct) ct.classList.add('mq-view');
+  var dc=el('dashboardContent'); if(dc) dc.classList.add('mq-full');
   glkSetActiveNav('navMobileQtd');
-  mqInitControlsPanel();
-  mqSyncBridgeControlsUi();
+  glkMobileQtdInit(true);
   mqInitWowPriorStore();
-  if(!window._GLK_BRIDGE_MENU_LOADED){
-    window._GLK_BRIDGE_MENU_LOADED=true;
+  if(window._glkMobileSpRefreshing){
     glkEnsureBridgeReportOnShow();
+  }else if(!window._GLK_BRIDGE_MENU_LOADED || !mqGetActiveReport()){
+    glkMobileReportRefreshFromSharePoint();
   }else{
-    glkEnsureBridgeReportOnShow();
     glkPaintMobileQtd();
   }
   requestAnimationFrame(function(){ glkSetActiveNav('navMobileQtd'); });
@@ -5240,28 +5258,14 @@ function glkPaintTrends(){
 }
 function glkShowRevenueRec(){
   glkHideAllMainViews();
-  el('revenue-rec-view').style.display='block';
-  el('table-nav').style.display='none';
-  el('content').classList.add('mq-view');
-  el('dashboardContent').classList.add('mq-full');
+  var rv=el('revenue-rec-view'); if(rv) rv.style.display='block';
+  var tn=el('table-nav'); if(tn) tn.style.display='none';
+  var ct=el('content'); if(ct) ct.classList.add('mq-view');
+  var dc=el('dashboardContent'); if(dc) dc.classList.add('mq-full');
   glkSetActiveNav('navRevenueRec');
   requestAnimationFrame(function(){ glkSetActiveNav('navRevenueRec'); });
   rrInitControlsPanel();
-  if(RR_PARSED&&Object.keys(RR_PARSED).length){
-    rrBuildChartTabs();
-    glkPaintTrends();
-    rrTryLoadFromSharePoint(function(){ glkPaintTrends(); });
-  }else{
-    var metaEl=el('rrReportMeta');
-    if(metaEl) metaEl.textContent='Loading from SharePoint…';
-    rrTryLoadFromSharePoint(function(err){
-      if(err){
-        rrTryLoadBundledWorkbook(function(){ glkPaintTrends(); });
-        return;
-      }
-      glkPaintTrends();
-    });
-  }
+  glkEnsureTrendsLoaded(true);
   setTimeout(glkPaintTrends,80);
   setTimeout(glkPaintTrends,280);
 }
@@ -9960,29 +9964,33 @@ function glkMobileQtdInit(skipSpLoad){
   mqInitControlsPanel();
   mqSyncBridgeControlsUi();
   if(skipSpLoad) return;
-  glkSpLoadMobileReport(function(err){
-    if(err&&!mqGetActiveReport()){
-      console.log('[GLK] No QTD report yet:',err.message);
-      GLK_MOBILE_REPORT_META=null;
+  glkMobileReportRefreshFromSharePoint();
+}
+function glkEnsureTrendsLoaded(forcePaint){
+  var metaEl=el('rrReportMeta');
+  function finish(err){
+    window._glkTrendsLoading=false;
+    window._GLK_TRENDS_SP_LOADED=true;
+    if(err) console.warn('[GLK] Trends SharePoint load:',err.message);
+    if(forcePaint||GLK_ACTIVE_NAV==='navRevenueRec') glkPaintTrends();
+    else rrRefreshMeta();
+  }
+  if(RR_PARSED&&Object.keys(RR_PARSED).length){
+    rrBuildChartTabs();
+    if(forcePaint||GLK_ACTIVE_NAV==='navRevenueRec') glkPaintTrends();
+  }else if(metaEl&&(forcePaint||GLK_ACTIVE_NAV==='navRevenueRec')){
+    metaEl.textContent='Loading from SharePoint…';
+  }
+  if(window._glkTrendsLoading) return;
+  if(window._GLK_TRENDS_SP_LOADED&&RR_PARSED&&Object.keys(RR_PARSED).length) return;
+  window._glkTrendsLoading=true;
+  rrTryLoadFromSharePoint(function(err){
+    if(err){
+      rrTryLoadBundledWorkbook(function(loadErr){ finish(loadErr||err); });
+      return;
     }
-    glkMobileQtdRefreshUI();
-    if(GLK_ACTIVE_NAV==='navMobileQtd'){
-      try{ if(mqGetActiveReport()) renderMobileQtdBridge(); }catch(e){}
-    }
+    finish(null);
   });
-}
-function glkPreloadBridgeReportAsync(){
-  if(window._glkBridgePreloadStarted||window._GLK_BRIDGE_MENU_LOADED||window._glkMobileSpRefreshing) return;
-  window._glkBridgePreloadStarted=true;
-  window._GLK_BRIDGE_MENU_LOADED=true;
-  setTimeout(function(){
-    glkEnsureBridgeReportOnShow();
-  },300);
-}
-function glkLoadPipelineInBackground(){
-  if(window._glkPipelineLoadStarted) return;
-  window._glkPipelineLoadStarted=true;
-  loadData();
 }
 function mqStripHtml(s){
   var d=document.createElement('div');
@@ -11457,10 +11465,7 @@ function rrTryLoadFromSharePoint(cb){
   });
 }
 function rrTryLoadFromSharePointBackground(){
-  rrTryLoadFromSharePoint(function(err){
-    if(err) console.warn('[GLK] Trends SP background sync:',err.message);
-    else rrRefreshMeta();
-  });
+  glkEnsureTrendsLoaded(false);
 }
 window.rrRefreshFromSharePoint=function(){
   var metaEl=el('rrReportMeta');
@@ -13291,17 +13296,15 @@ function pgInitGovernanceDatesOnce(){
 }
 window.glkShowGovernance=function(){
   glkHideAllMainViews();
-  el('table-nav').style.display='none';
-  el('governance-view').style.display='block';
-  el('content').classList.add('mq-view');
-  el('dashboardContent').classList.add('mq-full');
+  var tn=el('table-nav'); if(tn) tn.style.display='none';
+  var gv=el('governance-view'); if(gv) gv.style.display='block';
+  var ct=el('content'); if(ct) ct.classList.add('mq-view');
+  var dc=el('dashboardContent'); if(dc) dc.classList.add('mq-full');
   glkSetActiveNav('navGovernance');
   pgInitGovernanceDatesOnce();
-  if(!window._PG_GOV_MENU_LOADED){
-    window._PG_GOV_MENU_LOADED=true;
-    pgStartGovernanceLoad(false);
-  }else if(PG_LOADING) pgRender();
-  else pgEnsureVersionHistoryLoaded(false);
+  window._PG_GOV_MENU_LOADED=true;
+  if(PG_LOADING) pgRender();
+  else pgStartGovernanceLoad(false);
   requestAnimationFrame(function(){ glkSetActiveNav('navGovernance'); });
   setTimeout(function(){ glkSetActiveNav('navGovernance'); },100);
 };
