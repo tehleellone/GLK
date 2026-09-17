@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>GLK Enterprise Pipeline Dashboard</title>
+<title>Sales Excellence &amp; Governance Portal</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/ag-grid/32.0.2/ag-grid-community.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -158,7 +158,7 @@ select,input,textarea,button{font-family:inherit}
 .landing-brand-icon{margin-bottom:.85rem}
 .landing-brand-icon img{width:64px;height:64px;object-fit:contain;display:block}
 .header-title{
-  font-size:1.05rem;font-weight:800;white-space:nowrap;
+  font-size:.92rem;font-weight:800;line-height:1.25;max-width:min(320px,42vw);
   background:var(--grad);-webkit-background-clip:text;
   -webkit-text-fill-color:transparent;background-clip:text;
 }
@@ -919,30 +919,30 @@ body[data-theme="dark"] .live-badge,body[data-theme="duralux-dark"] .live-badge{
       <div class="landing-brand-icon">
         <img src="http://sharedspaces:8086/sites/GKA/SiteAssets/du.jpg" alt="du Logo">
       </div>
-      <h1 class="landing-brand-title gradient-text">GLK Pipeline Dashboard</h1>
-      <p class="landing-brand-subtitle">Quarter execution portal — performance bridge, live pipeline, trends, and hygiene.</p>
-      <p class="landing-brand-intro">One SharePoint-connected workspace for GLK leadership and sales teams. Bridge actuals to target, drill to accounts, track pipeline movement, and clean up stale deals — without Excel exports.</p>
-      <span class="live-badge"><span class="badge-pulse"></span> Live SharePoint data</span>
+      <h1 class="landing-brand-title gradient-text">Sales Excellence &amp; Governance Portal</h1>
+      <p class="landing-brand-subtitle">Executive portal for sales performance, pipeline visibility, and governance.</p>
+      <p class="landing-brand-intro">A unified view for GLK leadership and sales teams — quarter performance, forecasts, pipeline movement, and deal quality in one place.</p>
+      <span class="live-badge"><span class="badge-pulse"></span> Real-time data</span>
       <div class="landing-features">
         <div class="landing-feature">
           <div class="landing-feature-icon"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg></div>
           <div>
             <div class="landing-feature-title">Performance Bridge</div>
-            <div class="landing-feature-desc">QTD/YTD waterfall — actuals, pipeline, net forecast, and gap to target with account drill-down</div>
+            <div class="landing-feature-desc">Quarter and year-to-date view of actuals, forecast, and gap to target</div>
           </div>
         </div>
         <div class="landing-feature">
           <div class="landing-feature-icon"><svg viewBox="0 0 24 24"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 8 12 3 7 8"/></svg></div>
           <div>
             <div class="landing-feature-title">Trends &amp; Live Pipeline</div>
-            <div class="landing-feature-desc">Historical Net Adds / MRC trends plus HD → AD → AM pipeline views from SharePoint</div>
+            <div class="landing-feature-desc">Historical performance trends and live pipeline visibility across the sales hierarchy</div>
           </div>
         </div>
         <div class="landing-feature">
           <div class="landing-feature-icon"><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg></div>
           <div>
             <div class="landing-feature-title">Pipeline Governance</div>
-            <div class="landing-feature-desc">Stale deal queue and Opp Status flip tracking from SharePoint version history</div>
+            <div class="landing-feature-desc">Deal quality oversight, status discipline, and stale pipeline identification</div>
           </div>
         </div>
       </div>
@@ -958,12 +958,12 @@ body[data-theme="dark"] .live-badge,body[data-theme="duralux-dark"] .live-badge{
             <img src="http://sharedspaces:8086/sites/GKA/SiteAssets/du.jpg" alt="du Logo">
           </div>
         </div>
-        <h1 class="landing-title">Welcome back</h1>
-        <p class="landing-subtitle">Go to Dashboard opens Performance Bridge first</p>
+        <h1 class="landing-title">Welcome Back</h1>
+        <p class="landing-subtitle">Sign in to access the portal</p>
       </div>
 
       <div class="landing-card animate-slide-up" style="animation-delay:.2s;">
-        <div class="welcome-badge"><span class="badge-pulse"></span><span>GLK Enterprise Portal</span></div>
+        <div class="welcome-badge"><span class="badge-pulse"></span><span>Welcome Back</span></div>
         <div class="landing-user-info">
           <div class="landing-avatar">
             <div class="avatar-ring"></div>
@@ -991,7 +991,7 @@ body[data-theme="dark"] .live-badge,body[data-theme="duralux-dark"] .live-badge{
           </div>
           <div class="stats-secondary">
             <div class="stat-mini"><svg style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg><span>Secure session</span></div>
-            <div class="stat-mini"><svg style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg><span>SharePoint connected</span></div>
+            <div class="stat-mini"><svg style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg><span>Enterprise access</span></div>
           </div>
         </div>
 
@@ -1008,7 +1008,7 @@ body[data-theme="dark"] .live-badge,body[data-theme="duralux-dark"] .live-badge{
         </div>
       </div>
       <div class="landing-footer animate-fade-in" style="animation-delay:.6s;">
-        <p>GLK Pipeline Dashboard · SharePoint SiteAssets · All roles</p>
+        <p>Sales Excellence &amp; Governance Portal · GLK Enterprise</p>
       </div>
     </div>
   </div>
@@ -1028,7 +1028,7 @@ body[data-theme="dark"] .live-badge,body[data-theme="duralux-dark"] .live-badge{
       <div class="logo">
         <img src="http://sharedspaces:8086/sites/GKA/SiteAssets/du.jpg" alt="du Logo">
       </div>
-      <span class="header-title">GLK Pipeline Dashboard</span>
+      <span class="header-title">Sales Excellence &amp; Governance Portal</span>
     </div>
     <div class="header-center">
       <div class="live-badge-pill"><span class="status-dot"></span><span>Live</span></div>
@@ -1058,7 +1058,7 @@ body[data-theme="dark"] .live-badge,body[data-theme="duralux-dark"] .live-badge{
         <svg id="sidebarToggleIcon" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/><polyline points="9 18 3 12 9 6"/></svg>
       </div>
       <div class="nav-items">
-       <div class="nav-section-label">GLK Portal</div>
+       <div class="nav-section-label">Portal</div>
 <div class="nav-item" id="navMobileQtd" data-glk-nav="navMobileQtd" style="display:none;" onclick="glkShowMobileQtd();return false;">
   <div class="nav-icon"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg></div>
   <div class="nav-label">Performance Bridge</div>
@@ -2754,7 +2754,7 @@ function populateLanding(){
   btn.disabled=false;
   btn.innerHTML='<span class="btn-icon"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg></span><span class="btn-text">Go to Dashboard</span><span class="btn-shine"></span>';
   btn.onclick=launchDashboard;
-  el('accessNote').innerHTML='<svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:#16a34a;fill:none;stroke-width:2"><polyline points="20 6 9 17 4 12"/></svg><span style="color:#16a34a;font-weight:600;">Opens Performance Bridge — pipeline loads in the background</span>';
+  el('accessNote').innerHTML='<svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:#16a34a;fill:none;stroke-width:2"><polyline points="20 6 9 17 4 12"/></svg><span style="color:#16a34a;font-weight:600;">Access verified</span>';
 }
 function glkShowLoader(msg){var l=el('glkLoader');if(!l)return;if(msg)el('glkLoaderText').textContent=msg;l.style.display='flex';}
 function glkHideLoader(){var l=el('glkLoader');if(l)l.style.display='none';}
@@ -2792,14 +2792,14 @@ function launchDashboard(){
   window._glkPipelineLoading=false;
   window._glkPipelineLoadStarted=false;
   window._GLK_BRIDGE_MENU_LOADED=false;
-  glkShowMobileQtd();
+  window._glkBridgePreloadStarted=false;
+  glkShowDashboard();
   loadData();
   rrInitView(true);
   glkMobileQtdInit(true);
+  glkPreloadBridgeReportAsync();
 
-    
-    
-    setTimeout(function(){
+  setTimeout(function(){
     if(USER.email.toLowerCase()==='tehleel.lone@du.ae') glkInitViewAs();
   },1500);
 }
@@ -2921,7 +2921,7 @@ function glkViewAs(){
   btn.disabled=false;
   btn.innerHTML='<span class="btn-icon"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg></span><span class="btn-text">Go to Dashboard</span><span class="btn-shine"></span>';
   btn.onclick=launchDashboard;
-  el('accessNote').innerHTML='<svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:#16a34a;fill:none;stroke-width:2"><polyline points="20 6 9 17 4 12"/></svg><span style="color:#16a34a;font-weight:600;">Opens Performance Bridge — pipeline loads in the background</span>';
+  el('accessNote').innerHTML='<svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:#16a34a;fill:none;stroke-width:2"><polyline points="20 6 9 17 4 12"/></svg><span style="color:#16a34a;font-weight:600;">Access verified</span>';
 
   el('vaRestoreBtn').style.display='none';
   el('vaCurrentUser').innerHTML='Viewing as: <strong style="color:var(--acc)">'+USER.email+'</strong> · <strong style="color:var(--acc)">'+USER.role+'</strong>';
@@ -2951,13 +2951,15 @@ function glkLaunchSpoofed(){
   window._glkPipelineLoading=false;
   window._glkPipelineLoadStarted=false;
   window._GLK_BRIDGE_MENU_LOADED=false;
+  window._glkBridgePreloadStarted=false;
   resetAll();
   buildFilters();
   applyRoleLocks();
-  glkShowMobileQtd();
+  glkShowDashboard();
   loadData();
   rrInitView(true);
   glkMobileQtdInit(true);
+  glkPreloadBridgeReportAsync();
 
   // Re-show the View-As panel with restore button visible
   setTimeout(function(){
@@ -5164,11 +5166,11 @@ function applyTheme(base,dark){
     '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>':
     '<circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>';
 }
-let GLK_ACTIVE_NAV='navMobileQtd';
+let GLK_ACTIVE_NAV='navDashboard';
 var GLK_NAV_IDS=['navMobileQtd','navRevenueRec','navGovernance','navDashboard'];
 function glkSetActiveNav(navId){
-  navId=navId||'navMobileQtd';
-  if(GLK_NAV_IDS.indexOf(navId)<0) navId='navMobileQtd';
+  navId=navId||'navDashboard';
+  if(GLK_NAV_IDS.indexOf(navId)<0) navId='navDashboard';
   GLK_ACTIVE_NAV=navId;
   try{ sessionStorage.setItem('glk_active_nav',GLK_ACTIVE_NAV); }catch(e){}
   GLK_NAV_IDS.forEach(function(id){
@@ -5201,8 +5203,8 @@ function glkShowDashboard(){
   el('content').classList.remove('mq-view');
   el('dashboardContent').classList.remove('mq-full');
   glkSetActiveNav('navDashboard');
-  if(window._glkPipelineLoading||(!window._glkPipelineReady&&window._glkPipelineLoadStarted)){
-    glkShowDashboardLoading();
+  if(!window._glkPipelineReady){
+    glkShowDashboardLoading(window._glkPipelineLoading?'Loading pipeline from SharePoint…':undefined);
   }else{
     glkHideDashboardLoading();
   }
@@ -9969,6 +9971,14 @@ function glkMobileQtdInit(skipSpLoad){
     }
   });
 }
+function glkPreloadBridgeReportAsync(){
+  if(window._glkBridgePreloadStarted||window._GLK_BRIDGE_MENU_LOADED||window._glkMobileSpRefreshing) return;
+  window._glkBridgePreloadStarted=true;
+  window._GLK_BRIDGE_MENU_LOADED=true;
+  setTimeout(function(){
+    glkEnsureBridgeReportOnShow();
+  },300);
+}
 function glkLoadPipelineInBackground(){
   if(window._glkPipelineLoadStarted) return;
   window._glkPipelineLoadStarted=true;
@@ -10090,7 +10100,7 @@ window.mqExportBridgePpt=function(){
         :('Mobile Net Add Lines — '+mqPeriodLongName(bridgePer));
       var pptx=new PptxCtor();
       pptx.layout='LAYOUT_WIDE';
-      pptx.author='GLK Pipeline Dashboard';
+      pptx.author='Sales Excellence & Governance Portal';
       pptx.title=bridgeTitle;
       pptx.subject=mqPeriodLongName(calc.bridgePeriod||mqPeriod)+' Export';
       var slide=pptx.addSlide();
