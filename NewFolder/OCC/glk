@@ -607,8 +607,21 @@ body[data-theme="dark"] .status-dot,body[data-theme="duralux-dark"] .status-dot{
 .mq-bracket-line{display:block;width:calc(100% - 4px);height:0;border-top:1.5px solid rgba(100,116,139,.55);margin-top:10px}
 .mq-bracket-gross .mq-bracket-label{font-size:10px;font-weight:800;color:#1d4ed8;line-height:1.2;text-align:center;padding:0 3px;white-space:nowrap}
 .mq-bracket-churn .mq-bracket-label{font-size:10px;font-weight:800;color:#dc2626;line-height:1.2;text-align:center;padding:0 3px;white-space:nowrap}
-.mq-bracket-prod{display:block;font-size:8px;font-weight:700;color:var(--t3);margin-top:1px;letter-spacing:.03em}
-.mq-x-prod{display:block;font-size:9px;font-weight:800;color:#6366f1;margin-top:2px;letter-spacing:.04em}
+.mq-x-prod{
+  display:inline-block;margin-top:3px;padding:1px 5px;border-radius:4px;
+  font-size:8px;font-weight:800;letter-spacing:.04em;line-height:1.2;text-transform:uppercase;
+  background:rgba(99,102,241,.12);color:#4338ca;border:1px solid rgba(99,102,241,.28);
+}
+.mq-x-prod.corporate{background:rgba(234,88,12,.12);color:#c2410c;border-color:rgba(234,88,12,.32)}
+.mq-x-prod.m2m{background:rgba(13,148,136,.12);color:#0f766e;border-color:rgba(13,148,136,.32)}
+.mq-prod-onbar{
+  position:absolute;transform:translateX(-50%);pointer-events:none;z-index:5;
+  font-size:8px;font-weight:800;letter-spacing:.04em;line-height:1;text-transform:uppercase;
+  padding:2px 4px;border-radius:4px;background:#fff;box-shadow:0 1px 3px rgba(15,23,42,.2);
+  border:1px solid rgba(99,102,241,.35);color:#4338ca;white-space:nowrap;
+}
+.mq-prod-onbar.corporate{border-color:rgba(234,88,12,.4);color:#c2410c}
+.mq-prod-onbar.m2m{border-color:rgba(13,148,136,.4);color:#0f766e}
 .mq-bracket-gross .mq-bracket-line{border-top-color:rgba(29,78,216,.65)}
 .mq-bracket-churn .mq-bracket-line{border-top-color:rgba(220,38,38,.65)}
 #mqXAxisStrip{position:relative;height:52px;margin-top:4px;padding-bottom:2px;min-height:48px;flex-shrink:0}
@@ -9092,14 +9105,12 @@ function mqAxisNameLines(b){
   if(b.type==='gap') return ['Gap','('+fmtLines(Math.abs(b.value))+')'];
   var name=String(b.axisName||b.custName||b.groupLabel||'').trim();
   if(!name) return [''];
-  var prodTag=(mqProductFamily==='mobile'&&b.productBucket&&(b.section==='gross'||b.section==='churn')&&b.bracketGroup)?b.productBucket:'';
-  function withProd(lines){ return prodTag?lines.concat([prodTag]):lines; }
-  if(name.length<=14) return withProd([name]);
+  if(name.length<=14) return [name];
   var words=name.split(/\s+/);
   if(words.length>=3){
     var third=Math.ceil(words.length/3);
     var two=Math.ceil(words.length*2/3);
-    return withProd([words.slice(0,third).join(' '),words.slice(third,two).join(' '),words.slice(two).join(' ')]);
+    return [words.slice(0,third).join(' '),words.slice(third,two).join(' '),words.slice(two).join(' ')];
   }
   if(words.length>=2){
     var best=1,bestDiff=999;
@@ -9108,18 +9119,26 @@ function mqAxisNameLines(b){
       var diff=Math.abs(a.length-bb.length);
       if(diff<bestDiff){ bestDiff=diff; best=w; }
     }
-    return withProd([words.slice(0,best).join(' '), words.slice(best).join(' ')]);
+    return [words.slice(0,best).join(' '), words.slice(best).join(' ')];
   }
   var mid=Math.ceil(name.length/2);
-  return withProd([name.slice(0,mid), name.slice(mid)]);
+  return [name.slice(0,mid), name.slice(mid)];
 }
-function mqFormatAxisCellHtml(lines){
-  if(!lines||!lines.length) return '';
-  var prodSet={'MPR':1,'Corporate':1,'M2M':1};
-  return lines.map(function(l,i){
-    if(i===lines.length-1&&prodSet[l]) return '<span class="mq-x-prod">'+mqEscHtml(l)+'</span>';
-    return mqEscHtml(l);
-  }).join('<br>');
+function mqBarProductTag(b){
+  if(!b||mqProductFamily!=='mobile') return '';
+  if(!(b.section==='gross'||b.section==='churn')||!b.bracketGroup) return '';
+  return String(b.productBucket||'').trim();
+}
+function mqProductTagClass(tag){
+  var t=String(tag||'').toLowerCase();
+  if(t==='corporate') return 'corporate';
+  if(t==='m2m') return 'm2m';
+  return 'mpr';
+}
+function mqFormatAxisCellHtml(lines,prodTag){
+  var html=(lines||[]).map(function(l){ return mqEscHtml(l); }).join('<br>');
+  if(prodTag) html+='<br><span class="mq-x-prod '+mqProductTagClass(prodTag)+'">'+mqEscHtml(prodTag)+'</span>';
+  return html;
 }
 function mqAxisLabelLines(b){
   return mqAxisNameLines(b);
@@ -9152,17 +9171,7 @@ function mqSyncChartLabels(chart,bars){
       var w=b1.x+(b1.width||14)/2+2-x1;
       cell.style.left=x1+'px';
       cell.style.width=Math.max(w,24)+'px';
-      var prodNote='';
-      if(mqProductFamily==='mobile'&&bars){
-        var prodSet={};
-        for(var bi=g.start;bi<=g.end;bi++){
-          var bb=bars[bi];
-          if(bb&&bb.productBucket) prodSet[bb.productBucket]=1;
-        }
-        var pk=Object.keys(prodSet);
-        if(pk.length) prodNote='<span class="mq-bracket-prod">'+mqEscHtml(pk.join(' · '))+'</span>';
-      }
-      cell.innerHTML='<span class="mq-bracket-label">'+mqEscHtml(g.label)+'</span>'+prodNote+'<span class="mq-bracket-line"></span>';
+      cell.innerHTML='<span class="mq-bracket-label">'+mqEscHtml(g.label)+'</span><span class="mq-bracket-line"></span>';
       brow.appendChild(cell);
     });
   }
@@ -9179,30 +9188,46 @@ function mqSyncChartLabels(chart,bars){
     strip.style.minWidth=cw+'px';
     strip.innerHTML='';
     var maxLines=1;
-    bars.forEach(function(b){ maxLines=Math.max(maxLines,mqAxisNameLines(b).length); });
+    bars.forEach(function(b){
+      var n=mqAxisNameLines(b).length+(mqBarProductTag(b)?1:0);
+      maxLines=Math.max(maxLines,n);
+    });
     strip.style.height=Math.max(56,maxLines*16+10)+'px';
     strip.style.minHeight=strip.style.height;
   }
   meta.data.forEach(function(bar,i){
     var b=bars[i]; if(!b) return;
     var nameLines=mqAxisNameLines(b);
-    if(overlay&&b.verticalHint){
-      var letters=mqVerticalLetters(b.verticalHint);
-      if(letters.length){
-        var bot=Math.max(bar.y,bar.base);
-        var blockH=letters.length*12+8;
-        var limit=(canvas.clientHeight||340)-blockH-4;
-        var vcell=document.createElement('div');
-        vcell.className='mq-v-onbar'+(GLK_MQ_DETAIL_IDX===i?' sel':'');
-        vcell.style.left=bar.x+'px';
-        vcell.style.top=Math.min(bot+7,limit)+'px';
-        var hd=mqVertHdGroup((b.bids&&b.bids[0]&&b.bids[0].vertical)||b.verticalHint);
-        vcell.innerHTML=mqVerticalStackBlock(b.verticalHint);
-        var stack=vcell.querySelector('.mq-v-stack');
-        if(stack) stack.style.borderLeft='3px solid '+(MQ_HD_COLORS[hd]||MQ_HD_COLORS.other);
-        vcell.title=b.verticalHint;
-        vcell.onclick=function(){mqClickAxisCell(i);};
-        overlay.appendChild(vcell);
+    var prodTag=mqBarProductTag(b);
+    if(overlay){
+      if(b.verticalHint){
+        var letters=mqVerticalLetters(b.verticalHint);
+        if(letters.length){
+          var bot=Math.max(bar.y,bar.base);
+          var blockH=letters.length*12+8;
+          var limit=(canvas.clientHeight||340)-blockH-4;
+          var vcell=document.createElement('div');
+          vcell.className='mq-v-onbar'+(GLK_MQ_DETAIL_IDX===i?' sel':'');
+          vcell.style.left=bar.x+'px';
+          vcell.style.top=Math.min(bot+7,limit)+'px';
+          var hd=mqVertHdGroup((b.bids&&b.bids[0]&&b.bids[0].vertical)||b.verticalHint);
+          vcell.innerHTML=mqVerticalStackBlock(b.verticalHint);
+          var stack=vcell.querySelector('.mq-v-stack');
+          if(stack) stack.style.borderLeft='3px solid '+(MQ_HD_COLORS[hd]||MQ_HD_COLORS.other);
+          vcell.title=b.verticalHint;
+          vcell.onclick=function(){mqClickAxisCell(i);};
+          overlay.appendChild(vcell);
+        }
+      }
+      if(prodTag){
+        var pcell=document.createElement('div');
+        pcell.className='mq-prod-onbar '+mqProductTagClass(prodTag);
+        pcell.textContent=prodTag;
+        pcell.style.left=bar.x+'px';
+        var topY=Math.min(bar.y,bar.base);
+        pcell.style.top=Math.max(4,topY+4)+'px';
+        pcell.title=prodTag;
+        overlay.appendChild(pcell);
       }
     }
     if(strip){
@@ -9214,8 +9239,8 @@ function mqSyncChartLabels(chart,bars){
       var slotW=GLK_MQ_LAST_BAR_SLOT||72;
       cell.style.maxWidth=Math.max(62,slotW-2)+'px';
       cell.style.minWidth=Math.max(58,Math.min(slotW,slotW-4))+'px';
-      cell.innerHTML=mqFormatAxisCellHtml(nameLines);
-      cell.title=b.custName||nameLines.join(' ');
+      cell.innerHTML=mqFormatAxisCellHtml(nameLines,prodTag);
+      cell.title=(b.custName||nameLines.join(' '))+(prodTag?' · '+prodTag:'');
       cell.onclick=function(){mqClickAxisCell(i);};
       strip.appendChild(cell);
     }
