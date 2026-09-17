@@ -1,5 +1,5 @@
 // ============================================================
-// repeated-calls.js — Repeated Calls Module v1.9.5
+// repeated-calls.js — Repeated Calls Module v1.9.6
 // List: Repeated_Calls | Agents: Account Mapping (CTI match, all teams)
 // SP fields: RC_Status, Upload_Date, Assignment_Date, Reassign_Date, Resolved_Date, Assigned_To
 // ============================================================
@@ -18,7 +18,7 @@ var rcCharts        = {};
 var rcGrids         = { dash: null, assign: null, assigned: null, agentQueue: null, agentRecords: null };
 var rcUploadRows    = []; 
 var rcSelectedAgent = null;
-window.RC_MODULE_VERSION = '1.9.5';
+window.RC_MODULE_VERSION = '1.9.6';
 
 var RC_DELETE_ALL_EMAILS = ['tehleel.lone@du.ae', 'ubaid.mir@du.ae'];
 var RC_MIN_REPEAT_CALLS = 3;
@@ -1425,10 +1425,7 @@ function rcInjectStyles() {
 }
 
 function rcSetFullLayout(on) {
-    var content = document.querySelector('.content');
-    var shell = document.querySelector('.portal-shell');
-    if (content) content.classList.toggle('rc-full-mode', !!on);
-    if (shell) shell.classList.toggle('rc-full-shell', !!on);
+    /* no-op: layout handled by switchDashboardSection like RNPS */
 }
 
 function rcCssVar(name) { return getComputedStyle(document.body).getPropertyValue(name).trim() || '#a855f7'; }
@@ -3114,10 +3111,6 @@ function rcDashboardMainHTML(dateFiltered, items, s, gridItems) {
             rcKpiTile('In Progress', s.inprogress, 'Unique repeat callers · assigned', rcStatusColor(RC_STATUS.INPROGRESS), 'inprogress') +
             rcKpiTile('Resolved', s.completed, 'Unique repeat callers · done', rcStatusColor(RC_STATUS.RESOLVED), 'resolved') +
         '</div>' +
-        '<div class="rc-chart-card rc-chart-wide" style="margin:1rem 0;">' +
-            '<div class="rc-chart-head"><div><h3>Repeated Contacts Breakdown</h3><span>Click a tile to filter the grid · click again to clear · Top 5 drivers / pending with</span></div></div>' +
-            '<div class="rc-chart-body" style="height:auto;min-height:280px;padding-top:.25rem;">' + rcContactTreeHTML(items) + '</div>' +
-        '</div>' +
         '<div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin:1rem 0;">' +
             '<button type="button" id="rcToggleRepeatBtn" class="export-btn" onclick="rcToggleRepeatCallers()" style="padding:12px 20px;font-size:14px;">' +
                 '<i data-lucide="phone-missed" id="rcRepeatIcon" style="width:16px;height:16px;display:inline-block;vertical-align:middle;margin-right:6px;"></i>' +
@@ -3130,6 +3123,10 @@ function rcDashboardMainHTML(dateFiltered, items, s, gridItems) {
             rcRepeatCallersPanelHTML(dateFiltered) +
         '</div>' +
         '<div id="rcChartsSection" style="display:' + (rcChartsBuilt ? 'block' : 'none') + ';margin-top:1rem;">' +
+            '<div class="rc-chart-card rc-chart-wide" style="margin-bottom:1rem;">' +
+                '<div class="rc-chart-head"><div><h3>Repeated Contacts Breakdown</h3><span>Click a tile to filter the grid · click again to clear · Top 5 drivers / pending with</span></div></div>' +
+                '<div class="rc-chart-body" id="rcContactTreeBody" style="height:auto;min-height:280px;padding-top:.25rem;">' + rcContactTreeHTML(items) + '</div>' +
+            '</div>' +
             '<div class="rc-chart-grid">' +
             rcTrendChartCardHTML() +
             rcChartCard('Status Breakdown', 'rcChartStatus', 'Pending / in progress / resolved', true) +
@@ -3166,8 +3163,8 @@ function rcRefreshDashboardContent() {
     if (rcChartsBuilt) {
         rcDestroyCharts();
         rcBuildDashboardCharts(items, s);
+        rcSchedulePaintContactTree();
     }
-    rcSchedulePaintContactTree();
 
     if (typeof lucide !== 'undefined') lucide.createIcons();
     if (rcRepeatVisible) {
