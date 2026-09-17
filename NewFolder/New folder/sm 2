@@ -173,116 +173,66 @@
             background: var(--bg-body);
         }
 
-        /* GLK-style full-page immersive mode — hide SharePoint chrome, keep inner scroll */
+        /* Immersive mode after Launch / Account Search / OCC Search / FS button only */
         html.sm-fullpage,
         html.sm-fullpage body {
+            overflow: hidden !important;
             height: 100% !important;
             max-height: 100vh !important;
-            overflow: hidden !important;
-            margin: 0 !important;
-            padding: 0 !important;
         }
-
-        html.sm-fullpage #suiteBarDelta,
-        html.sm-fullpage #suiteBarTop,
-        html.sm-fullpage #s4-ribbonrow,
-        html.sm-fullpage #s4-titlerow,
-        html.sm-fullpage #titlerow,
-        html.sm-fullpage #sideNavBox,
-        html.sm-fullpage #DeltaPlaceHolderLeftNavBar,
-        html.sm-fullpage .ms-core-navigation,
-        html.sm-fullpage .ms-cui-topBar2,
-        html.sm-fullpage #DeltaSuiteBar,
-        html.sm-fullpage #suiteNavDelta,
-        html.sm-fullpage #globalNavBox,
-        html.sm-fullpage #DeltaPlaceHolderSearchBox,
-        html.sm-fullpage #s4-leftpanel,
-        html.sm-fullpage #DeltaTopNavigation,
-        html.sm-fullpage .ms-breadcrumb-top {
-            display: none !important;
-            width: 0 !important;
-            min-width: 0 !important;
-            height: 0 !important;
-            overflow: hidden !important;
-        }
-
-        html.sm-fullpage #s4-workspace,
-        html.sm-fullpage #s4-bodyContainer,
-        html.sm-fullpage #contentRow,
-        html.sm-fullpage #contentBox,
-        html.sm-fullpage #DeltaPlaceHolderMain,
-        html.sm-fullpage .ms-webpart-zone,
-        html.sm-fullpage .ms-webpartzone-cell,
-        html.sm-fullpage #MSO_ContentTable,
-        html.sm-fullpage #s4-bodyContainer > div {
-            width: 100% !important;
-            max-width: none !important;
-            height: auto !important;
-            margin: 0 !important;
-            margin-left: 0 !important;
-            padding: 0 !important;
-            float: none !important;
-            left: 0 !important;
-            position: static !important;
-        }
-
-        html.sm-fullpage #s4-workspace {
-            height: 100% !important;
-            overflow: hidden !important;
-        }
-
-        html.sm-fullpage #landingPage,
-        html.sm-fullpage #dashboardContent {
+        #smAppRoot {
             position: fixed !important;
             inset: 0 !important;
             width: 100vw !important;
-            height: 100% !important;
-            max-height: 100vh !important;
+            height: 100vh !important;
             z-index: 2147483000 !important;
-            margin: 0 !important;
-            left: 0 !important;
-            top: 0 !important;
-        }
-
-        html.sm-fullpage #dashboardContent {
-            flex-direction: column !important;
-            background: var(--bg-body);
             overflow: hidden !important;
+            background: var(--bg-body);
+            margin: 0 !important;
         }
-
-        html.sm-fullpage .portal-shell {
+        #smAppRoot #dashboardContent,
+        #smAppRoot .portal-shell {
             max-width: none !important;
             width: 100% !important;
-            min-height: 0 !important;
             height: 100% !important;
-            flex: 1 1 auto;
+            min-height: 0 !important;
+            margin: 0 !important;
+            overflow: hidden !important;
         }
-
-        html.sm-fullpage .header {
-            flex-shrink: 0;
-        }
-
-        html.sm-fullpage .main-container {
-            display: flex !important;
+        #smAppRoot .main-container {
             flex: 1 1 auto !important;
             min-height: 0 !important;
             overflow: hidden !important;
+            width: 100% !important;
         }
-
-        html.sm-fullpage .content {
+        #smAppRoot .content {
             flex: 1 1 auto !important;
+            min-width: 0 !important;
             min-height: 0 !important;
             overflow-y: auto !important;
             overflow-x: hidden !important;
-            -webkit-overflow-scrolling: touch;
         }
-
-        html.sm-fullpage #rcView,
-        html.sm-fullpage #rcView #rcContainer,
-        html.sm-fullpage #rcView .rc-root {
-            overflow: visible;
+        #smAppRoot #accountSearchView,
+        #smAppRoot #portalAnalyticsView,
+        #smAppRoot #comingSoonView,
+        #smAppRoot #amAdDashboard,
+        #smAppRoot #createRequestView,
+        #smAppRoot #newsletterView,
+        #smAppRoot #amTransferRequestsView,
+        #smAppRoot #amMyRequestsView,
+        #smAppRoot #amRequestDetailView {
+            width: 100% !important;
+            height: 100% !important;
+            max-width: none !important;
+            margin: 0 !important;
+            overflow-y: auto !important;
+            overflow-x: hidden !important;
         }
-
+        .theme-toggle.active-fs {
+            border-color: var(--nab2);
+            background: var(--nab);
+            color: var(--acc);
+        }
         #dashboardContent:fullscreen,
         #dashboardContent:-webkit-full-screen,
         html:fullscreen,
@@ -290,7 +240,6 @@
             width: 100%;
             height: 100%;
             background: var(--bg-body);
-            overflow: hidden;
         }
 
         .sm-fs-btn {
@@ -2307,51 +2256,21 @@
 </head>
 
 <body>
-    <style id="sm-hide-sp-chrome-inline">
-        /* Survive SharePoint <head> stripping — hide suite bar / left nav immediately */
-        #suiteBarDelta, #suiteBarTop, #s4-ribbonrow, #s4-titlerow, #titlerow,
-        #sideNavBox, #DeltaPlaceHolderLeftNavBar, .ms-core-navigation,
-        #globalNavBox, #s4-leftpanel, #s4-leftpanel-content, #DeltaTopNavigation,
-        .ms-breadcrumb-top, #DeltaSuiteBar, #suiteNavDelta, .ms-cui-topBar2,
-        #DeltaPlaceHolderSearchBox, #s4-prerender, #notificationArea, #pageTitle,
-        .ms-cui-ribbon, #s4-topheader2, #zz1_TopNavigationMenuV4,
-        .ms-core-listMenu-horizontalBox, #siteIcon, #pageStatusBar,
-        #DeltaPageStatusBar, #s4-statusbarcontainer, .ms-siteactionsmenu,
-        #DeltaSiteLogo, #siteActionMenu {
-            display: none !important;
-            width: 0 !important;
-            min-width: 0 !important;
-            height: 0 !important;
+    <style id="sm-glk-fullpage-css">
+        /* Body copy — SharePoint strips <head>. Overlay is created only after Launch. */
+        html.sm-fullpage, html.sm-fullpage body {
             overflow: hidden !important;
-            pointer-events: none !important;
-            visibility: hidden !important;
-        }
-        #contentBox, #contentRow, #s4-bodyContainer, #DeltaPlaceHolderMain,
-        .ms-webpart-zone, .ms-webpartzone-cell, #MSO_ContentTable, #s4-workspace,
-        #s4-mainarea {
-            margin: 0 !important;
-            margin-left: 0 !important;
-            padding: 0 !important;
-            width: 100% !important;
-            max-width: none !important;
-            float: none !important;
-            left: 0 !important;
+            height: 100% !important;
+            max-height: 100vh !important;
         }
         #smAppRoot {
             position: fixed !important;
             inset: 0 !important;
             width: 100vw !important;
             height: 100vh !important;
-            z-index: 2147483646 !important;
+            z-index: 2147483000 !important;
             overflow: hidden !important;
             background: var(--bg-body, #f9f0ff);
-            pointer-events: auto !important;
-        }
-        #smAppRoot #landingPage {
-            width: 100% !important;
-            height: 100% !important;
-            min-height: 100% !important;
-            overflow: auto !important;
             margin: 0 !important;
         }
         #smAppRoot #dashboardContent,
@@ -2361,9 +2280,9 @@
             height: 100% !important;
             min-height: 0 !important;
             margin: 0 !important;
+            overflow: hidden !important;
         }
         #smAppRoot .main-container {
-            display: flex !important;
             flex: 1 1 auto !important;
             min-height: 0 !important;
             overflow: hidden !important;
@@ -2376,25 +2295,23 @@
             overflow-y: auto !important;
             overflow-x: hidden !important;
         }
-        #smAppRoot #rcView,
-        #smAppRoot #rcView #rcContainer,
-        #smAppRoot #rcView .rc-root {
+        #smAppRoot #accountSearchView,
+        #smAppRoot #portalAnalyticsView,
+        #smAppRoot #comingSoonView,
+        #smAppRoot #amAdDashboard,
+        #smAppRoot #createRequestView,
+        #smAppRoot #newsletterView,
+        #smAppRoot #amTransferRequestsView,
+        #smAppRoot #amMyRequestsView,
+        #smAppRoot #amRequestDetailView {
             width: 100% !important;
+            height: 100% !important;
             max-width: none !important;
-            overflow: visible;
+            margin: 0 !important;
+            overflow-y: auto !important;
+            overflow-x: hidden !important;
         }
     </style>
-    <script>
-        (function () {
-            try { document.documentElement.classList.add('sm-fullpage'); } catch (e) {}
-            try { if (document.body) document.body.classList.add('sm-fullpage'); } catch (e2) {}
-            try {
-                if (window.frameElement) {
-                    window.frameElement.style.cssText = 'position:fixed!important;inset:0!important;width:100vw!important;height:100vh!important;z-index:2147483646!important;border:0!important;';
-                }
-            } catch (e3) {}
-        })();
-    </script>
     <!-- ======================================================================================== -->
     <!-- SHAREPOINT COMPATIBILITY: All CSS in body since SharePoint strips <head> section -->
     <!-- ======================================================================================== -->
@@ -6264,6 +6181,7 @@ else {
 
 else if (USER_CONTEXT.role === 'Account Manager' || USER_CONTEXT.role === 'Account Director') {
                         showAMDashboard();
+                        if (typeof smEnterFullscreen === 'function') smEnterFullscreen();
                     }
                 };
 
@@ -6293,6 +6211,7 @@ else if (USER_CONTEXT.role === 'Account Manager' || USER_CONTEXT.role === 'Accou
                 searchBtn.disabled = false;
                 searchBtn.onclick = function() {
                     showAccountSearch();
+                    if (typeof smEnterFullscreen === 'function') smEnterFullscreen();
                 };
             }
 
@@ -6303,6 +6222,7 @@ else if (USER_CONTEXT.role === 'Account Manager' || USER_CONTEXT.role === 'Accou
                 occBtn.style.display = occEnabled ? 'flex' : 'none';
                 occBtn.disabled = !occEnabled;
                 occBtn.onclick = function() {
+                    if (typeof smEnterFullscreen === 'function') smEnterFullscreen();
                     window.location.href = 'http://sharedspaces:8081/sites/OCC/SitePages/occ-search.aspx';
                 };
             }
@@ -6348,7 +6268,6 @@ else if (USER_CONTEXT.role === 'Account Manager' || USER_CONTEXT.role === 'Accou
                 dash.style.height = '100%';
             }
             if (typeof smEnterFullscreen === 'function') smEnterFullscreen();
-            else if (typeof smEnterFullPage === 'function') smEnterFullPage();
 
             // Auditor: jump straight to QA view
             if (USER_CONTEXT.role === 'Auditor') {
@@ -8957,23 +8876,29 @@ ${USER_CONTEXT.userName}`
             if (typeof lucide !== 'undefined') lucide.createIcons();
         }
 
-        window._smFullPage = true;
+        window._smFullPage = false;
+
+        var SM_FS_VIEW_IDS = [
+            'landingPage', 'dashboardContent', 'accountSearchView', 'portalAnalyticsView',
+            'comingSoonView', 'amAdDashboard', 'createRequestView', 'newsletterView',
+            'amTransferRequestsView', 'amMyRequestsView', 'amRequestDetailView'
+        ];
 
         function smFullscreenElement() {
             return document.fullscreenElement || document.webkitFullscreenElement || null;
         }
 
         function smSyncFullscreenBtn() {
-            var on = window._smFullPage !== false || !!smFullscreenElement();
-            var btn = document.getElementById('smFullscreenBtn');
-            if (!btn) return;
-            btn.classList.toggle('active-fs', on);
-            btn.title = on ? 'Minimize' : 'Full screen';
-            var icon = btn.querySelector('svg');
-            if (!icon) return;
-            icon.innerHTML = on
-                ? '<polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/><line x1="14" y1="10" x2="21" y2="3"/><line x1="3" y1="21" x2="10" y2="14"/>'
-                : '<polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/>';
+            var on = window._smFullPage === true || !!smFullscreenElement();
+            document.querySelectorAll('.sm-fs-btn').forEach(function (btn) {
+                btn.classList.toggle('active-fs', on);
+                btn.title = on ? 'Minimize' : 'Full screen';
+                var icon = btn.querySelector('svg');
+                if (!icon) return;
+                icon.innerHTML = on
+                    ? '<polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/><line x1="14" y1="10" x2="21" y2="3"/><line x1="3" y1="21" x2="10" y2="14"/>'
+                    : '<polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/>';
+            });
         }
 
         function smExitNativeFullscreen() {
@@ -8981,66 +8906,18 @@ ${USER_CONTEXT.userName}`
             if (exitFn && smFullscreenElement()) exitFn.call(document);
         }
 
-        function smHideSharePointChrome(on) {
-            var css = '#suiteBarDelta,#suiteBarTop,#s4-ribbonrow,#s4-titlerow,#titlerow,#sideNavBox,#DeltaPlaceHolderLeftNavBar,.ms-core-navigation,#globalNavBox,#s4-leftpanel,#s4-leftpanel-content,#DeltaTopNavigation,.ms-breadcrumb-top,#DeltaSuiteBar,#suiteNavDelta,.ms-cui-topBar2,#DeltaPlaceHolderSearchBox,#s4-prerender,#notificationArea,#pageTitle,.ms-cui-ribbon,#s4-topheader2,#zz1_TopNavigationMenuV4,.ms-core-listMenu-horizontalBox,#siteIcon,#pageStatusBar,#DeltaPageStatusBar,#s4-statusbarcontainer,.ms-siteactionsmenu,#DeltaSiteLogo,#siteActionMenu{display:none!important;width:0!important;min-width:0!important;height:0!important;overflow:hidden!important;pointer-events:none!important;visibility:hidden!important}' +
-                '#contentBox,#contentRow,#s4-bodyContainer,#DeltaPlaceHolderMain,.ms-webpart-zone,.ms-webpartzone-cell,#MSO_ContentTable,#s4-workspace,#s4-mainarea{margin:0!important;margin-left:0!important;padding:0!important;width:100%!important;max-width:none!important;float:none!important;left:0!important}' +
-                '#s4-workspace{overflow:hidden!important}' +
-                '#smAppRoot{position:fixed!important;inset:0!important;width:100vw!important;height:100vh!important;z-index:2147483646!important;overflow:hidden!important;pointer-events:auto!important}' +
-                '#smAppRoot #dashboardContent,#smAppRoot .portal-shell{max-width:none!important;width:100%!important;height:100%!important;min-height:0!important;margin:0!important}' +
-                '#smAppRoot .main-container{display:flex!important;flex:1 1 auto!important;min-height:0!important;overflow:hidden!important;width:100%!important}' +
-                '#smAppRoot .content{flex:1 1 auto!important;min-width:0!important;min-height:0!important;overflow-y:auto!important;overflow-x:hidden!important}' +
-                '#smAppRoot #landingPage{width:100%!important;height:100%!important;min-height:100%!important;overflow:auto!important;margin:0!important}';
-            function apply(doc) {
-                if (!doc) return;
-                var el = doc.getElementById('sm-hide-sp-chrome');
-                if (on) {
-                    if (!el) {
-                        el = doc.createElement('style');
-                        el.id = 'sm-hide-sp-chrome';
-                        (doc.head || doc.documentElement).appendChild(el);
-                    }
-                    el.textContent = css;
-                    try { doc.documentElement.classList.add('sm-fullpage'); } catch (e) {}
-                    try { if (doc.body) doc.body.classList.add('sm-fullpage'); } catch (e1) {}
-                } else if (el) {
-                    el.parentNode.removeChild(el);
-                    try { doc.documentElement.classList.remove('sm-fullpage'); } catch (e2) {}
-                    try { if (doc.body) doc.body.classList.remove('sm-fullpage'); } catch (e2b) {}
-                }
-            }
-            apply(document);
-            try { if (window.top && window.top.document !== document) apply(window.top.document); } catch (e3) {}
-            try { if (window.parent && window.parent.document !== document) apply(window.parent.document); } catch (e4) {}
-            try {
-                if (window.frameElement) {
-                    window.frameElement.style.cssText = 'position:fixed!important;inset:0!important;width:100vw!important;height:100vh!important;z-index:2147483646!important;border:0!important;';
-                }
-            } catch (e5) {}
-        }
-
-        var SM_APP_ROOT_IDS = [
-            'landingPage', 'dashboardContent', 'portalAnalyticsView', 'comingSoonView',
-            'amAdDashboard', 'createRequestView', 'accountSearchView', 'newsletterView',
-            'amTransferRequestsView', 'amMyRequestsView', 'amRequestDetailView'
-        ];
-
-        function smEnsureAppRoot() {
+        function smMountOverlay() {
             var root = document.getElementById('smAppRoot');
-            if (root) return root;
-            root = document.createElement('div');
-            root.id = 'smAppRoot';
-            (document.body || document.documentElement).appendChild(root);
-            return root;
-        }
-
-        function smDetachDashboard() {
-            var root = smEnsureAppRoot();
-            var dashHost = document.getElementById('dashboardContent');
-            SM_APP_ROOT_IDS.forEach(function (id) {
+            if (!root) {
+                root = document.createElement('div');
+                root.id = 'smAppRoot';
+                document.body.appendChild(root);
+            }
+            var dash = document.getElementById('dashboardContent');
+            SM_FS_VIEW_IDS.forEach(function (id) {
                 var el = document.getElementById(id);
-                if (!el) return;
-                if (el.parentNode === root) return;
-                if (dashHost && id !== 'dashboardContent' && dashHost.contains(el)) return;
+                if (!el || el.parentNode === root) return;
+                if (dash && id !== 'dashboardContent' && dash.contains(el)) return;
                 if (!window._smViewHomes) window._smViewHomes = {};
                 if (!window._smViewHomes[id]) {
                     window._smViewHomes[id] = { parent: el.parentNode, next: el.nextSibling };
@@ -9049,9 +8926,9 @@ ${USER_CONTEXT.userName}`
             });
         }
 
-        function smRestoreDashboard() {
+        function smUnmountOverlay() {
             if (!window._smViewHomes) return;
-            SM_APP_ROOT_IDS.forEach(function (id) {
+            SM_FS_VIEW_IDS.forEach(function (id) {
                 var el = document.getElementById(id);
                 var home = window._smViewHomes[id];
                 if (!el || !home || !home.parent) return;
@@ -9061,32 +8938,18 @@ ${USER_CONTEXT.userName}`
                     home.parent.appendChild(el);
                 }
             });
-        }
-
-        function smEnterFullPage() {
-            window._smFullPage = true;
-            document.documentElement.classList.add('sm-fullpage');
-            if (document.body) document.body.classList.add('sm-fullpage');
-            smHideSharePointChrome(true);
-            smDetachDashboard();
-            smSyncFullscreenBtn();
-        }
-
-        function smFsRoot() {
-            try {
-                if (window.top && window.top.document && window.top.document.documentElement) {
-                    return window.top.document.documentElement;
-                }
-            } catch (e) {}
-            return document.documentElement;
+            var root = document.getElementById('smAppRoot');
+            if (root && root.parentNode) root.parentNode.removeChild(root);
         }
 
         function smEnterFullscreen() {
-            smEnterFullPage();
-            if (smFullscreenElement()) return;
-            var node = smFsRoot();
+            window._smFullPage = true;
+            document.documentElement.classList.add('sm-fullpage');
+            smMountOverlay();
+            smSyncFullscreenBtn();
+            var node = document.documentElement;
             var req = node.requestFullscreen || node.webkitRequestFullscreen;
-            if (!req) return;
+            if (!req || smFullscreenElement()) return;
             window._smWantNativeFs = true;
             try {
                 var p = req.call(node);
@@ -9096,27 +8959,16 @@ ${USER_CONTEXT.userName}`
             }
         }
 
-        function smBindFullscreenOnGesture() {
-            if (window._smFsGestureBound) return;
-            window._smFsGestureBound = true;
-            function go(e) {
-                if (window._smFullPage === false) return;
-                if (smFullscreenElement()) return;
-                if (e && e.target && e.target.closest && e.target.closest('.sm-fs-btn')) return;
-                smEnterFullscreen();
-            }
-            document.addEventListener('pointerdown', go, true);
-            document.addEventListener('keydown', go, true);
-        }
-        smBindFullscreenOnGesture();
-
         function smMinimizeFullscreen() {
+            window._smFullPage = false;
+            document.documentElement.classList.remove('sm-fullpage');
+            smUnmountOverlay();
             smExitNativeFullscreen();
-            smEnterFullPage();
+            smSyncFullscreenBtn();
         }
 
         function smToggleFullscreen() {
-            if (smFullscreenElement()) smExitNativeFullscreen();
+            if (window._smFullPage === true || smFullscreenElement()) smMinimizeFullscreen();
             else smEnterFullscreen();
         }
 
@@ -9245,12 +9097,19 @@ ${USER_CONTEXT.userName}`
                 contentDiv.classList.remove('section-mode');
                 contentDiv.classList.remove('psd-full-mode');
                 contentDiv.classList.remove('rc-full-mode');
+                contentDiv.style.overflowY = 'auto';
             }
             var portalShell = document.querySelector('.portal-shell');
             if (portalShell) {
                 portalShell.classList.remove('psd-full-shell');
                 portalShell.classList.remove('rc-full-shell');
+                if (window._smFullPage) {
+                    portalShell.style.display = 'flex';
+                    portalShell.style.flexDirection = 'column';
+                    portalShell.style.height = '100%';
+                }
             }
+            if (window._smFullPage && typeof smMountOverlay === 'function') smMountOverlay();
 
             // ── HIDE ALL SECTIONS ─────────────────────────────────────────
             document.querySelectorAll('.dashboard-section').forEach(function(section) {
@@ -9502,6 +9361,7 @@ else if (sectionId === 'rcView') {
                     document.querySelectorAll('.nav-item').forEach(function(item) { item.classList.remove('active'); });
                     var nav = document.getElementById('newsletterNavItem');
                     if (nav) nav.classList.add('active');
+                    if (window._smFullPage && typeof smMountOverlay === 'function') smMountOverlay();
                     return result;
                 };
                 window.showNewsletterView.__smPatched = true;
@@ -9539,7 +9399,6 @@ else if (sectionId === 'rcView') {
         // Load user access first, then initialize
         // ===== MAIN INITIALIZATION =====
         function initAll() {
-            if (typeof smEnterFullPage === 'function') smEnterFullPage();
             injectAGGridThemeStyles();
             initLandingPage();
             smInstallSharePointEnterGuard();
@@ -9600,9 +9459,8 @@ else if (sectionId === 'rcView') {
                 // ✅ ALWAYS show landing page for ALL users (even without access)
                 console.log('[INFO] User:', USER_CONTEXT.userName, '| Role:', USER_CONTEXT.role);
 
-                // Show landing page ALWAYS — overlay already hides SharePoint chrome
+                // Show landing page ALWAYS — SharePoint chrome stays so the page can be saved
                 document.getElementById('landingPage').style.display = 'grid';
-                if (typeof smEnterFullPage === 'function') smEnterFullPage();
 
                 // Load data for all roles with access (Account_Search_Viewer uses same init as Admin)
               if (hasAccess) {
@@ -11297,6 +11155,7 @@ else if (sectionId === 'rcView') {
             if (typeof lucide !== 'undefined') {
                 lucide.createIcons();
             }
+            if (typeof smEnterFullscreen === 'function') smEnterFullscreen();
         }
 
         // ─── COMING SOON VIEWS ──────────────────────────────────────────────
@@ -11325,6 +11184,7 @@ else if (sectionId === 'rcView') {
             window.scrollTo(0, 0);
             if (typeof analyticsLoadDashboard === 'function') analyticsLoadDashboard();
             if (typeof lucide !== 'undefined') lucide.createIcons();
+            if (window._smFullPage && typeof smMountOverlay === 'function') smMountOverlay();
         };
 
         window.showPortalAnalyticsBack = function() {
@@ -11338,7 +11198,9 @@ else if (sectionId === 'rcView') {
             if (dc) {
                 dc.style.position = '';
                 dc.style.zIndex = '';
-                dc.style.display = 'block';
+                dc.style.display = 'flex';
+                dc.style.flexDirection = 'column';
+                dc.style.height = '100%';
             }
             if (typeof switchDashboardSection === 'function') switchDashboardSection('dashboard-view');
             window.scrollTo(0, 0);
@@ -11380,7 +11242,9 @@ else if (sectionId === 'rcView') {
             if (dc) {
                 dc.style.position = '';
                 dc.style.zIndex = '';
-                dc.style.display = 'block';
+                dc.style.display = 'flex';
+                dc.style.flexDirection = 'column';
+                dc.style.height = '100%';
             }
             if (typeof switchDashboardSection === 'function') switchDashboardSection('dashboard-view');
             window.scrollTo(0, 0);
@@ -11974,7 +11838,6 @@ else if (sectionId === 'rcView') {
         </div>
     </div>
     <script>
-        if (typeof smEnterFullPage === 'function') smEnterFullPage();
     </script>
 </body>
 
