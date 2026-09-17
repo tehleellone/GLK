@@ -13,6 +13,9 @@ window.showNewsletterView = function() {
     if (typeof switchDashboardSection === 'function') {
         switchDashboardSection('newsletterView');
     } else {
+        var dash = document.getElementById('dashboard-view');
+        if (dash) dash.style.display = 'none';
+        document.querySelectorAll('.dashboard-section').forEach(function(s) { s.style.display = 'none'; });
         var view = document.getElementById('newsletterView');
         if (view) view.style.display = 'block';
         nlLoadNewsletter();
