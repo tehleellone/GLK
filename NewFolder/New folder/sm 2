@@ -2350,35 +2350,13 @@
             max-width: none !important;
             margin: 0 !important;
         }
-        .content.rc-full-mode,
-        .content.psd-full-mode {
-            display: block !important;
-            width: 100% !important;
-            max-width: none !important;
-            margin: 0 !important;
-            padding: 0.75rem 1rem 1.25rem !important;
-            overflow-y: auto !important;
-            overflow-x: hidden !important;
-            min-height: 0 !important;
-            flex: 1 1 auto !important;
-        }
-        .content.rc-full-mode > *:not(#rcView),
-        .content.psd-full-mode > *:not(#psdView) {
-            display: none !important;
-            width: 0 !important;
-            height: 0 !important;
-            overflow: hidden !important;
-        }
-        .content.rc-full-mode #rcView,
-        .content.rc-full-mode #rcView #rcContainer,
-        .content.rc-full-mode #rcView .rc-root,
-        .content.psd-full-mode #psdView,
-        .content.psd-full-mode #psdView #psdContainer {
-            display: block !important;
-            width: 100% !important;
-            max-width: none !important;
-            margin: 0 !important;
-            float: none !important;
+        #rcView,
+        #psdView,
+        #pending-requests,
+        #newsletterView {
+            width: 100%;
+            max-width: none;
+            box-sizing: border-box;
         }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
@@ -2601,7 +2579,7 @@
                     <i data-lucide="chevrons-left" id="sidebarToggleIcon"></i>
                 </div>
                 <div class="nav-items">
-                    <div class="nav-item" id="newsletterNavItem" onclick="showNewsletterView()">
+                    <div class="nav-item" id="newsletterNavItem" data-section="newsletterView" onclick="showNewsletterView()">
                         <div class="nav-icon"><i data-lucide="mail"></i></div>
                         <div class="nav-label">Newsletter</div>
                         <span id="nlNewBadge" style="display:none;background:#ef4444;color:#fff;font-size:9px;font-weight:800;padding:2px 6px;border-radius:20px;margin-left:auto;line-height:1.4;">NEW</span>
@@ -3220,6 +3198,31 @@
                 </div>
             </div>
             <!-- TRANSFER REQUESTS SECTION: content injected by transfer.js (#transfer-requests, #sdReviewTransferView). -->
+            <!-- NEWSLETTER SECTION -->
+            <div class="dashboard-section" style="display:none;" id="newsletterView">
+                <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.75rem;margin-bottom:1rem;">
+                    <h2 style="font-size:1rem;font-weight:800;color:var(--t1);margin:0!important;display:flex;align-items:center;gap:.45rem;">
+                        <i data-lucide="mail" style="width:22px;height:22px;"></i>Newsletter
+                    </h2>
+                </div>
+                <div style="max-width:1000px;margin:0 auto;">
+                    <div style="display:flex;gap:8px;margin-bottom:1.5rem;">
+                        <button type="button" id="nlTabView" onclick="nlSetTab('view')" style="padding:10px 24px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;border:none;background:var(--grad);color:#fff;display:inline-flex;align-items:center;gap:6px;">
+                            <i data-lucide="newspaper" style="width:14px;height:14px;"></i>Newsletter
+                        </button>
+                        <button type="button" id="nlTabManage" onclick="nlSetTab('manage')" style="display:none;padding:10px 24px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;border:1px solid var(--border);background:var(--bg-input);color:var(--t1);align-items:center;gap:6px;">
+                            <i data-lucide="settings" style="width:14px;height:14px;"></i>Manage
+                        </button>
+                    </div>
+                    <div id="nlLoading" style="text-align:center;padding:60px;color:var(--t2);">
+                        <i data-lucide="loader-2" style="width:40px;height:40px;animation:spin 1s linear infinite;color:var(--acc);display:inline-block;"></i>
+                        <div style="margin-top:12px;font-weight:600;">Loading Newsletter...</div>
+                    </div>
+                    <div id="nlContent" style="display:none;">
+                        <div id="nlViewContainer"></div>
+                    </div>
+                </div>
+            </div>
 
         </div><!-- /content -->
     </div><!-- /main-container -->
@@ -8953,9 +8956,14 @@ ${USER_CONTEXT.userName}`
 
         var SM_FS_VIEW_IDS = [
             'landingPage', 'dashboardContent', 'accountSearchView', 'portalAnalyticsView',
-            'comingSoonView', 'amAdDashboard', 'createRequestView', 'newsletterView',
+            'comingSoonView', 'amAdDashboard', 'createRequestView',
             'amTransferRequestsView', 'amMyRequestsView', 'amRequestDetailView'
         ];
+
+        function smIsNestedInDashboardView(sectionEl) {
+            var dashboardView = document.getElementById('dashboard-view');
+            return !!(sectionEl && dashboardView && sectionEl !== dashboardView && dashboardView.contains(sectionEl));
+        }
 
         function smFullscreenElement() {
             return document.fullscreenElement || document.webkitFullscreenElement || null;
@@ -9050,6 +9058,12 @@ ${USER_CONTEXT.userName}`
             document.documentElement.classList.add('sm-fullpage');
             smMountOverlay();
             smSyncFullscreenBtn();
+            var node = document.documentElement;
+            var req = node.requestFullscreen || node.webkitRequestFullscreen;
+            if (!req || smFullscreenElement()) return;
+            window._smWantNativeFs = true;
+            var p = req.call(node);
+            if (p && p.catch) p.catch(function () { window._smWantNativeFs = false; });
         }
 
         function smMinimizeFullscreen() {
@@ -9214,31 +9228,31 @@ ${USER_CONTEXT.userName}`
                 item.classList.remove('active');
             });
 
-            // ── SHOW TARGET SECTION ───────────────────────────────────────
+            // ── SHOW TARGET SECTION (RNPS-style: nested vs top-level) ────
             var targetSection = document.getElementById(sectionId);
-            if (targetSection) {
+            var dashboardView = document.getElementById('dashboard-view');
+            var dashInnerContent = document.getElementById('content');
+            var dashLoading = document.getElementById('loading');
+
+            if (sectionId === 'dashboard-view') {
+                if (dashboardView) dashboardView.style.display = 'block';
+                var hasDashData = typeof filteredData !== 'undefined' && filteredData && filteredData.length;
+                if (dashInnerContent) dashInnerContent.style.display = hasDashData ? 'block' : 'none';
+                if (dashLoading) dashLoading.style.display = hasDashData ? 'none' : 'block';
+            } else if (targetSection && smIsNestedInDashboardView(targetSection)) {
+                if (dashboardView) dashboardView.style.display = 'block';
+                if (dashInnerContent) dashInnerContent.style.display = 'none';
+                if (dashLoading) dashLoading.style.display = 'none';
                 targetSection.style.display = 'block';
+            } else {
+                if (dashboardView) dashboardView.style.display = 'none';
+                if (targetSection) targetSection.style.display = 'block';
             }
 
             // ── SET ACTIVE NAV ITEM ───────────────────────────────────────
             var activeNav = document.querySelector('[data-section="' + sectionId + '"]');
             if (activeNav) {
                 activeNav.classList.add('active');
-            }
-
-            // ── SECTION-MODE for pending/transfer ────────────────────────
-            if (contentDiv) {
-                if (sectionId === 'pending-requests' || sectionId === 'transfer-requests') {
-                    contentDiv.classList.add('section-mode');
-                }
-                if (sectionId === 'psdView') {
-                    contentDiv.classList.add('psd-full-mode');
-                    if (portalShell) portalShell.classList.add('psd-full-shell');
-                }
-                if (sectionId === 'rcView') {
-                    contentDiv.classList.add('rc-full-mode');
-                    if (portalShell) portalShell.classList.add('rc-full-shell');
-                }
             }
 
             // ── LOAD DATA FOR SPECIFIC SECTIONS ──────────────────────────
@@ -9287,6 +9301,11 @@ else if (sectionId === 'rcView') {
             rcLoading.innerHTML = '<div style="text-align:center;padding:40px;color:#ef4444;font-weight:700;">Repeated Calls script failed to load. Re-upload repeated-calls.js to SharePoint and hard-refresh (Ctrl+F5).</div>';
         }
     }
+}
+else if (sectionId === 'newsletterView') {
+    if (typeof nlLoadNewsletter === 'function') nlLoadNewsletter();
+    if (typeof nlMarkAsSeen === 'function') nlMarkAsSeen();
+    if (typeof nlRemoveNewBadge === 'function') nlRemoveNewBadge();
 }
 
         }
@@ -11265,7 +11284,7 @@ else if (sectionId === 'rcView') {
             'reviewRequestView', 'transferRequestView', 'sdReviewTransferView',
             'amAdDashboard', 'amTransferRequestsView', 'amMyRequestsView', 'amRequestDetailView',
             'createRequestView', 'accountSearchView', 'comingSoonView', 'portalAnalyticsView',
-            'editRequestView', 'contactUsView', 'newsletterView'
+            'editRequestView', 'contactUsView'
         ];
 
         window.showPortalAnalytics = function() {
@@ -11903,43 +11922,10 @@ else if (sectionId === 'rcView') {
     <script src="http://sharedspaces:8086/sites/SM/Shared%20Documents/processdocs.js"></script>
     <script src="http://sharedspaces:8086/sites/SM/Shared%20Documents/qualityassurance.js"></script>
     <script src="http://sharedspaces:8086/sites/SM/Shared%20Documents/psd__assignment.js?v=1.2.0"></script>
-    <script src="http://sharedspaces:8086/sites/SM/Shared%20Documents/repeated-calls.js?v=1.9.5"></script>
+    <script src="http://sharedspaces:8086/sites/SM/Shared%20Documents/repeated-calls.js?v=1.9.6"></script>
     <script src="http://sharedspaces:8086/sites/SM/Shared%20Documents/rnps.js"></script>
   <script src="http://sharedspaces:8086/sites/SM/Shared%20Documents/semailbox.js"></script>
   <script src="http://sharedspaces:8086/sites/SM/Shared%20Documents/tsm-se.js?v=4fix1"></script>
-    <div class="dashboard" style="display:none;" id="newsletterView">
-        <div class="header">
-            <div class="header-left">
-                <h1><i data-lucide="mail" style="width:28px;height:28px;display:inline-block;vertical-align:middle;margin-right:10px;"></i>Newsletter</h1>
-                <p>Service Management Platform</p>
-            </div>
-            <div class="header-actions">
-                <button type="button" class="theme-btn" onclick="backFromNewsletter()" style="background:rgba(239,68,68,0.15);color:#ef4444;padding:10px 20px;border-radius:12px;border:none;cursor:pointer;font-weight:600;">
-                    <i data-lucide="arrow-left" style="width:16px;height:16px;display:inline-block;vertical-align:middle;margin-right:6px;"></i>Back to Dashboard
-                </button>
-            </div>
-        </div>
-        <div style="max-width:1000px;margin:0 auto;padding:24px;">
-            <!-- TABS -->
-            <div style="display:flex;gap:8px;margin-bottom:1.5rem;">
-                <button type="button" id="nlTabView" onclick="nlSetTab('view')" style="padding:10px 24px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;border:none;background:var(--grad);color:#fff;display:inline-flex;align-items:center;gap:6px;">
-                    <i data-lucide="newspaper" style="width:14px;height:14px;"></i>Newsletter
-                </button>
-                <button type="button" id="nlTabManage" onclick="nlSetTab('manage')" style="display:none;padding:10px 24px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;border:1px solid var(--border);background:var(--bg-input);color:var(--t1);align-items:center;gap:6px;">
-                    <i data-lucide="settings" style="width:14px;height:14px;"></i>Manage
-                </button>
-            </div>
-            <!-- Loading -->
-            <div id="nlLoading" style="text-align:center;padding:60px;color:var(--t2);">
-                <i data-lucide="loader-2" style="width:40px;height:40px;animation:spin 1s linear infinite;color:var(--acc);display:inline-block;"></i>
-                <div style="margin-top:12px;font-weight:600;">Loading Newsletter...</div>
-            </div>
-            <!-- Content -->
-            <div id="nlContent" style="display:none;">
-                <div id="nlViewContainer"></div>
-            </div>
-        </div>
-    </div>
     <script>
     </script>
 </body>
