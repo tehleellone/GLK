@@ -9,25 +9,21 @@ var nlAllItems = [];
 // ── Show / Hide ───────────────────────────────────────────────
 window.showNewsletterView = function() {
     if (typeof analyticsTrackPage === 'function') analyticsTrackPage('Newsletter');
-    ALL_VIEW_IDS.forEach(function(vid) {
-        var el = document.getElementById(vid);
-        if (el) { el.style.display = 'none'; el.style.position = 'absolute'; el.style.zIndex = '-1'; }
-    });
-    var view = document.getElementById('newsletterView');
-    if (view) { view.style.position = ''; view.style.zIndex = ''; view.style.display = 'block'; }
-    window.scrollTo(0, 0);
     nlCurrentTab = 'view';
-    nlLoadNewsletter();
-    nlMarkAsSeen();
-    nlRemoveNewBadge();
+    if (typeof switchDashboardSection === 'function') {
+        switchDashboardSection('newsletterView');
+    } else {
+        var view = document.getElementById('newsletterView');
+        if (view) view.style.display = 'block';
+        nlLoadNewsletter();
+        nlMarkAsSeen();
+        nlRemoveNewBadge();
+    }
+    window.scrollTo(0, 0);
     if (typeof lucide !== 'undefined') lucide.createIcons();
 };
 
 window.backFromNewsletter = function() {
-    var view = document.getElementById('newsletterView');
-    if (view) { view.style.display = 'none'; view.style.position = 'absolute'; view.style.zIndex = '-1'; }
-    var dc = document.getElementById('dashboardContent');
-    if (dc) { dc.style.position = ''; dc.style.zIndex = ''; dc.style.display = 'block'; }
     if (typeof switchDashboardSection === 'function') switchDashboardSection('dashboard-view');
     window.scrollTo(0, 0);
     if (typeof lucide !== 'undefined') lucide.createIcons();
