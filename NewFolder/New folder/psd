@@ -803,10 +803,7 @@ function psdInjectStyles() {
 }
 
 function psdSetFullLayout(on) {
-    var content = document.querySelector('.content');
-    var shell = document.querySelector('.portal-shell');
-    if (content) content.classList.toggle('psd-full-mode', !!on);
-    if (shell) shell.classList.toggle('psd-full-shell', !!on);
+    /* no-op: layout handled by switchDashboardSection like RNPS */
 }
 
 function psdCssVar(name) { return getComputedStyle(document.body).getPropertyValue(name).trim() || '#a855f7'; }
