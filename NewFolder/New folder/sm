@@ -173,90 +173,105 @@
             background: var(--bg-body);
         }
 
-        /* GLK-style full-page immersive mode — hide SharePoint chrome, keep inner scroll */
+        /* Immersive mode — GLK-style CSS only (no DOM reparenting; keeps popups visible) */
         html.sm-fullpage,
         html.sm-fullpage body {
+            overflow: hidden !important;
             height: 100% !important;
             max-height: 100vh !important;
-            overflow: hidden !important;
-            margin: 0 !important;
-            padding: 0 !important;
         }
-
-        html.sm-fullpage #suiteBarDelta,
-        html.sm-fullpage #suiteBarTop,
-        html.sm-fullpage #s4-ribbonrow,
-        html.sm-fullpage #s4-titlerow,
-        html.sm-fullpage #titlerow,
-        html.sm-fullpage #sideNavBox,
-        html.sm-fullpage #DeltaPlaceHolderLeftNavBar,
-        html.sm-fullpage .ms-cui-topBar2,
-        html.sm-fullpage #DeltaSuiteBar,
-        html.sm-fullpage #suiteNavDelta {
-            display: none !important;
-        }
-
-        html.sm-fullpage #s4-workspace,
-        html.sm-fullpage #s4-bodyContainer {
-            width: 100% !important;
-            max-width: none !important;
-            height: 100% !important;
-            margin: 0 !important;
-            padding: 0 !important;
-            overflow: hidden !important;
-        }
-
-        html.sm-fullpage #landingPage,
-        html.sm-fullpage #dashboardContent {
+        html.sm-fullpage #landingPage:not(.sm-hidden),
+        html.sm-fullpage #dashboardContent.sm-visible-shell,
+        html.sm-fullpage #accountSearchView,
+        html.sm-fullpage #portalAnalyticsView,
+        html.sm-fullpage #comingSoonView,
+        html.sm-fullpage #amAdDashboard,
+        html.sm-fullpage #createRequestView,
+        html.sm-fullpage #amTransferRequestsView,
+        html.sm-fullpage #amMyRequestsView,
+        html.sm-fullpage #amRequestDetailView {
             position: fixed !important;
             inset: 0 !important;
             width: 100vw !important;
-            height: 100% !important;
-            max-height: 100vh !important;
+            height: 100vh !important;
             z-index: 2147483000 !important;
             margin: 0 !important;
+            max-width: none !important;
         }
-
-        html.sm-fullpage #dashboardContent {
+        html.sm-fullpage #dashboardContent.sm-visible-shell {
             display: flex !important;
             flex-direction: column !important;
+            overflow: hidden !important;
             background: var(--bg-body);
-            overflow: hidden !important;
         }
-
-        html.sm-fullpage .portal-shell {
-            max-width: none !important;
-            width: 100% !important;
+        html.sm-fullpage #dashboardContent.sm-visible-shell .main-container {
+            flex: 1 1 auto !important;
             min-height: 0 !important;
-            height: 100% !important;
-            flex: 1 1 auto;
-        }
-
-        html.sm-fullpage .header {
-            flex-shrink: 0;
-        }
-
-        html.sm-fullpage .main-container {
             display: flex !important;
-            flex: 1 1 auto !important;
-            min-height: 0 !important;
             overflow: hidden !important;
+            width: 100% !important;
         }
-
-        html.sm-fullpage .content {
+        html.sm-fullpage #dashboardContent.sm-visible-shell .content {
             flex: 1 1 auto !important;
+            min-width: 0 !important;
             min-height: 0 !important;
             overflow-y: auto !important;
-            overflow-x: hidden !important;
+            overflow-x: auto !important;
             -webkit-overflow-scrolling: touch;
+            overscroll-behavior: contain;
+            scrollbar-gutter: stable;
         }
-
-        html.sm-fullpage #rcView,
-        html.sm-fullpage #rcView #rcContainer,
-        html.sm-fullpage #rcView .rc-root {
-            overflow: visible;
+        html.sm-fullpage #dashboardContent.sm-visible-shell .sidebar .nav-items {
+            overflow-y: auto !important;
+            max-height: calc(100vh - 72px);
         }
-
+        html.sm-fullpage #dashboardContent.sm-visible-shell .content::-webkit-scrollbar,
+        html.sm-fullpage #dashboardContent.sm-visible-shell .sidebar .nav-items::-webkit-scrollbar {
+            width: 10px;
+            height: 10px;
+        }
+        html.sm-fullpage #dashboardContent.sm-visible-shell .content::-webkit-scrollbar-thumb,
+        html.sm-fullpage #dashboardContent.sm-visible-shell .sidebar .nav-items::-webkit-scrollbar-thumb {
+            background: rgba(128, 128, 128, 0.45);
+            border-radius: 6px;
+        }
+        html.sm-fullpage #accountSearchView,
+        html.sm-fullpage #portalAnalyticsView,
+        html.sm-fullpage #comingSoonView,
+        html.sm-fullpage #amAdDashboard,
+        html.sm-fullpage #createRequestView,
+        html.sm-fullpage #amTransferRequestsView,
+        html.sm-fullpage #amMyRequestsView,
+        html.sm-fullpage #amRequestDetailView {
+            overflow-y: auto !important;
+            overflow-x: hidden !important;
+        }
+        /* Popups/modals/dropdowns must sit above the fixed shell */
+        html.sm-fullpage #editHistoryModal,
+        html.sm-fullpage #smExportModal,
+        html.sm-fullpage #rcEditModal,
+        html.sm-fullpage .rc-modal-overlay,
+        html.sm-fullpage #transferReviewOverlay,
+        html.sm-fullpage #nlOverlay,
+        html.sm-fullpage .ag-popup,
+        html.sm-fullpage .ag-popup-child,
+        html.sm-fullpage .ag-menu,
+        html.sm-fullpage .ag-filter-popup,
+        html.sm-fullpage .ag-tooltip,
+        html.sm-fullpage .multiselect-dropdown {
+            z-index: 2147483647 !important;
+        }
+        html.sm-fullpage #dashboardContent .filters-section,
+        html.sm-fullpage #dashboardContent .filter-group,
+        html.sm-fullpage #dashboardContent .custom-multiselect,
+        html.sm-fullpage #dashboardContent .filter-bar {
+            overflow: visible !important;
+        }
+        .theme-toggle.active-fs {
+            border-color: var(--nab2);
+            background: var(--nab);
+            color: var(--acc);
+        }
         #dashboardContent:fullscreen,
         #dashboardContent:-webkit-full-screen,
         html:fullscreen,
@@ -264,7 +279,6 @@
             width: 100%;
             height: 100%;
             background: var(--bg-body);
-            overflow: hidden;
         }
 
         .sm-fs-btn {
@@ -756,28 +770,20 @@
             padding: 1rem
         }
 
-        /* PSD Assignment — full-bleed layout (edge-to-edge beside sidebar) */
-        .portal-shell.psd-full-shell {
-            max-width: none;
-            width: 100%;
-        }
-
-        .content.psd-full-mode {
-            padding: 0 !important;
-            width: 100%;
-            flex: 1;
-            min-width: 0;
-        }
-
-        #psdView {
+        /* Module sections — same layout as RNPS (no rc/psd full-mode) */
+        #rcView,
+        #psdView,
+        #pending-requests,
+        #newsletterView {
             width: 100%;
             max-width: none;
-            padding: 0.75rem 1rem 1.25rem;
             box-sizing: border-box;
         }
 
         #psdView #psdContainer,
-        #psdView .psd-root {
+        #psdView .psd-root,
+        #rcView #rcContainer,
+        #rcView .rc-root {
             width: 100%;
             max-width: none;
         }
@@ -786,58 +792,18 @@
             grid-template-columns: repeat(6, minmax(0, 1fr));
         }
 
-        @media (max-width: 1400px) {
-            #psdView .top-stats {
-                grid-template-columns: repeat(3, minmax(0, 1fr));
-            }
-        }
-
-        @media (max-width: 900px) {
-            #psdView .top-stats {
-                grid-template-columns: repeat(2, minmax(0, 1fr));
-            }
-        }
-
-        /* Repeated Calls — full-bleed layout (same as PSD) */
-        .portal-shell.rc-full-shell {
-            max-width: none;
-            width: 100%;
-        }
-
-        .content.rc-full-mode {
-            padding: 0 !important;
-            width: 100%;
-            flex: 1;
-            min-width: 0;
-        }
-
-        #rcView {
-            width: 100%;
-            max-width: none;
-            padding: 0.75rem 1rem 1.25rem;
-            box-sizing: border-box;
-        }
-
-        #rcView #rcContainer,
-        #rcView .rc-root {
-            width: 100%;
-            max-width: none;
-        }
-
         #rcView .top-stats {
             grid-template-columns: repeat(3, minmax(0, 1fr));
         }
 
         @media (max-width: 1400px) {
-            #rcView .top-stats {
-                grid-template-columns: repeat(3, minmax(0, 1fr));
-            }
+            #psdView .top-stats { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+            #rcView .top-stats { grid-template-columns: repeat(3, minmax(0, 1fr)); }
         }
 
         @media (max-width: 900px) {
-            #rcView .top-stats {
-                grid-template-columns: repeat(2, minmax(0, 1fr));
-            }
+            #psdView .top-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            #rcView .top-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
         }
 
         @keyframes fadeSection {
@@ -1763,9 +1729,23 @@
         /* ═══════ LANDING ════════════════════════════════════════════════════════ */
         .landing-page {
             min-height: 100vh;
-            display: flex !important;
-            flex-direction: row !important;
-            background: var(--bg-body)
+            display: flex;
+            flex-direction: row;
+            background: var(--bg-body);
+            position: relative;
+            overflow: hidden;
+        }
+        #landingPage.sm-hidden {
+            display: none !important;
+            visibility: hidden !important;
+            pointer-events: none !important;
+        }
+        #smLandingFsBtn {
+            position: fixed;
+            top: 16px;
+            right: 16px;
+            z-index: 2147483001;
+            background: var(--bg-card);
         }
 
         .landing-left,
@@ -2281,9 +2261,24 @@
 </head>
 
 <body>
+    <style id="sm-glk-fullpage-css">
+        /* Body copy — SharePoint strips <head>. See head block for full sm-fullpage rules. */
+    </style>
     <!-- ======================================================================================== -->
     <!-- SHAREPOINT COMPATIBILITY: All CSS in body since SharePoint strips <head> section -->
     <!-- ======================================================================================== -->
+    <style id="sm-rc-psd-fix">
+        html.sm-fullpage #landingPage:not(.sm-hidden),
+        html.sm-fullpage #dashboardContent.sm-visible-shell {
+            position: fixed !important;
+            inset: 0 !important;
+            width: 100vw !important;
+            height: 100vh !important;
+            z-index: 2147483000 !important;
+            margin: 0 !important;
+            max-width: none !important;
+        }
+    </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
     <script src="http://sharedspaces:8086/sites/SM/Shared%20Documents/lucide.min.js"></script>
 
@@ -2291,6 +2286,9 @@
 
     <!-- ===== LANDING PAGE ===== -->
     <div id="landingPage" class="landing-page" style="display: none;">
+        <button type="button" class="theme-toggle sm-fs-btn" id="smLandingFsBtn" onclick="smToggleFullscreen();return false;" title="Minimize">
+            <svg viewBox="0 0 24 24" style="width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;"><polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/><line x1="14" y1="10" x2="21" y2="3"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
+        </button>
         <!-- Animated background gradients -->
         <div class="landing-bg-gradient"></div>
         <div class="landing-bg-orbs">
@@ -2501,7 +2499,7 @@
                     <i data-lucide="chevrons-left" id="sidebarToggleIcon"></i>
                 </div>
                 <div class="nav-items">
-                    <div class="nav-item" id="newsletterNavItem" onclick="showNewsletterView()">
+                    <div class="nav-item" id="newsletterNavItem" data-section="newsletterView" onclick="switchDashboardSection('newsletterView')">
                         <div class="nav-icon"><i data-lucide="mail"></i></div>
                         <div class="nav-label">Newsletter</div>
                         <span id="nlNewBadge" style="display:none;background:#ef4444;color:#fff;font-size:9px;font-weight:800;padding:2px 6px;border-radius:20px;margin-left:auto;line-height:1.4;">NEW</span>
@@ -3120,6 +3118,31 @@
                 </div>
             </div>
             <!-- TRANSFER REQUESTS SECTION: content injected by transfer.js (#transfer-requests, #sdReviewTransferView). -->
+            <!-- NEWSLETTER SECTION -->
+            <div class="dashboard-section" style="display:none;" id="newsletterView">
+                <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.75rem;margin-bottom:1rem;">
+                    <h2 style="font-size:1rem;font-weight:800;color:var(--t1);margin:0!important;display:flex;align-items:center;gap:.45rem;">
+                        <i data-lucide="mail" style="width:22px;height:22px;"></i>Newsletter
+                    </h2>
+                </div>
+                <div style="max-width:1000px;margin:0 auto;">
+                    <div style="display:flex;gap:8px;margin-bottom:1.5rem;">
+                        <button type="button" id="nlTabView" onclick="nlSetTab('view')" style="padding:10px 24px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;border:none;background:var(--grad);color:#fff;display:inline-flex;align-items:center;gap:6px;">
+                            <i data-lucide="newspaper" style="width:14px;height:14px;"></i>Newsletter
+                        </button>
+                        <button type="button" id="nlTabManage" onclick="nlSetTab('manage')" style="display:none;padding:10px 24px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;border:1px solid var(--border);background:var(--bg-input);color:var(--t1);align-items:center;gap:6px;">
+                            <i data-lucide="settings" style="width:14px;height:14px;"></i>Manage
+                        </button>
+                    </div>
+                    <div id="nlLoading" style="text-align:center;padding:60px;color:var(--t2);">
+                        <i data-lucide="loader-2" style="width:40px;height:40px;animation:spin 1s linear infinite;color:var(--acc);display:inline-block;"></i>
+                        <div style="margin-top:12px;font-weight:600;">Loading Newsletter...</div>
+                    </div>
+                    <div id="nlContent" style="display:none;">
+                        <div id="nlViewContainer"></div>
+                    </div>
+                </div>
+            </div>
 
         </div><!-- /content -->
     </div><!-- /main-container -->
@@ -3826,7 +3849,7 @@
         </div>
     </div>
     <!-- Edit-mode SharePoint item version history (Service Manager Request list) -->
-    <div id="editHistoryModal" style="display:none;position:fixed;inset:0;z-index:10050;background:rgba(0,0,0,.55);backdrop-filter:blur(4px);align-items:center;justify-content:center;padding:24px;">
+    <div id="editHistoryModal" style="display:none;position:fixed;inset:0;z-index:2147483647;background:rgba(0,0,0,.55);backdrop-filter:blur(4px);align-items:center;justify-content:center;padding:24px;">
         <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:18px;max-width:1100px;width:100%;max-height:90vh;display:flex;flex-direction:column;box-shadow:0 24px 64px rgba(0,0,0,.35);overflow:hidden;">
             <div style="display:flex;align-items:center;justify-content:space-between;padding:18px 22px;border-bottom:1px solid var(--border);background:var(--bg-secondary);">
                 <div>
@@ -3840,7 +3863,7 @@
         </div>
     </div>
 
-    <div id="smExportModal" style="display:none;position:fixed;inset:0;z-index:10050;background:rgba(0,0,0,.55);backdrop-filter:blur(4px);align-items:center;justify-content:center;padding:24px;">
+    <div id="smExportModal" style="display:none;position:fixed;inset:0;z-index:2147483647;background:rgba(0,0,0,.55);backdrop-filter:blur(4px);align-items:center;justify-content:center;padding:24px;">
         <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:18px;max-width:480px;width:100%;box-shadow:0 24px 64px rgba(0,0,0,.35);overflow:hidden;">
             <div style="padding:18px 22px;border-bottom:1px solid var(--border);background:var(--bg-secondary);">
                 <div style="font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;">Export Options</div>
@@ -6150,6 +6173,7 @@ else {
 
 else if (USER_CONTEXT.role === 'Account Manager' || USER_CONTEXT.role === 'Account Director') {
                         showAMDashboard();
+                        if (typeof smEnterFullscreen === 'function') smEnterFullscreen();
                     }
                 };
 
@@ -6179,6 +6203,7 @@ else if (USER_CONTEXT.role === 'Account Manager' || USER_CONTEXT.role === 'Accou
                 searchBtn.disabled = false;
                 searchBtn.onclick = function() {
                     showAccountSearch();
+                    if (typeof smEnterFullscreen === 'function') smEnterFullscreen();
                 };
             }
 
@@ -6189,6 +6214,7 @@ else if (USER_CONTEXT.role === 'Account Manager' || USER_CONTEXT.role === 'Accou
                 occBtn.style.display = occEnabled ? 'flex' : 'none';
                 occBtn.disabled = !occEnabled;
                 occBtn.onclick = function() {
+                    if (typeof smEnterFullscreen === 'function') smEnterFullscreen();
                     window.location.href = 'http://sharedspaces:8081/sites/OCC/SitePages/occ-search.aspx';
                 };
             }
@@ -6219,22 +6245,25 @@ else if (USER_CONTEXT.role === 'Account Manager' || USER_CONTEXT.role === 'Accou
         }
 
         function showDashboard() {
-            const landing = document.getElementById('landingPage');
-            if (landing) {
-                landing.style.display = 'none';
-                landing.style.visibility = 'hidden';
-                landing.style.position = 'absolute';
-                landing.style.zIndex = '-9999';
+            if (typeof smHideLanding === 'function') smHideLanding();
+            else {
+                const landing = document.getElementById('landingPage');
+                if (landing) {
+                    landing.classList.add('sm-hidden');
+                    landing.style.setProperty('display', 'none', 'important');
+                }
             }
-
-            var dash = document.getElementById('dashboardContent');
-            if (dash) {
-                dash.style.display = 'flex';
-                dash.style.flexDirection = 'column';
-                dash.style.height = '100%';
+            if (typeof smShowDashboardShell === 'function') smShowDashboardShell();
+            else {
+                var dash = document.getElementById('dashboardContent');
+                if (dash) {
+                    dash.classList.add('sm-visible-shell');
+                    dash.style.setProperty('display', 'flex', 'important');
+                    dash.style.flexDirection = 'column';
+                    dash.style.height = '100%';
+                }
             }
             if (typeof smEnterFullscreen === 'function') smEnterFullscreen();
-            else if (typeof smEnterFullPage === 'function') smEnterFullPage();
 
             // Auditor: jump straight to QA view
             if (USER_CONTEXT.role === 'Auditor') {
@@ -8843,23 +8872,46 @@ ${USER_CONTEXT.userName}`
             if (typeof lucide !== 'undefined') lucide.createIcons();
         }
 
-        window._smFullPage = true;
+        window._smFullPage = false;
+
+        var SM_FS_VIEW_IDS = [
+            'landingPage', 'dashboardContent', 'accountSearchView', 'portalAnalyticsView',
+            'comingSoonView', 'amAdDashboard', 'createRequestView',
+            'amTransferRequestsView', 'amMyRequestsView', 'amRequestDetailView'
+        ];
+
+        function smIsNestedInDashboardView(sectionEl) {
+            var dashboardView = document.getElementById('dashboard-view');
+            return !!(sectionEl && dashboardView && sectionEl !== dashboardView && dashboardView.contains(sectionEl));
+        }
+
+        function smClearModuleLayoutModes() {
+            var contentDiv = document.querySelector('#dashboardContent .content') || document.querySelector('.content');
+            var portalShell = document.getElementById('dashboardContent') || document.querySelector('.portal-shell');
+            if (contentDiv) {
+                contentDiv.classList.remove('section-mode', 'psd-full-mode', 'rc-full-mode', 'edit-full-mode');
+                contentDiv.style.removeProperty('display');
+            }
+            if (portalShell) {
+                portalShell.classList.remove('psd-full-shell', 'rc-full-shell', 'edit-full-shell');
+            }
+        }
 
         function smFullscreenElement() {
             return document.fullscreenElement || document.webkitFullscreenElement || null;
         }
 
         function smSyncFullscreenBtn() {
-            var on = window._smFullPage !== false || !!smFullscreenElement();
-            var btn = document.getElementById('smFullscreenBtn');
-            if (!btn) return;
-            btn.classList.toggle('active-fs', on);
-            btn.title = on ? 'Minimize' : 'Full screen';
-            var icon = btn.querySelector('svg');
-            if (!icon) return;
-            icon.innerHTML = on
-                ? '<polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/><line x1="14" y1="10" x2="21" y2="3"/><line x1="3" y1="21" x2="10" y2="14"/>'
-                : '<polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/>';
+            var on = window._smFullPage === true || !!smFullscreenElement();
+            document.querySelectorAll('.sm-fs-btn').forEach(function (btn) {
+                btn.classList.toggle('active-fs', on);
+                btn.title = on ? 'Minimize' : 'Full screen';
+                var icon = btn.querySelector('svg');
+                if (!icon) return;
+                icon.innerHTML = on
+                    ? '<polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/><line x1="14" y1="10" x2="21" y2="3"/><line x1="3" y1="21" x2="10" y2="14"/>'
+                    : '<polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/>';
+            });
         }
 
         function smExitNativeFullscreen() {
@@ -8867,59 +8919,96 @@ ${USER_CONTEXT.userName}`
             if (exitFn && smFullscreenElement()) exitFn.call(document);
         }
 
-        function smEnterFullPage() {
-            window._smFullPage = true;
-            document.documentElement.classList.add('sm-fullpage');
-            smSyncFullscreenBtn();
+        function smMountOverlay() {
+            /* GLK-style: CSS-only fullscreen — do not reparent DOM (breaks body-mounted popups). */
+            smRestoreLegacyAppRoot();
         }
 
-        function smFsRoot() {
-            try {
-                if (window.top && window.top.document && window.top.document.documentElement) {
-                    return window.top.document.documentElement;
-                }
-            } catch (e) {}
-            return document.documentElement;
+        function smRestoreLegacyAppRoot() {
+            if (window._smViewHomes) {
+                SM_FS_VIEW_IDS.forEach(function (id) {
+                    var el = document.getElementById(id);
+                    var home = window._smViewHomes[id];
+                    if (!el || !home || !home.parent) return;
+                    if (home.next && home.next.parentNode === home.parent) {
+                        home.parent.insertBefore(el, home.next);
+                    } else {
+                        home.parent.appendChild(el);
+                    }
+                });
+                window._smViewHomes = null;
+            }
+            var root = document.getElementById('smAppRoot');
+            if (root && root.parentNode) root.parentNode.removeChild(root);
+        }
+
+        function smUnmountOverlay() {
+            smRestoreLegacyAppRoot();
+        }
+
+        function smPopupParent() {
+            return document.body;
+        }
+
+        window.smBoostPopupZ = function (el) {
+            if (!el || !window._smFullPage) return;
+            el.style.zIndex = '2147483647';
+        };
+
+        function smHideLanding() {
+            var landing = document.getElementById('landingPage');
+            if (!landing) return;
+            landing.classList.add('sm-hidden');
+            landing.style.setProperty('display', 'none', 'important');
+        }
+
+        function smShowLanding() {
+            var landing = document.getElementById('landingPage');
+            if (!landing) return;
+            landing.classList.remove('sm-hidden');
+            landing.style.setProperty('display', 'flex', 'important');
+        }
+
+        function smShowDashboardShell() {
+            var dash = document.getElementById('dashboardContent');
+            if (!dash) return;
+            dash.classList.add('sm-visible-shell');
+            dash.style.setProperty('display', 'flex', 'important');
+            dash.style.flexDirection = 'column';
+            dash.style.height = '100%';
+        }
+
+        function smHideDashboardShell() {
+            var dash = document.getElementById('dashboardContent');
+            if (!dash) return;
+            dash.classList.remove('sm-visible-shell');
+            dash.style.setProperty('display', 'none', 'important');
         }
 
         function smEnterFullscreen() {
-            smEnterFullPage();
-            if (smFullscreenElement()) return;
-            var node = smFsRoot();
+            window._smFullPage = true;
+            smRestoreLegacyAppRoot();
+            document.documentElement.classList.add('sm-fullpage');
+            smMountOverlay();
+            smSyncFullscreenBtn();
+            var node = document.documentElement;
             var req = node.requestFullscreen || node.webkitRequestFullscreen;
-            if (!req) return;
+            if (!req || smFullscreenElement()) return;
             window._smWantNativeFs = true;
-            try {
-                var p = req.call(node);
-                if (p && p.catch) p.catch(function () { window._smWantNativeFs = false; });
-            } catch (e) {
-                window._smWantNativeFs = false;
-            }
+            var p = req.call(node);
+            if (p && p.catch) p.catch(function () { window._smWantNativeFs = false; });
         }
-
-        function smBindFullscreenOnGesture() {
-            if (window._smFsGestureBound) return;
-            window._smFsGestureBound = true;
-            function go(e) {
-                if (window._smFullPage === false) return;
-                if (smFullscreenElement()) return;
-                if (e && e.target && e.target.closest && e.target.closest('.sm-fs-btn')) return;
-                smEnterFullscreen();
-            }
-            document.addEventListener('pointerdown', go, true);
-            document.addEventListener('keydown', go, true);
-        }
-        smBindFullscreenOnGesture();
 
         function smMinimizeFullscreen() {
             window._smFullPage = false;
             document.documentElement.classList.remove('sm-fullpage');
+            smUnmountOverlay();
             smExitNativeFullscreen();
             smSyncFullscreenBtn();
         }
 
         function smToggleFullscreen() {
-            if (window._smFullPage !== false || smFullscreenElement()) smMinimizeFullscreen();
+            if (window._smFullPage === true || smFullscreenElement()) smMinimizeFullscreen();
             else smEnterFullscreen();
         }
 
@@ -9042,18 +9131,16 @@ ${USER_CONTEXT.userName}`
                 // grid stays, just reset the review state
             }
 
-            // ── RESET section-mode on content div ────────────────────────
-            var contentDiv = document.querySelector('.content');
-            if (contentDiv) {
-                contentDiv.classList.remove('section-mode');
-                contentDiv.classList.remove('psd-full-mode');
-                contentDiv.classList.remove('rc-full-mode');
+            smClearModuleLayoutModes();
+            var contentDiv = document.querySelector('#dashboardContent .content') || document.querySelector('.content');
+            var portalShell = document.getElementById('dashboardContent') || document.querySelector('.portal-shell');
+            if (contentDiv) contentDiv.style.overflowY = 'auto';
+            if (portalShell && window._smFullPage) {
+                portalShell.style.display = 'flex';
+                portalShell.style.flexDirection = 'column';
+                portalShell.style.height = '100%';
             }
-            var portalShell = document.querySelector('.portal-shell');
-            if (portalShell) {
-                portalShell.classList.remove('psd-full-shell');
-                portalShell.classList.remove('rc-full-shell');
-            }
+            if (window._smFullPage && typeof smMountOverlay === 'function') smMountOverlay();
 
             // ── HIDE ALL SECTIONS ─────────────────────────────────────────
             document.querySelectorAll('.dashboard-section').forEach(function(section) {
@@ -9065,31 +9152,45 @@ ${USER_CONTEXT.userName}`
                 item.classList.remove('active');
             });
 
-            // ── SHOW TARGET SECTION ───────────────────────────────────────
+            // ── SHOW TARGET SECTION (RNPS-style: nested vs top-level) ────
             var targetSection = document.getElementById(sectionId);
-            if (targetSection) {
+            var dashboardView = document.getElementById('dashboard-view');
+            var dashInnerContent = document.getElementById('content');
+            var dashLoading = document.getElementById('loading');
+
+            if (sectionId === 'dashboard-view') {
+                if (dashboardView) {
+                    dashboardView.style.display = 'block';
+                    dashboardView.style.visibility = 'visible';
+                }
+                var hasDashData = (typeof ALL_DATA !== 'undefined' && ALL_DATA && ALL_DATA.length > 0);
+                if (dashInnerContent) dashInnerContent.style.display = hasDashData ? 'block' : 'none';
+                if (dashLoading) dashLoading.style.display = hasDashData ? 'none' : 'block';
+            } else if (targetSection && smIsNestedInDashboardView(targetSection)) {
+                if (dashboardView) {
+                    dashboardView.style.display = 'block';
+                    dashboardView.style.visibility = 'visible';
+                }
+                if (dashInnerContent) dashInnerContent.style.display = 'none';
+                if (dashLoading) dashLoading.style.display = 'none';
                 targetSection.style.display = 'block';
+            } else {
+                if (dashboardView) {
+                    dashboardView.style.display = 'none';
+                    dashboardView.style.visibility = 'hidden';
+                }
+                if (targetSection) {
+                    targetSection.style.display = 'block';
+                    targetSection.style.visibility = 'visible';
+                }
             }
+
+            smClearModuleLayoutModes();
 
             // ── SET ACTIVE NAV ITEM ───────────────────────────────────────
             var activeNav = document.querySelector('[data-section="' + sectionId + '"]');
             if (activeNav) {
                 activeNav.classList.add('active');
-            }
-
-            // ── SECTION-MODE for pending/transfer ────────────────────────
-            if (contentDiv) {
-                if (sectionId === 'pending-requests' || sectionId === 'transfer-requests') {
-                    contentDiv.classList.add('section-mode');
-                }
-                if (sectionId === 'psdView') {
-                    contentDiv.classList.add('psd-full-mode');
-                    if (portalShell) portalShell.classList.add('psd-full-shell');
-                }
-                if (sectionId === 'rcView') {
-                    contentDiv.classList.add('rc-full-mode');
-                    if (portalShell) portalShell.classList.add('rc-full-shell');
-                }
             }
 
             // ── LOAD DATA FOR SPECIFIC SECTIONS ──────────────────────────
@@ -9138,6 +9239,11 @@ else if (sectionId === 'rcView') {
             rcLoading.innerHTML = '<div style="text-align:center;padding:40px;color:#ef4444;font-weight:700;">Repeated Calls script failed to load. Re-upload repeated-calls.js to SharePoint and hard-refresh (Ctrl+F5).</div>';
         }
     }
+}
+else if (sectionId === 'newsletterView') {
+    if (typeof nlLoadNewsletter === 'function') nlLoadNewsletter();
+    if (typeof nlMarkAsSeen === 'function') nlMarkAsSeen();
+    if (typeof nlRemoveNewBadge === 'function') nlRemoveNewBadge();
 }
 
         }
@@ -9305,6 +9411,7 @@ else if (sectionId === 'rcView') {
                     document.querySelectorAll('.nav-item').forEach(function(item) { item.classList.remove('active'); });
                     var nav = document.getElementById('newsletterNavItem');
                     if (nav) nav.classList.add('active');
+                    if (window._smFullPage && typeof smMountOverlay === 'function') smMountOverlay();
                     return result;
                 };
                 window.showNewsletterView.__smPatched = true;
@@ -9402,8 +9509,10 @@ else if (sectionId === 'rcView') {
                 // ✅ ALWAYS show landing page for ALL users (even without access)
                 console.log('[INFO] User:', USER_CONTEXT.userName, '| Role:', USER_CONTEXT.role);
 
-                // Show landing page ALWAYS
-                document.getElementById('landingPage').style.display = 'grid';
+                // GLK-style: landing covers SharePoint; minimize button reveals SP chrome
+                document.getElementById('landingPage').style.setProperty('display', 'flex', 'important');
+                document.getElementById('landingPage').classList.remove('sm-hidden');
+                if (typeof smEnterFullscreen === 'function') smEnterFullscreen();
 
                 // Load data for all roles with access (Account_Search_Viewer uses same init as Admin)
               if (hasAccess) {
@@ -11060,15 +11169,22 @@ else if (sectionId === 'rcView') {
         // ========================================
 
         function showAccountSearch() {
-            const landing = document.getElementById('landingPage');
-            if (landing) {
-                landing.style.display = 'none';
-                landing.style.visibility = 'hidden';
-                landing.style.position = 'absolute';
-                landing.style.zIndex = '-1';
+            if (typeof smHideLanding === 'function') smHideLanding();
+            else {
+                const landing = document.getElementById('landingPage');
+                if (landing) {
+                    landing.classList.add('sm-hidden');
+                    landing.style.setProperty('display', 'none', 'important');
+                }
             }
-            const dc = document.getElementById('dashboardContent');
-            if (dc) dc.style.display = 'none';
+            if (typeof smHideDashboardShell === 'function') smHideDashboardShell();
+            else {
+                const dc = document.getElementById('dashboardContent');
+                if (dc) {
+                    dc.classList.remove('sm-visible-shell');
+                    dc.style.setProperty('display', 'none', 'important');
+                }
+            }
 
             document.getElementById('accountSearchView').style.display = 'block';
             window.scrollTo(0, 0);
@@ -11098,6 +11214,7 @@ else if (sectionId === 'rcView') {
             if (typeof lucide !== 'undefined') {
                 lucide.createIcons();
             }
+            if (typeof smEnterFullscreen === 'function') smEnterFullscreen();
         }
 
         // ─── COMING SOON VIEWS ──────────────────────────────────────────────
@@ -11105,7 +11222,7 @@ else if (sectionId === 'rcView') {
             'reviewRequestView', 'transferRequestView', 'sdReviewTransferView',
             'amAdDashboard', 'amTransferRequestsView', 'amMyRequestsView', 'amRequestDetailView',
             'createRequestView', 'accountSearchView', 'comingSoonView', 'portalAnalyticsView',
-            'editRequestView', 'contactUsView', 'newsletterView'
+            'editRequestView', 'contactUsView'
         ];
 
         window.showPortalAnalytics = function() {
@@ -11126,6 +11243,7 @@ else if (sectionId === 'rcView') {
             window.scrollTo(0, 0);
             if (typeof analyticsLoadDashboard === 'function') analyticsLoadDashboard();
             if (typeof lucide !== 'undefined') lucide.createIcons();
+            if (window._smFullPage && typeof smMountOverlay === 'function') smMountOverlay();
         };
 
         window.showPortalAnalyticsBack = function() {
@@ -11139,7 +11257,9 @@ else if (sectionId === 'rcView') {
             if (dc) {
                 dc.style.position = '';
                 dc.style.zIndex = '';
-                dc.style.display = 'block';
+                dc.style.display = 'flex';
+                dc.style.flexDirection = 'column';
+                dc.style.height = '100%';
             }
             if (typeof switchDashboardSection === 'function') switchDashboardSection('dashboard-view');
             window.scrollTo(0, 0);
@@ -11181,7 +11301,9 @@ else if (sectionId === 'rcView') {
             if (dc) {
                 dc.style.position = '';
                 dc.style.zIndex = '';
-                dc.style.display = 'block';
+                dc.style.display = 'flex';
+                dc.style.flexDirection = 'column';
+                dc.style.height = '100%';
             }
             if (typeof switchDashboardSection === 'function') switchDashboardSection('dashboard-view');
             window.scrollTo(0, 0);
@@ -11190,12 +11312,13 @@ else if (sectionId === 'rcView') {
 
         function backToLanding() {
             document.getElementById('accountSearchView').style.display = 'none';
-            const landing = document.getElementById('landingPage');
-            if (landing) {
-                landing.style.position = '';
-                landing.style.visibility = '';
-                landing.style.zIndex = '';
-                landing.style.display = 'grid';
+            if (typeof smShowLanding === 'function') smShowLanding();
+            else {
+                const landing = document.getElementById('landingPage');
+                if (landing) {
+                    landing.classList.remove('sm-hidden');
+                    landing.style.setProperty('display', 'flex', 'important');
+                }
             }
 
             // Clear search results
@@ -11737,45 +11860,11 @@ else if (sectionId === 'rcView') {
     <script src="http://sharedspaces:8086/sites/SM/Shared%20Documents/processdocs.js"></script>
     <script src="http://sharedspaces:8086/sites/SM/Shared%20Documents/qualityassurance.js"></script>
     <script src="http://sharedspaces:8086/sites/SM/Shared%20Documents/psd__assignment.js?v=1.2.0"></script>
-    <script src="http://sharedspaces:8086/sites/SM/Shared%20Documents/repeated-calls.js?v=1.9.2"></script>
+    <script src="http://sharedspaces:8086/sites/SM/Shared%20Documents/repeated-calls.js?v=1.9.7"></script>
     <script src="http://sharedspaces:8086/sites/SM/Shared%20Documents/rnps.js"></script>
   <script src="http://sharedspaces:8086/sites/SM/Shared%20Documents/semailbox.js"></script>
   <script src="http://sharedspaces:8086/sites/SM/Shared%20Documents/tsm-se.js?v=4fix1"></script>
-    <div class="dashboard" style="display:none;" id="newsletterView">
-        <div class="header">
-            <div class="header-left">
-                <h1><i data-lucide="mail" style="width:28px;height:28px;display:inline-block;vertical-align:middle;margin-right:10px;"></i>Newsletter</h1>
-                <p>Service Management Platform</p>
-            </div>
-            <div class="header-actions">
-                <button type="button" class="theme-btn" onclick="backFromNewsletter()" style="background:rgba(239,68,68,0.15);color:#ef4444;padding:10px 20px;border-radius:12px;border:none;cursor:pointer;font-weight:600;">
-                    <i data-lucide="arrow-left" style="width:16px;height:16px;display:inline-block;vertical-align:middle;margin-right:6px;"></i>Back to Dashboard
-                </button>
-            </div>
-        </div>
-        <div style="max-width:1000px;margin:0 auto;padding:24px;">
-            <!-- TABS -->
-            <div style="display:flex;gap:8px;margin-bottom:1.5rem;">
-                <button type="button" id="nlTabView" onclick="nlSetTab('view')" style="padding:10px 24px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;border:none;background:var(--grad);color:#fff;display:inline-flex;align-items:center;gap:6px;">
-                    <i data-lucide="newspaper" style="width:14px;height:14px;"></i>Newsletter
-                </button>
-                <button type="button" id="nlTabManage" onclick="nlSetTab('manage')" style="display:none;padding:10px 24px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;border:1px solid var(--border);background:var(--bg-input);color:var(--t1);align-items:center;gap:6px;">
-                    <i data-lucide="settings" style="width:14px;height:14px;"></i>Manage
-                </button>
-            </div>
-            <!-- Loading -->
-            <div id="nlLoading" style="text-align:center;padding:60px;color:var(--t2);">
-                <i data-lucide="loader-2" style="width:40px;height:40px;animation:spin 1s linear infinite;color:var(--acc);display:inline-block;"></i>
-                <div style="margin-top:12px;font-weight:600;">Loading Newsletter...</div>
-            </div>
-            <!-- Content -->
-            <div id="nlContent" style="display:none;">
-                <div id="nlViewContainer"></div>
-            </div>
-        </div>
-    </div>
     <script>
-
     </script>
 </body>
 
