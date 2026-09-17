@@ -1,5 +1,5 @@
 // ============================================================
-// repeated-calls.js — Repeated Calls Module v1.9.2
+// repeated-calls.js — Repeated Calls Module v1.9.5
 // List: Repeated_Calls | Agents: Account Mapping (CTI match, all teams)
 // SP fields: RC_Status, Upload_Date, Assignment_Date, Reassign_Date, Resolved_Date, Assigned_To
 // ============================================================
@@ -18,7 +18,7 @@ var rcCharts        = {};
 var rcGrids         = { dash: null, assign: null, assigned: null, agentQueue: null, agentRecords: null };
 var rcUploadRows    = []; 
 var rcSelectedAgent = null;
-window.RC_MODULE_VERSION = '1.9.2';
+window.RC_MODULE_VERSION = '1.9.5';
 
 var RC_DELETE_ALL_EMAILS = ['tehleel.lone@du.ae', 'ubaid.mir@du.ae'];
 var RC_MIN_REPEAT_CALLS = 3;
@@ -1278,22 +1278,29 @@ async function rcRunPool(items, worker, options) {
     return { ok: ok, fail: fail };
 }
 
-// ── Chart theme ───────────────────────────────────────────────
-var RC_CHART_PALETTE = {
-    pending:    { from: '#64748b', to: '#94a3b8' },
-    inprogress: { from: '#c2410c', to: '#fb923c' },
-    completed:  { from: '#047857', to: '#34d399' },
-    agents:     ['#7c3aed', '#6366f1', '#0891b2', '#db2777', '#059669', '#d97706'],
-    categories: ['#0284c7', '#0d9488', '#7c3aed', '#db2777', '#ca8a04', '#dc2626'],
-    aging:      ['#22c55e', '#84cc16', '#eab308', '#f97316', '#ef4444']
-};
+// ── Chart theme (always pulled from SM CSS tokens) ───────────
+function rcThemePalette() {
+    var acc = (typeof rcCssVar === 'function' ? rcCssVar('--acc') : '') || '#a855f7';
+    var acc2 = (typeof rcCssVar === 'function' ? rcCssVar('--acc2') : '') || '#c724b1';
+    var t3 = (typeof rcCssVar === 'function' ? rcCssVar('--t3') : '') || '#8b7aad';
+    return {
+        pending:    { from: t3, to: acc },
+        inprogress: { from: acc, to: acc2 },
+        completed:  { from: acc2, to: acc },
+        agents:     [acc, acc2, t3, '#6366f1', '#0891b2', '#059669'],
+        categories: [acc, acc2, t3, '#6366f1', '#0891b2', '#d97706'],
+        aging:      [acc, acc2, t3, '#f59e0b', '#ef4444']
+    };
+}
+var RC_CHART_PALETTE = rcThemePalette();
 
 function rcInjectStyles() {
-    if (document.getElementById('rc-module-styles')) return;
+    var existing = document.getElementById('rc-module-styles');
+    if (existing) existing.parentNode.removeChild(existing);
     var s = document.createElement('style');
     s.id = 'rc-module-styles';
     s.textContent =
-        '.rc-root{width:100%;max-width:none;box-sizing:border-box}' +
+        '.rc-root{width:100%!important;max-width:none!important;box-sizing:border-box}' +
         '.rc-chart-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem;margin-top:1rem;width:100%}' +
         '@media(max-width:1100px){.rc-chart-grid{grid-template-columns:1fr}.rc-chart-card.rc-chart-wide{grid-column:span 1}}' +
         '.rc-chart-card.rc-chart-wide{grid-column:span 2}' +
@@ -1388,27 +1395,28 @@ function rcInjectStyles() {
         '.rc-ms .multiselect-option:hover{background:var(--bg-hover,rgba(148,163,184,.12))}' +
         '.rc-ms .multiselect-option input[type=checkbox]{margin-right:10px;width:15px;height:15px;cursor:pointer;accent-color:var(--acc)}' +
         '.rc-ms .multiselect-option label{cursor:pointer;flex:1;font-size:.8rem;color:var(--t1);margin:0}' +
-        '.rc-flow{position:relative;overflow:auto;padding:8px 4px 12px;min-height:460px}' +
+        '.rc-flow{position:relative;overflow:auto;padding:16px 12px 18px;min-height:540px;background:var(--bg-card);border:1px solid var(--border);border-radius:14px;box-shadow:var(--cs)}' +
         '.rc-flow-svg{position:absolute;left:0;top:0;pointer-events:none;z-index:0;overflow:visible}' +
-        '.rc-flow-grid{position:relative;z-index:1;display:grid;grid-template-columns:minmax(150px,170px) 56px minmax(150px,170px) 56px minmax(150px,170px) 56px minmax(170px,1fr);grid-template-rows:auto auto auto auto auto;gap:10px 0;align-items:center;min-width:920px}' +
-        '.rc-flow-node{position:relative;z-index:2;padding:.7rem .8rem;border-radius:12px;text-align:center;box-shadow:var(--cs);border:1px solid var(--border);background:var(--bg-card);color:var(--t1);cursor:pointer;transition:transform .15s,box-shadow .15s}' +
+        '.rc-flow-grid{position:relative;z-index:1;display:grid;grid-template-columns:minmax(168px,190px) 80px minmax(168px,190px) 80px minmax(168px,190px) 80px minmax(200px,1fr);grid-template-rows:auto auto auto auto auto;column-gap:0;row-gap:16px;align-items:center;min-width:1040px}' +
+        '.rc-flow-node{position:relative;z-index:2;padding:.75rem .85rem;border-radius:12px;text-align:center;box-shadow:var(--cs);border:1px solid transparent;background:var(--bg-card);color:var(--t1);cursor:pointer;transition:transform .15s,box-shadow .15s}' +
         '.rc-flow-node:hover{transform:translateY(-1px);box-shadow:var(--ch)}' +
         '.rc-flow-node.rc-flow-active{box-shadow:0 0 0 3px var(--acc),var(--ch)}' +
         '.rc-flow-label{font-size:.66rem;font-weight:800;letter-spacing:.04em;text-transform:uppercase;line-height:1.25;color:inherit}' +
         '.rc-flow-count{font-size:1.32rem;font-weight:900;line-height:1.1;margin-top:.2rem}' +
         '.rc-flow-sub{font-size:.62rem;opacity:.88;margin-top:.15rem;font-weight:600}' +
         '.rc-flow-root{grid-column:1;grid-row:1/6;align-self:center;background:var(--grad);color:#fff;border-color:var(--nab2)}' +
-        '.rc-flow-l1{background:var(--acc);color:#fff;border-color:var(--nab2)}' +
+        '.rc-flow-l1{color:#fff}' +
         '.rc-flow-l2{background:var(--acc2);color:#fff;border-color:var(--nab2)}' +
-        '.rc-flow-l2-alt{background:var(--t3);color:#fff;border-color:var(--border-s)}' +
-        '.rc-flow-nr{grid-column:3;grid-row:1}' +
-        '.rc-flow-reach{grid-column:3;grid-row:2/5}' +
-        '.rc-flow-ip{grid-column:3;grid-row:5}' +
+        '.rc-flow-l2-alt{background:#64748b;color:#fff;border-color:transparent}' +
+        '.rc-flow-nr{grid-column:3;grid-row:1;background:#64748b}' +
+        '.rc-flow-reach{grid-column:3;grid-row:2/5;background:var(--acc)}' +
+        '.rc-flow-ip{grid-column:3;grid-row:5;background:#f59e0b}' +
         '.rc-flow-res{grid-column:5;grid-row:2}' +
         '.rc-flow-nres{grid-column:5;grid-row:4}' +
         '.rc-flow-drivers{grid-column:7;grid-row:1/3;display:flex;flex-direction:column;gap:8px}' +
         '.rc-flow-pending{grid-column:7;grid-row:3/6;display:flex;flex-direction:column;gap:8px}' +
-        '.rc-flow-leaf{background:var(--bg-card);color:var(--t1);border:1.5px solid var(--acc);padding:.5rem .7rem}' +
+        '.rc-flow-colhead{font-size:.62rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--acc);padding:0 .2rem}' +
+        '.rc-flow-leaf{background:var(--bg-secondary);color:var(--t1);border:1.5px solid var(--acc);padding:.5rem .7rem}' +
         '.rc-flow-leaf .rc-flow-count{color:var(--acc);font-size:1.05rem}' +
         '.rc-flow-leaf .rc-flow-label{color:var(--t2);text-transform:none;letter-spacing:.01em;font-size:.72rem}' +
         '.rc-flow-foot{margin-top:.75rem;font-size:.72rem;color:var(--t3);line-height:1.45;border-top:1px dashed var(--border);padding-top:.6rem}' +
@@ -1859,6 +1867,17 @@ window.rcTreeNodeClick = function (node, value) {
         if (grid) grid.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }, 180);
 };
+
+if (!window._rcTreeClickBound) {
+    window._rcTreeClickBound = true;
+    document.addEventListener('click', function (e) {
+        var n = e.target && e.target.closest ? e.target.closest('.rc-flow-node') : null;
+        if (!n) return;
+        e.preventDefault();
+        e.stopPropagation();
+        window.rcTreeNodeClick(n.getAttribute('data-rc-filter-node') || n.getAttribute('data-rc-node'), n.getAttribute('data-rc-filter-value') || '');
+    }, true);
+}
 
 window.rcShowTop10Callers = function () {
     rcRepeatVisible = true;
@@ -2408,21 +2427,14 @@ function rcTopNPairs(map, n) {
     var keys = Object.keys(map || {}).sort(function (a, b) {
         return (map[b] - map[a]) || a.localeCompare(b);
     });
-    var top = keys.slice(0, n);
-    var rest = keys.slice(n);
-    var out = top.map(function (k) { return { label: k, count: map[k] }; });
-    var other = rest.reduce(function (s, k) { return s + (map[k] || 0); }, 0);
-    if (other) out.push({ label: 'Others', count: other });
-    return out;
+    return keys.slice(0, n).map(function (k) { return { label: k, count: map[k] }; });
 }
 
 function rcFlowNodeHTML(id, extraClass, label, count, sub, filterNode, filterValue) {
     filterNode = filterNode || id;
     filterValue = filterValue || '';
     var active = (rcTreeFilter.node === filterNode && (rcTreeFilter.value || '') === filterValue) ? ' rc-flow-active' : '';
-    var nEnc = encodeURIComponent(filterNode);
-    var vEnc = encodeURIComponent(filterValue);
-    return '<div class="rc-flow-node ' + extraClass + active + '" data-rc-node="' + rcEsc(id) + '" role="button" title="Click to filter the grid · click again to clear" onclick="rcTreeNodeClick(decodeURIComponent(\'' + nEnc + '\'), decodeURIComponent(\'' + vEnc + '\'))">' +
+    return '<div class="rc-flow-node ' + extraClass + active + '" data-rc-node="' + rcEsc(id) + '" data-rc-filter-node="' + rcEsc(filterNode) + '" data-rc-filter-value="' + rcEsc(filterValue) + '" role="button" title="Click to filter the grid · click again to clear">' +
         '<div class="rc-flow-label">' + rcEsc(label) + '</div>' +
         '<div class="rc-flow-count">' + rcEsc(String(count)) + '</div>' +
         (sub ? '<div class="rc-flow-sub">' + rcEsc(sub) + '</div>' : '') +
@@ -2452,8 +2464,8 @@ function rcContactTreeHTML(items) {
             rcFlowNodeHTML('ip', 'rc-flow-l1 rc-flow-ip', 'In Progress', d.inProgress, 'Not edited yet') +
             rcFlowNodeHTML('resolved', 'rc-flow-l2 rc-flow-res', 'Resolved', d.resolved) +
             rcFlowNodeHTML('nres', 'rc-flow-l2 rc-flow-l2-alt rc-flow-nres', 'Issue Not Resolved', d.notResolved) +
-            '<div class="rc-flow-drivers" id="rcFlowDrivers">' + rcFlowLeafStackHTML(drivers, 'd', 'driver') + '</div>' +
-            '<div class="rc-flow-pending" id="rcFlowPending">' + rcFlowLeafStackHTML(pending, 'p', 'pending') + '</div>' +
+            '<div class="rc-flow-drivers" id="rcFlowDrivers"><div class="rc-flow-colhead">Top 5 Call Drivers</div>' + rcFlowLeafStackHTML(drivers, 'd', 'driver') + '</div>' +
+            '<div class="rc-flow-pending" id="rcFlowPending"><div class="rc-flow-colhead">Top 5 Pending With</div>' + rcFlowLeafStackHTML(pending, 'p', 'pending') + '</div>' +
         '</div>' +
         '<div class="rc-flow-foot">Lines show the callback path. Leaves are Top 5 only' + (openNote ? ' · ' + rcEsc(openNote) : '') + '.</div>' +
     '</div>';
@@ -2478,35 +2490,50 @@ window.rcPaintContactTree = function () {
     svg.setAttribute('height', h);
     svg.setAttribute('viewBox', '0 0 ' + w + ' ' + h);
     var acc = rcCssVar('--acc') || '#a855f7';
-    svg.innerHTML = '<defs><marker id="rcArrowHead" markerWidth="11" markerHeight="11" refX="9" refY="3.5" orient="auto">' +
-        '<polygon points="0 0, 10 3.5, 0 7" fill="' + acc + '"></polygon></marker></defs>';
+    var acc2 = rcCssVar('--acc2') || '#c724b1';
+    var slate = '#64748b';
+    var amber = '#f59e0b';
+    svg.innerHTML = '<defs>' +
+        '<marker id="rcArrowHead" markerWidth="14" markerHeight="14" refX="12" refY="5" orient="auto"><polygon points="0 0, 14 5, 0 10" fill="' + acc + '"></polygon></marker>' +
+        '<marker id="rcArrowHead2" markerWidth="14" markerHeight="14" refX="12" refY="5" orient="auto"><polygon points="0 0, 14 5, 0 10" fill="' + acc2 + '"></polygon></marker>' +
+        '<marker id="rcArrowHeadSlate" markerWidth="14" markerHeight="14" refX="12" refY="5" orient="auto"><polygon points="0 0, 14 5, 0 10" fill="' + slate + '"></polygon></marker>' +
+        '<marker id="rcArrowHeadAmber" markerWidth="14" markerHeight="14" refX="12" refY="5" orient="auto"><polygon points="0 0, 14 5, 0 10" fill="' + amber + '"></polygon></marker>' +
+        '</defs>';
 
     function node(id) { return board.querySelector('[data-rc-node="' + id + '"]'); }
-    function connect(fromId, toId) {
+    function markerFor(color) {
+        if (color === acc2) return 'url(#rcArrowHead2)';
+        if (color === slate) return 'url(#rcArrowHeadSlate)';
+        if (color === amber) return 'url(#rcArrowHeadAmber)';
+        return 'url(#rcArrowHead)';
+    }
+    function connect(fromId, toId, color) {
         var a = node(fromId), b = node(toId);
         if (!a || !b) return;
+        color = color || acc;
         var p1 = rcTreeAnchor(board, a, 'right');
         var p2 = rcTreeAnchor(board, b, 'left');
         var mx = (p1.x + p2.x) / 2;
         var path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
         path.setAttribute('d', 'M ' + p1.x + ' ' + p1.y + ' C ' + mx + ' ' + p1.y + ', ' + mx + ' ' + p2.y + ', ' + p2.x + ' ' + p2.y);
         path.setAttribute('fill', 'none');
-        path.setAttribute('stroke', acc);
-        path.setAttribute('stroke-width', '2.25');
-        path.setAttribute('marker-end', 'url(#rcArrowHead)');
+        path.setAttribute('stroke', color);
+        path.setAttribute('stroke-width', '3.25');
+        path.setAttribute('stroke-linecap', 'round');
+        path.setAttribute('marker-end', markerFor(color));
         svg.appendChild(path);
     }
 
-    connect('root', 'nr');
-    connect('root', 'reach');
-    connect('root', 'ip');
-    connect('reach', 'resolved');
-    connect('reach', 'nres');
+    connect('root', 'nr', slate);
+    connect('root', 'reach', acc);
+    connect('root', 'ip', amber);
+    connect('reach', 'resolved', acc2);
+    connect('reach', 'nres', slate);
     board.querySelectorAll('#rcFlowDrivers [data-rc-node]').forEach(function (el) {
-        connect('resolved', el.getAttribute('data-rc-node'));
+        connect('resolved', el.getAttribute('data-rc-node'), acc);
     });
     board.querySelectorAll('#rcFlowPending [data-rc-node]').forEach(function (el) {
-        connect('nres', el.getAttribute('data-rc-node'));
+        connect('nres', el.getAttribute('data-rc-node'), slate);
     });
 };
 
@@ -3087,6 +3114,10 @@ function rcDashboardMainHTML(dateFiltered, items, s, gridItems) {
             rcKpiTile('In Progress', s.inprogress, 'Unique repeat callers · assigned', rcStatusColor(RC_STATUS.INPROGRESS), 'inprogress') +
             rcKpiTile('Resolved', s.completed, 'Unique repeat callers · done', rcStatusColor(RC_STATUS.RESOLVED), 'resolved') +
         '</div>' +
+        '<div class="rc-chart-card rc-chart-wide" style="margin:1rem 0;">' +
+            '<div class="rc-chart-head"><div><h3>Repeated Contacts Breakdown</h3><span>Click a tile to filter the grid · click again to clear · Top 5 drivers / pending with</span></div></div>' +
+            '<div class="rc-chart-body" style="height:auto;min-height:280px;padding-top:.25rem;">' + rcContactTreeHTML(items) + '</div>' +
+        '</div>' +
         '<div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin:1rem 0;">' +
             '<button type="button" id="rcToggleRepeatBtn" class="export-btn" onclick="rcToggleRepeatCallers()" style="padding:12px 20px;font-size:14px;">' +
                 '<i data-lucide="phone-missed" id="rcRepeatIcon" style="width:16px;height:16px;display:inline-block;vertical-align:middle;margin-right:6px;"></i>' +
@@ -3099,10 +3130,6 @@ function rcDashboardMainHTML(dateFiltered, items, s, gridItems) {
             rcRepeatCallersPanelHTML(dateFiltered) +
         '</div>' +
         '<div id="rcChartsSection" style="display:' + (rcChartsBuilt ? 'block' : 'none') + ';margin-top:1rem;">' +
-            '<div class="rc-chart-card rc-chart-wide" style="margin-bottom:1rem;">' +
-                '<div class="rc-chart-head"><div><h3>Repeated Contacts Breakdown</h3><span>Callback outcome → resolution → driver / pending with</span></div></div>' +
-                '<div class="rc-chart-body" style="height:auto;min-height:280px;padding-top:.25rem;">' + rcContactTreeHTML(items) + '</div>' +
-            '</div>' +
             '<div class="rc-chart-grid">' +
             rcTrendChartCardHTML() +
             rcChartCard('Status Breakdown', 'rcChartStatus', 'Pending / in progress / resolved', true) +
@@ -3140,6 +3167,7 @@ function rcRefreshDashboardContent() {
         rcDestroyCharts();
         rcBuildDashboardCharts(items, s);
     }
+    rcSchedulePaintContactTree();
 
     if (typeof lucide !== 'undefined') lucide.createIcons();
     if (rcRepeatVisible) {
@@ -3240,6 +3268,7 @@ function rcRenderDashboard(body) {
         if (rpIcon) rpIcon.setAttribute('data-lucide', 'eye-off');
         if (typeof lucide !== 'undefined') lucide.createIcons();
     }
+    rcSchedulePaintContactTree();
 }
 
 window.rcToggleRepeatCallers = function () {
@@ -3416,6 +3445,7 @@ function rcBuildTrendChart(items) {
 
 function rcBuildDashboardCharts(items, s) {
     if (typeof Chart === 'undefined') return;
+    RC_CHART_PALETTE = rcThemePalette();
     rcEnsureChartPlugins();
     Chart.defaults.color = rcCssVar('--t2');
     Chart.defaults.font.family = 'Inter,sans-serif';
