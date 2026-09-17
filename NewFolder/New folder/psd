@@ -803,7 +803,7 @@ function psdInjectStyles() {
 }
 
 function psdSetFullLayout(on) {
-    /* no-op: layout handled by switchDashboardSection like RNPS */
+    if (typeof smClearModuleLayoutModes === 'function') smClearModuleLayoutModes();
 }
 
 function psdCssVar(name) { return getComputedStyle(document.body).getPropertyValue(name).trim() || '#a855f7'; }
@@ -1041,7 +1041,7 @@ window.psdInit = async function () {
         try {
             psdInjectStyles();
             if (typeof injectAGGridThemeStyles === 'function') injectAGGridThemeStyles();
-            psdSetFullLayout(true);
+            if (typeof smClearModuleLayoutModes === 'function') smClearModuleLayoutModes();
             if (loadingEl) {
                 loadingEl.style.display = 'block';
                 loadingEl.innerHTML = psdSpinnerBlock('Loading PSD Assignment…', 'Fetching records and agents');
