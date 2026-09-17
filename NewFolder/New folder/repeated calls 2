@@ -1380,7 +1380,7 @@ function rcInjectStyles() {
         '.rc-ms .multiselect-selected{padding:.38rem .65rem;background:var(--bg-input);border:1px solid var(--border);border-radius:8px;color:var(--t1);font-size:.8rem;font-weight:500;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;box-sizing:border-box}' +
         '.rc-ms .multiselect-selected:hover{border-color:var(--acc);box-shadow:0 0 0 2px var(--glow)}' +
         '.rc-edit-field textarea{min-height:80px;resize:vertical}' +
-        '.rc-modal-overlay{position:fixed;inset:0;z-index:9999;background:rgba(15,23,42,.5);display:flex;align-items:center;justify-content:center;padding:1rem}' +
+        '.rc-modal-overlay{position:fixed;inset:0;z-index:2147483647;background:rgba(15,23,42,.5);display:flex;align-items:center;justify-content:center;padding:1rem}' +
         '.rc-modal-box{background:var(--bg-card);border:1px solid var(--border);border-radius:14px;max-width:520px;width:100%;max-height:90vh;overflow:auto;box-shadow:0 20px 60px rgba(0,0,0,.25)}' +
         '.rc-modal-head{padding:1rem 1.15rem;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}' +
         '.rc-modal-head h3{margin:0;font-size:.95rem;font-weight:800;color:var(--t1)}' +
@@ -2311,7 +2311,8 @@ function rcEnsureEditModal() {
                 '<button type="button" class="rc-action-btn" id="rcEditSaveBtn" onclick="rcSaveEditModal()">Save</button>' +
             '</div>' +
         '</div>';
-    document.body.appendChild(overlay);
+    (typeof smPopupParent === 'function' ? smPopupParent() : document.body).appendChild(overlay);
+    if (typeof smBoostPopupZ === 'function') smBoostPopupZ(overlay);
     overlay.addEventListener('click', function (e) { if (e.target === overlay) rcCloseEditModal(); });
 }
 
@@ -3265,7 +3266,6 @@ function rcRenderDashboard(body) {
         if (rpIcon) rpIcon.setAttribute('data-lucide', 'eye-off');
         if (typeof lucide !== 'undefined') lucide.createIcons();
     }
-    rcSchedulePaintContactTree();
 }
 
 window.rcToggleRepeatCallers = function () {
