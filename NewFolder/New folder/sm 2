@@ -210,14 +210,30 @@
             min-width: 0 !important;
             min-height: 0 !important;
             overflow-y: auto !important;
-            overflow-x: hidden !important;
+            overflow-x: auto !important;
+            -webkit-overflow-scrolling: touch;
+            overscroll-behavior: contain;
+            scrollbar-gutter: stable;
+        }
+        #smAppRoot .sidebar .nav-items {
+            overflow-y: auto !important;
+            max-height: calc(100vh - 72px);
+        }
+        #smAppRoot .content::-webkit-scrollbar,
+        #smAppRoot .sidebar .nav-items::-webkit-scrollbar {
+            width: 10px;
+            height: 10px;
+        }
+        #smAppRoot .content::-webkit-scrollbar-thumb,
+        #smAppRoot .sidebar .nav-items::-webkit-scrollbar-thumb {
+            background: rgba(128, 128, 128, 0.45);
+            border-radius: 6px;
         }
         #smAppRoot #accountSearchView,
         #smAppRoot #portalAnalyticsView,
         #smAppRoot #comingSoonView,
         #smAppRoot #amAdDashboard,
         #smAppRoot #createRequestView,
-        #smAppRoot #newsletterView,
         #smAppRoot #amTransferRequestsView,
         #smAppRoot #amMyRequestsView,
         #smAppRoot #amRequestDetailView {
@@ -731,28 +747,20 @@
             padding: 1rem
         }
 
-        /* PSD Assignment — full-bleed layout (edge-to-edge beside sidebar) */
-        .portal-shell.psd-full-shell {
-            max-width: none;
-            width: 100%;
-        }
-
-        .content.psd-full-mode {
-            padding: 0 !important;
-            width: 100%;
-            flex: 1;
-            min-width: 0;
-        }
-
-        #psdView {
+        /* Module sections — same layout as RNPS (no rc/psd full-mode) */
+        #rcView,
+        #psdView,
+        #pending-requests,
+        #newsletterView {
             width: 100%;
             max-width: none;
-            padding: 0.75rem 1rem 1.25rem;
             box-sizing: border-box;
         }
 
         #psdView #psdContainer,
-        #psdView .psd-root {
+        #psdView .psd-root,
+        #rcView #rcContainer,
+        #rcView .rc-root {
             width: 100%;
             max-width: none;
         }
@@ -761,58 +769,18 @@
             grid-template-columns: repeat(6, minmax(0, 1fr));
         }
 
-        @media (max-width: 1400px) {
-            #psdView .top-stats {
-                grid-template-columns: repeat(3, minmax(0, 1fr));
-            }
-        }
-
-        @media (max-width: 900px) {
-            #psdView .top-stats {
-                grid-template-columns: repeat(2, minmax(0, 1fr));
-            }
-        }
-
-        /* Repeated Calls — full-bleed layout (same as PSD) */
-        .portal-shell.rc-full-shell {
-            max-width: none;
-            width: 100%;
-        }
-
-        .content.rc-full-mode {
-            padding: 0 !important;
-            width: 100%;
-            flex: 1;
-            min-width: 0;
-        }
-
-        #rcView {
-            width: 100%;
-            max-width: none;
-            padding: 0.75rem 1rem 1.25rem;
-            box-sizing: border-box;
-        }
-
-        #rcView #rcContainer,
-        #rcView .rc-root {
-            width: 100%;
-            max-width: none;
-        }
-
         #rcView .top-stats {
             grid-template-columns: repeat(3, minmax(0, 1fr));
         }
 
         @media (max-width: 1400px) {
-            #rcView .top-stats {
-                grid-template-columns: repeat(3, minmax(0, 1fr));
-            }
+            #psdView .top-stats { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+            #rcView .top-stats { grid-template-columns: repeat(3, minmax(0, 1fr)); }
         }
 
         @media (max-width: 900px) {
-            #rcView .top-stats {
-                grid-template-columns: repeat(2, minmax(0, 1fr));
-            }
+            #psdView .top-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            #rcView .top-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
         }
 
         @keyframes fadeSection {
@@ -2307,14 +2275,30 @@
             min-width: 0 !important;
             min-height: 0 !important;
             overflow-y: auto !important;
-            overflow-x: hidden !important;
+            overflow-x: auto !important;
+            -webkit-overflow-scrolling: touch;
+            overscroll-behavior: contain;
+            scrollbar-gutter: stable;
+        }
+        #smAppRoot .sidebar .nav-items {
+            overflow-y: auto !important;
+            max-height: calc(100vh - 72px);
+        }
+        #smAppRoot .content::-webkit-scrollbar,
+        #smAppRoot .sidebar .nav-items::-webkit-scrollbar {
+            width: 10px;
+            height: 10px;
+        }
+        #smAppRoot .content::-webkit-scrollbar-thumb,
+        #smAppRoot .sidebar .nav-items::-webkit-scrollbar-thumb {
+            background: rgba(128, 128, 128, 0.45);
+            border-radius: 6px;
         }
         #smAppRoot #accountSearchView,
         #smAppRoot #portalAnalyticsView,
         #smAppRoot #comingSoonView,
         #smAppRoot #amAdDashboard,
         #smAppRoot #createRequestView,
-        #smAppRoot #newsletterView,
         #smAppRoot #amTransferRequestsView,
         #smAppRoot #amMyRequestsView,
         #smAppRoot #amRequestDetailView {
@@ -2350,13 +2334,16 @@
             max-width: none !important;
             margin: 0 !important;
         }
-        #rcView,
-        #psdView,
-        #pending-requests,
-        #newsletterView {
-            width: 100%;
-            max-width: none;
-            box-sizing: border-box;
+        html.sm-fullpage #dashboardContent.sm-visible-shell .main-container {
+            display: flex !important;
+            flex: 1 1 auto !important;
+            min-height: 0 !important;
+            overflow: hidden !important;
+        }
+        html.sm-fullpage #dashboardContent.sm-visible-shell .content {
+            overflow-y: auto !important;
+            overflow-x: auto !important;
+            min-height: 0 !important;
         }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
@@ -2579,7 +2566,7 @@
                     <i data-lucide="chevrons-left" id="sidebarToggleIcon"></i>
                 </div>
                 <div class="nav-items">
-                    <div class="nav-item" id="newsletterNavItem" data-section="newsletterView" onclick="showNewsletterView()">
+                    <div class="nav-item" id="newsletterNavItem" data-section="newsletterView" onclick="switchDashboardSection('newsletterView')">
                         <div class="nav-icon"><i data-lucide="mail"></i></div>
                         <div class="nav-label">Newsletter</div>
                         <span id="nlNewBadge" style="display:none;background:#ef4444;color:#fff;font-size:9px;font-weight:800;padding:2px 6px;border-radius:20px;margin-left:auto;line-height:1.4;">NEW</span>
@@ -8965,6 +8952,18 @@ ${USER_CONTEXT.userName}`
             return !!(sectionEl && dashboardView && sectionEl !== dashboardView && dashboardView.contains(sectionEl));
         }
 
+        function smClearModuleLayoutModes() {
+            var contentDiv = document.querySelector('#dashboardContent .content') || document.querySelector('.content');
+            var portalShell = document.getElementById('dashboardContent') || document.querySelector('.portal-shell');
+            if (contentDiv) {
+                contentDiv.classList.remove('section-mode', 'psd-full-mode', 'rc-full-mode', 'edit-full-mode');
+                contentDiv.style.removeProperty('display');
+            }
+            if (portalShell) {
+                portalShell.classList.remove('psd-full-shell', 'rc-full-shell', 'edit-full-shell');
+            }
+        }
+
         function smFullscreenElement() {
             return document.fullscreenElement || document.webkitFullscreenElement || null;
         }
@@ -9198,23 +9197,14 @@ ${USER_CONTEXT.userName}`
                 // grid stays, just reset the review state
             }
 
-            // ── RESET section-mode on content div ────────────────────────
-            var contentDiv = document.querySelector('.content');
-            if (contentDiv) {
-                contentDiv.classList.remove('section-mode');
-                contentDiv.classList.remove('psd-full-mode');
-                contentDiv.classList.remove('rc-full-mode');
-                contentDiv.style.overflowY = 'auto';
-            }
-            var portalShell = document.querySelector('.portal-shell');
-            if (portalShell) {
-                portalShell.classList.remove('psd-full-shell');
-                portalShell.classList.remove('rc-full-shell');
-                if (window._smFullPage) {
-                    portalShell.style.display = 'flex';
-                    portalShell.style.flexDirection = 'column';
-                    portalShell.style.height = '100%';
-                }
+            smClearModuleLayoutModes();
+            var contentDiv = document.querySelector('#dashboardContent .content') || document.querySelector('.content');
+            var portalShell = document.getElementById('dashboardContent') || document.querySelector('.portal-shell');
+            if (contentDiv) contentDiv.style.overflowY = 'auto';
+            if (portalShell && window._smFullPage) {
+                portalShell.style.display = 'flex';
+                portalShell.style.flexDirection = 'column';
+                portalShell.style.height = '100%';
             }
             if (window._smFullPage && typeof smMountOverlay === 'function') smMountOverlay();
 
@@ -9235,19 +9225,33 @@ ${USER_CONTEXT.userName}`
             var dashLoading = document.getElementById('loading');
 
             if (sectionId === 'dashboard-view') {
-                if (dashboardView) dashboardView.style.display = 'block';
-                var hasDashData = typeof filteredData !== 'undefined' && filteredData && filteredData.length;
+                if (dashboardView) {
+                    dashboardView.style.display = 'block';
+                    dashboardView.style.visibility = 'visible';
+                }
+                var hasDashData = (typeof ALL_DATA !== 'undefined' && ALL_DATA && ALL_DATA.length > 0);
                 if (dashInnerContent) dashInnerContent.style.display = hasDashData ? 'block' : 'none';
                 if (dashLoading) dashLoading.style.display = hasDashData ? 'none' : 'block';
             } else if (targetSection && smIsNestedInDashboardView(targetSection)) {
-                if (dashboardView) dashboardView.style.display = 'block';
+                if (dashboardView) {
+                    dashboardView.style.display = 'block';
+                    dashboardView.style.visibility = 'visible';
+                }
                 if (dashInnerContent) dashInnerContent.style.display = 'none';
                 if (dashLoading) dashLoading.style.display = 'none';
                 targetSection.style.display = 'block';
             } else {
-                if (dashboardView) dashboardView.style.display = 'none';
-                if (targetSection) targetSection.style.display = 'block';
+                if (dashboardView) {
+                    dashboardView.style.display = 'none';
+                    dashboardView.style.visibility = 'hidden';
+                }
+                if (targetSection) {
+                    targetSection.style.display = 'block';
+                    targetSection.style.visibility = 'visible';
+                }
             }
+
+            smClearModuleLayoutModes();
 
             // ── SET ACTIVE NAV ITEM ───────────────────────────────────────
             var activeNav = document.querySelector('[data-section="' + sectionId + '"]');
@@ -11922,7 +11926,7 @@ else if (sectionId === 'newsletterView') {
     <script src="http://sharedspaces:8086/sites/SM/Shared%20Documents/processdocs.js"></script>
     <script src="http://sharedspaces:8086/sites/SM/Shared%20Documents/qualityassurance.js"></script>
     <script src="http://sharedspaces:8086/sites/SM/Shared%20Documents/psd__assignment.js?v=1.2.0"></script>
-    <script src="http://sharedspaces:8086/sites/SM/Shared%20Documents/repeated-calls.js?v=1.9.6"></script>
+    <script src="http://sharedspaces:8086/sites/SM/Shared%20Documents/repeated-calls.js?v=1.9.7"></script>
     <script src="http://sharedspaces:8086/sites/SM/Shared%20Documents/rnps.js"></script>
   <script src="http://sharedspaces:8086/sites/SM/Shared%20Documents/semailbox.js"></script>
   <script src="http://sharedspaces:8086/sites/SM/Shared%20Documents/tsm-se.js?v=4fix1"></script>
