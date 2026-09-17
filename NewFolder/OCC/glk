@@ -9219,16 +9219,6 @@ function mqSyncChartLabels(chart,bars){
           overlay.appendChild(vcell);
         }
       }
-      if(prodTag){
-        var pcell=document.createElement('div');
-        pcell.className='mq-prod-onbar '+mqProductTagClass(prodTag);
-        pcell.textContent=prodTag;
-        pcell.style.left=bar.x+'px';
-        var topY=Math.min(bar.y,bar.base);
-        pcell.style.top=Math.max(4,topY+4)+'px';
-        pcell.title=prodTag;
-        overlay.appendChild(pcell);
-      }
     }
     if(strip){
       var cell=document.createElement('div');
