@@ -18,7 +18,7 @@ var rcCharts        = {};
 var rcGrids         = { dash: null, assign: null, assigned: null, agentQueue: null, agentRecords: null };
 var rcUploadRows    = []; 
 var rcSelectedAgent = null;
-window.RC_MODULE_VERSION = '1.9.12';
+window.RC_MODULE_VERSION = '1.9.13';
 
 var RC_DELETE_ALL_EMAILS = ['tehleel.lone@du.ae', 'ubaid.mir@du.ae'];
 var RC_MIN_REPEAT_CALLS = 3;
@@ -1436,46 +1436,54 @@ function rcInjectStyles() {
         '.rc-ms .multiselect-option:hover{background:var(--bg-hover,rgba(148,163,184,.12))}' +
         '.rc-ms .multiselect-option input[type=checkbox]{margin-right:10px;width:15px;height:15px;cursor:pointer;accent-color:var(--acc)}' +
         '.rc-ms .multiselect-option label{cursor:pointer;flex:1;font-size:.8rem;color:var(--t1);margin:0}' +
-        '.rc-cbr{position:relative;padding:28px 32px 24px;background:#fff;border:1px solid #d1d5db;border-radius:4px;box-shadow:none;min-height:420px}' +
-        '.rc-cbr-head{text-align:center;margin-bottom:28px}' +
-        '.rc-cbr-head h3{margin:0;font-size:1.35rem;font-weight:800;color:#1e293b;letter-spacing:-.02em}' +
-        '.rc-cbr-head p{margin:.5rem 0 0;font-size:.88rem;color:#64748b}' +
-        '.rc-cbr-stage{display:grid;grid-template-columns:200px 22px 215px 22px 185px 22px minmax(260px,1fr);grid-template-rows:142px 142px;column-gap:0;row-gap:14px;align-items:stretch;min-width:980px;margin:0 auto;padding:8px 0 20px}' +
-        '.rc-cbr-total{grid-column:1;grid-row:1/3;align-self:stretch}' +
-        '.rc-cbr-brace-a{grid-column:2;grid-row:1/3;display:flex;align-items:center;justify-content:center;color:#94a3b8;font-size:118px;line-height:.72;font-weight:300;font-family:Georgia,serif;user-select:none;margin:0 -4px}' +
-        '.rc-cbr-nr{grid-column:3;grid-row:1}' +
-        '.rc-cbr-reach{grid-column:3;grid-row:2}' +
-        '.rc-cbr-brace-b{grid-column:4;grid-row:2;display:flex;align-items:center;justify-content:center;color:#94a3b8;font-size:92px;line-height:.72;font-weight:300;font-family:Georgia,serif;user-select:none;margin:0 -4px}' +
-        '.rc-cbr-rescol{grid-column:5;grid-row:2;display:flex;flex-direction:column;gap:14px;justify-content:center;height:100%}' +
-        '.rc-cbr-brace-c{grid-column:6;grid-row:1/3;display:flex;align-items:center;justify-content:center;color:#94a3b8;font-size:92px;line-height:.72;font-weight:300;font-family:Georgia,serif;user-select:none;margin:0 -4px}' +
-        '.rc-cbr-chart-wrap{grid-column:7;grid-row:1/3;align-self:center;padding:0 0 0 8px}' +
-        '.rc-cbr-tile{position:relative;background:#fff;border:1px solid #cbd5e1;border-radius:2px;padding:18px 14px 14px;text-align:center;cursor:pointer;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;height:100%;min-height:0}' +
-        '.rc-cbr-tile:hover{box-shadow:0 2px 10px rgba(15,23,42,.08)}' +
-        '.rc-cbr-tile.rc-cbr-active{outline:2px solid var(--acc);outline-offset:1px}' +
-        '.rc-cbr-accent{position:absolute;top:0;left:0;right:0;height:4px}' +
-        '.rc-cbr-total .rc-cbr-accent{background:#1e293b}' +
-        '.rc-cbr-nr .rc-cbr-accent{background:#7c3aed}' +
-        '.rc-cbr-reach .rc-cbr-accent{background:#38bdf8}' +
-        '.rc-cbr-nres .rc-cbr-accent{background:#2563eb}' +
-        '.rc-cbr-res .rc-cbr-accent{background:#0f172a}' +
-        '.rc-cbr-count{font-size:2.4rem;font-weight:800;line-height:1;color:#0f172a;margin-top:6px}' +
-        '.rc-cbr-total .rc-cbr-count{font-size:3rem;margin-top:10px}' +
-        '.rc-cbr-label{font-size:.82rem;font-weight:700;color:#0f172a;margin-top:10px}' +
-        '.rc-cbr-desc{font-size:.72rem;color:#475569;margin-top:10px;line-height:1.5;font-weight:400}' +
-        '.rc-cbr-total .rc-cbr-desc{font-size:.78rem;color:#64748b;margin-top:12px}' +
-        '.rc-cbr-tile.rc-cbr-sm{min-height:118px;padding:14px 12px 12px}' +
-        '.rc-cbr-tile.rc-cbr-sm .rc-cbr-count{font-size:1.85rem;margin-top:4px}' +
-        '.rc-cbr-tile.rc-cbr-sm .rc-cbr-label{font-size:.76rem;margin-top:6px}' +
-        '.rc-cbr-tile.rc-cbr-sm .rc-cbr-desc{font-size:.66rem;margin-top:6px;line-height:1.4}' +
-        '.rc-cbr-chart-title{font-size:.95rem;font-weight:800;color:#1e293b;margin-bottom:12px;text-align:left}' +
-        '.rc-cbr-chart-body{height:268px;position:relative}' +
-        '.rc-cbr-await{margin-top:8px;padding:.55rem .75rem;background:#fffbeb;border:1px solid #fde68a;border-radius:4px;font-size:.74rem;color:#475569}' +
-        '.rc-cbr-link{color:#2563eb;font-weight:700;cursor:pointer;text-decoration:underline}' +
-        '.rc-cbr-findings{display:flex;gap:18px;margin-top:22px;padding-top:18px;border-top:2px solid #cbd5e1;align-items:flex-start}' +
-        '.rc-cbr-findings-label{font-size:.72rem;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:#0f172a;writing-mode:vertical-rl;transform:rotate(180deg);flex-shrink:0;padding:4px 0;line-height:1.2}' +
-        '.rc-cbr-findings-list{margin:0;padding-left:1.2rem;font-size:.78rem;color:#334155;line-height:1.65}' +
-        '.rc-cbr-findings-list li{margin-bottom:.4rem}' +
-        '@media(max-width:1100px){.rc-cbr-stage{grid-template-columns:1fr 1fr;min-width:0}.rc-cbr-brace-a,.rc-cbr-brace-b,.rc-cbr-brace-c{display:none}.rc-cbr-total{grid-column:1/3;grid-row:1}.rc-cbr-nr{grid-column:1;grid-row:2}.rc-cbr-reach{grid-column:2;grid-row:2}.rc-cbr-nres{grid-column:1;grid-row:3}.rc-cbr-res{grid-column:2;grid-row:3}.rc-cbr-chart-wrap{grid-column:1/3;grid-row:4}}';
+        '.rc-cbr{font-family:"Segoe UI",system-ui,-apple-system,BlinkMacSystemFont,Roboto,Arial,sans-serif;position:relative;padding:32px 36px 28px;background:#fff;border:1px solid #cbd5e1;border-radius:2px;box-shadow:0 1px 3px rgba(15,23,42,.06);min-height:420px;overflow:hidden}' +
+        '.rc-cbr-head{text-align:center;margin-bottom:32px}' +
+        '.rc-cbr-head h3{margin:0;font-size:1.45rem;font-weight:700;color:#111827;letter-spacing:-.01em}' +
+        '.rc-cbr-head p{margin:.55rem 0 0;font-size:.9rem;color:#6b7280;font-weight:400}' +
+        '.rc-cbr-stage{display:flex;flex-direction:row;align-items:center;justify-content:center;gap:0;min-width:960px;padding:4px 0 24px;overflow:visible}' +
+        '.rc-cbr-col{display:flex;flex-direction:column;flex-shrink:0;gap:16px}' +
+        '.rc-cbr-col-total{width:196px}' +
+        '.rc-cbr-col-mid{width:212px}' +
+        '.rc-cbr-col-res{width:198px;gap:12px}' +
+        '.rc-cbr-col-chart{flex:1;min-width:270px;max-width:420px;padding-left:12px}' +
+        '.rc-cbr-bracket{width:26px;flex-shrink:0;display:flex;align-items:center;justify-content:center;overflow:visible;position:relative;z-index:0}' +
+        '.rc-cbr-bracket svg{display:block;overflow:visible}' +
+        '.rc-cbr-bracket-full svg{height:300px;width:26px}' +
+        '.rc-cbr-bracket-half svg{height:148px;width:26px}' +
+        '.rc-cbr-mid-block{display:flex;flex-direction:column;gap:16px;flex-shrink:0}' +
+        '.rc-cbr-reach-row{display:flex;flex-direction:row;align-items:center;gap:0;flex-shrink:0}' +
+        '.rc-cbr-spacer-top{height:154px;flex-shrink:0}' +
+        '.rc-cbr-tile{position:relative;z-index:2;background:#fff;border:1px solid #9ca3af;border-radius:0;padding:16px 12px 14px;text-align:center;cursor:pointer;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;box-shadow:0 1px 2px rgba(0,0,0,.04)}' +
+        '.rc-cbr-tile:hover{box-shadow:0 3px 12px rgba(15,23,42,.1)}' +
+        '.rc-cbr-tile.rc-cbr-active{outline:2px solid #2563eb;outline-offset:0}' +
+        '.rc-cbr-accent{position:absolute;top:0;left:0;right:0;height:3px}' +
+        '.rc-cbr-total{min-height:300px;padding-top:20px;padding-bottom:20px}' +
+        '.rc-cbr-total .rc-cbr-accent{background:#111827}' +
+        '.rc-cbr-nr{min-height:142px}' +
+        '.rc-cbr-nr .rc-cbr-accent{background:#6d28d9}' +
+        '.rc-cbr-reach{min-height:142px;width:212px}' +
+        '.rc-cbr-reach .rc-cbr-accent{background:#0284c7}' +
+        '.rc-cbr-nres{min-height:112px}' +
+        '.rc-cbr-nres .rc-cbr-accent{background:#1d4ed8}' +
+        '.rc-cbr-res{min-height:112px}' +
+        '.rc-cbr-res .rc-cbr-accent{background:#111827}' +
+        '.rc-cbr-count{font-size:2.15rem;font-weight:700;line-height:1.05;color:#111827;margin-top:4px;font-variant-numeric:tabular-nums}' +
+        '.rc-cbr-total .rc-cbr-count{font-size:2.75rem;margin-top:8px}' +
+        '.rc-cbr-label{font-size:.84rem;font-weight:600;color:#111827;margin-top:8px;line-height:1.25}' +
+        '.rc-cbr-desc{font-size:.72rem;color:#4b5563;margin-top:8px;line-height:1.55;font-weight:400}' +
+        '.rc-cbr-total .rc-cbr-desc{font-size:.78rem;color:#6b7280;margin-top:10px}' +
+        '.rc-cbr-tile.rc-cbr-sm .rc-cbr-count{font-size:1.9rem;margin-top:2px}' +
+        '.rc-cbr-tile.rc-cbr-sm .rc-cbr-label{font-size:.78rem;margin-top:6px}' +
+        '.rc-cbr-tile.rc-cbr-sm .rc-cbr-desc{font-size:.67rem;margin-top:6px;line-height:1.45}' +
+        '.rc-cbr-chart-title{font-size:1rem;font-weight:700;color:#111827;margin-bottom:14px;text-align:left}' +
+        '.rc-cbr-chart-body{height:272px;position:relative}' +
+        '.rc-cbr-await{margin-top:10px;padding:10px 14px;background:#fefce8;border:1px solid #fde047;border-radius:2px;font-size:.78rem;color:#374151;line-height:1.45}' +
+        '.rc-cbr-link{color:#1d4ed8;font-weight:600;cursor:pointer;text-decoration:underline}' +
+        '.rc-cbr-findings{display:flex;gap:20px;margin-top:24px;padding:18px 20px;border:1px solid #9ca3af;background:#fff;align-items:flex-start}' +
+        '.rc-cbr-findings-label{font-size:.7rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#111827;writing-mode:vertical-rl;transform:rotate(180deg);flex-shrink:0;padding:6px 0;line-height:1.25}' +
+        '.rc-cbr-findings-list{margin:0;padding-left:1.25rem;font-size:.8rem;color:#374151;line-height:1.7;list-style:decimal}' +
+        '.rc-cbr-findings-list li{margin-bottom:.35rem;padding-left:.15rem}' +
+        '@media(max-width:1100px){.rc-cbr-stage{flex-wrap:wrap;min-width:0;justify-content:flex-start}.rc-cbr-bracket{display:none}.rc-cbr-spacer-top{display:none}.rc-cbr-reach-row{flex-wrap:wrap}.rc-cbr-col-chart{max-width:none;flex:1 1 100%;padding-left:0;margin-top:16px}}';
     document.head.appendChild(s);
 }
 
@@ -2568,6 +2576,13 @@ function rcTopNPairs(map, n) {
     return keys.slice(0, n).map(function (k) { return { label: k, count: map[k] }; });
 }
 
+function rcCbrBracketSvg(tall) {
+    if (tall) {
+        return '<div class="rc-cbr-bracket rc-cbr-bracket-full" aria-hidden="true"><svg viewBox="0 0 26 300" preserveAspectRatio="none"><path d="M2 6 C20 6 22 6 22 150 C22 294 20 294 2 294" fill="none" stroke="#374151" stroke-width="2.2" stroke-linecap="round"/></svg></div>';
+    }
+    return '<div class="rc-cbr-bracket rc-cbr-bracket-half" aria-hidden="true"><svg viewBox="0 0 26 148" preserveAspectRatio="none"><path d="M2 6 C20 6 22 6 22 74 C22 142 20 142 2 142" fill="none" stroke="#374151" stroke-width="2.2" stroke-linecap="round"/></svg></div>';
+}
+
 function rcCbrTile(id, cls, label, count, desc, filterNode, filterValue, small) {
     filterNode = filterNode || id;
     filterValue = filterValue != null ? filterValue : '';
@@ -2598,19 +2613,25 @@ function rcContactTreeHTML(items) {
             '<p>Customers who contacted us more than twice</p>' +
         '</div>' +
         '<div class="rc-cbr-stage">' +
-            rcCbrTile('root', 'rc-cbr-total', 'Repeat callers', total, '100%  Contacted us more than twice') +
-            '<div class="rc-cbr-brace-a" aria-hidden="true">{</div>' +
-            rcCbrTile('nr', 'rc-cbr-nr', 'Not Reachable', d.notReachable, rcPct(d.notReachable, total) + '% of repeat customers were not reachable.') +
-            rcCbrTile('reach', 'rc-cbr-reach', 'Reachable', d.reachable, rcPct(d.reachable, total) + '% of repeat customers were reachable.') +
-            '<div class="rc-cbr-brace-b" aria-hidden="true">{</div>' +
-            '<div class="rc-cbr-rescol">' +
-                rcCbrTile('nres', 'rc-cbr-nres', 'Not Resolved', d.notResolved, nresNote, 'nres', '', true) +
-                rcCbrTile('resolved', 'rc-cbr-res', 'Resolved', d.resolved, rcPct(d.resolved, d.reachable) + '% Cases Resolved', 'resolved', '', true) +
+            '<div class="rc-cbr-col rc-cbr-col-total">' +
+                rcCbrTile('root', 'rc-cbr-total', 'Repeat callers', total, '100%  Contacted us more than twice') +
             '</div>' +
-            '<div class="rc-cbr-brace-c" aria-hidden="true">{</div>' +
-            '<div class="rc-cbr-chart-wrap">' +
-                '<div class="rc-cbr-chart-title">Unresolved Cases Breakdown</div>' +
-                '<div class="rc-cbr-chart-body"><canvas id="rcChartCallbackBreakdown"></canvas></div>' +
+            rcCbrBracketSvg(true) +
+            '<div class="rc-cbr-mid-block">' +
+                rcCbrTile('nr', 'rc-cbr-nr', 'Not Reachable', d.notReachable, rcPct(d.notReachable, total) + '% of repeat customers were not reachable.') +
+                '<div class="rc-cbr-reach-row">' +
+                    rcCbrTile('reach', 'rc-cbr-reach', 'Reachable', d.reachable, rcPct(d.reachable, total) + '% of repeat customers were reachable.') +
+                    rcCbrBracketSvg(false) +
+                    '<div class="rc-cbr-col rc-cbr-col-res">' +
+                        rcCbrTile('nres', 'rc-cbr-nres', 'Not Resolved', d.notResolved, nresNote, 'nres', '', true) +
+                        rcCbrTile('resolved', 'rc-cbr-res', 'Resolved', d.resolved, rcPct(d.resolved, d.reachable) + '% Cases Resolved', 'resolved', '', true) +
+                    '</div>' +
+                    rcCbrBracketSvg(false) +
+                    '<div class="rc-cbr-col rc-cbr-col-chart">' +
+                        '<div class="rc-cbr-chart-title">Unresolved Cases Breakdown</div>' +
+                        '<div class="rc-cbr-chart-body"><canvas id="rcChartCallbackBreakdown"></canvas></div>' +
+                    '</div>' +
+                '</div>' +
             '</div>' +
         '</div>' +
         (d.awaitingCallback ? '<div class="rc-cbr-await">' + d.awaitingCallback + ' repeat caller(s) awaiting callback capture · ' +
@@ -2641,7 +2662,7 @@ function rcBuildCallbackBreakdownChart(items, treeData) {
             labels: pairs.length ? pairs.map(function (p) { return p.label; }) : ['No unresolved cases'],
             datasets: [{
                 data: pairs.length ? pairs.map(function (p) { return p.count; }) : [0],
-                backgroundColor: '#1e40af',
+                backgroundColor: '#1e3a8a',
                 borderRadius: 2,
                 maxBarThickness: 22,
                 barPercentage: 0.72
