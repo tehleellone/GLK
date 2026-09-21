@@ -18,7 +18,7 @@ var rcCharts        = {};
 var rcGrids         = { dash: null, assign: null, assigned: null, agentQueue: null, agentRecords: null };
 var rcUploadRows    = []; 
 var rcSelectedAgent = null;
-window.RC_MODULE_VERSION = '1.9.14';
+window.RC_MODULE_VERSION = '1.9.15';
 
 var RC_DELETE_ALL_EMAILS = ['tehleel.lone@du.ae', 'ubaid.mir@du.ae'];
 var RC_MIN_REPEAT_CALLS = 3;
@@ -1436,49 +1436,50 @@ function rcInjectStyles() {
         '.rc-ms .multiselect-option:hover{background:var(--bg-hover,rgba(148,163,184,.12))}' +
         '.rc-ms .multiselect-option input[type=checkbox]{margin-right:10px;width:15px;height:15px;cursor:pointer;accent-color:var(--acc)}' +
         '.rc-ms .multiselect-option label{cursor:pointer;flex:1;font-size:.8rem;color:var(--t1);margin:0}' +
-        '.rc-cbr{font-family:"Segoe UI",Tahoma,Geneva,Verdana,sans-serif;position:relative;padding:36px 40px 32px;background:#fff;border:1px solid #d1d5db;border-radius:0;min-height:420px}' +
-        '.rc-cbr-head{text-align:center;margin-bottom:36px}' +
-        '.rc-cbr-head h3{margin:0;font-size:1.55rem;font-weight:700;color:#1a2332;letter-spacing:-.015em}' +
-        '.rc-cbr-head p{margin:.6rem 0 0;font-size:.92rem;color:#64748b;font-weight:400}' +
-        '.rc-cbr-stage{display:grid;grid-template-columns:208px 28px 208px 28px 196px 28px minmax(280px,380px);grid-template-rows:minmax(152px,auto) minmax(152px,auto);column-gap:0;row-gap:14px;align-items:stretch;justify-content:center;width:fit-content;max-width:100%;margin:0 auto;padding:0 0 20px}' +
-        '.rc-cbr-tile{position:relative;z-index:1;background:#fff;border:1px solid #bdbdbd;border-radius:0;padding:20px 16px 18px;text-align:center;cursor:pointer;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;box-shadow:none}' +
-        '.rc-cbr-tile:hover{box-shadow:0 2px 8px rgba(26,35,50,.08)}' +
-        '.rc-cbr-tile.rc-cbr-active{outline:2px solid #1890d8;outline-offset:0}' +
+        '.rc-cbr-host{background:transparent!important;border:none!important;box-shadow:none!important;padding:0!important;margin:0 0 1.25rem;overflow:visible}' +
+        '.rc-cbr{font-family:"Segoe UI",Calibri,"Helvetica Neue",Arial,sans-serif;color:#1c2740;background:#fff;border:1px solid #e2e8f0;padding:40px 44px 36px;box-sizing:border-box}' +
+        '.rc-cbr-head{text-align:left;margin:0 0 32px}' +
+        '.rc-cbr-head h3{margin:0;font-size:26px;line-height:1.2;font-weight:700;color:#152033;letter-spacing:-.02em}' +
+        '.rc-cbr-head p{margin:8px 0 0;font-size:14px;line-height:1.4;color:#7b8694;font-weight:400}' +
+        '.rc-cbr-flow{display:flex;align-items:stretch;gap:36px}' +
+        '.rc-cbr-right{display:flex;flex-direction:column;gap:16px;flex:1;min-width:0}' +
+        '.rc-cbr-reach-row{display:flex;align-items:stretch;gap:10px;min-width:0}' +
+        '.rc-cbr-stack{width:186px;flex-shrink:0;display:flex;flex-direction:column;gap:12px}' +
+        '.rc-cbr-chart{flex:1;min-width:240px;display:flex;flex-direction:column;justify-content:center;padding:4px 0 0 6px}' +
+        '.rc-cbr-tile{position:relative;background:#fff;border:1px solid #d5dbe3;padding:22px 18px 20px;text-align:center;cursor:pointer;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;overflow:hidden}' +
+        '.rc-cbr-tile:hover{border-color:#b7c0cc}' +
+        '.rc-cbr-tile.rc-cbr-active{box-shadow:inset 0 0 0 2px #2f95d8}' +
         '.rc-cbr-accent{position:absolute;top:0;left:0;right:0;height:6px}' +
-        '.rc-cbr-total{grid-column:1;grid-row:1/3;align-self:stretch;padding-top:24px;padding-bottom:24px}' +
-        '.rc-cbr-total .rc-cbr-accent{background:#1a2332}' +
-        '.rc-cbr-bracket{width:28px;border:2px solid #888;border-left:none;margin:0 2px;box-sizing:border-box;position:relative;z-index:0}' +
-        '.rc-cbr-bracket-full{grid-column:2;grid-row:1/3;align-self:center;height:calc(100% - 6px);border-radius:0 14px 14px 0}' +
-        '.rc-cbr-bracket-half{grid-column:4;grid-row:2;align-self:center;height:calc(100% - 4px);border-radius:0 12px 12px 0}' +
-        '.rc-cbr-bracket-narrow{grid-column:6;grid-row:2;align-self:start;height:calc(50% - 7px);min-height:72px;border-radius:0 10px 10px 0}' +
-        '.rc-cbr-nr{grid-column:3;grid-row:1}' +
-        '.rc-cbr-nr .rc-cbr-accent{background:#8b2952}' +
-        '.rc-cbr-nr .rc-cbr-label{color:#8b2952}' +
-        '.rc-cbr-reach{grid-column:3;grid-row:2}' +
-        '.rc-cbr-reach .rc-cbr-accent{background:#1890d8}' +
-        '.rc-cbr-reach .rc-cbr-count,.rc-cbr-reach .rc-cbr-label{color:#1890d8}' +
-        '.rc-cbr-col-res{grid-column:5;grid-row:2;display:flex;flex-direction:column;gap:12px;justify-content:center;min-width:0}' +
-        '.rc-cbr-nres .rc-cbr-accent{background:#1890d8}' +
-        '.rc-cbr-res .rc-cbr-accent{background:#1a2332}' +
-        '.rc-cbr-col-chart{grid-column:7;grid-row:2;display:flex;flex-direction:column;justify-content:center;padding:0 0 0 4px;min-width:0}' +
-        '.rc-cbr-count{font-size:2.05rem;font-weight:700;line-height:1.05;color:#1a2332;margin-top:6px;font-variant-numeric:tabular-nums}' +
-        '.rc-cbr-total .rc-cbr-count{font-size:2.9rem;margin-top:10px}' +
-        '.rc-cbr-label{font-size:.88rem;font-weight:700;color:#1a2332;margin-top:10px;line-height:1.25}' +
-        '.rc-cbr-desc{font-size:.74rem;color:#64748b;margin-top:10px;line-height:1.55;font-weight:400}' +
-        '.rc-cbr-total .rc-cbr-desc{font-size:.78rem;color:#64748b;margin-top:12px}' +
-        '.rc-cbr-tile.rc-cbr-sm{padding:16px 14px 14px}' +
-        '.rc-cbr-tile.rc-cbr-sm .rc-cbr-count{font-size:1.95rem;margin-top:4px}' +
-        '.rc-cbr-tile.rc-cbr-sm .rc-cbr-label{font-size:.82rem;margin-top:8px}' +
-        '.rc-cbr-tile.rc-cbr-sm .rc-cbr-desc{font-size:.7rem;margin-top:8px;line-height:1.5}' +
-        '.rc-cbr-chart-title{font-size:1.05rem;font-weight:700;color:#1890d8;margin-bottom:12px;text-align:left;line-height:1.3}' +
-        '.rc-cbr-chart-body{height:268px;position:relative}' +
-        '.rc-cbr-await{margin-top:12px;padding:10px 14px;background:#fefce8;border:1px solid #fde047;border-radius:0;font-size:.78rem;color:#374151;line-height:1.45}' +
-        '.rc-cbr-link{color:#1890d8;font-weight:600;cursor:pointer;text-decoration:underline}' +
-        '.rc-cbr-findings{display:flex;gap:18px;margin-top:28px;padding:20px 22px;border:1px solid #bdbdbd;background:#fff;align-items:flex-start}' +
-        '.rc-cbr-findings-label{font-size:.78rem;font-weight:700;color:#1a2332;writing-mode:vertical-rl;transform:rotate(180deg);flex-shrink:0;padding:4px 0;line-height:1.3;white-space:nowrap}' +
-        '.rc-cbr-findings-list{margin:0;padding-left:1.3rem;font-size:.82rem;color:#374151;line-height:1.75;list-style:decimal}' +
-        '.rc-cbr-findings-list li{margin-bottom:.4rem;padding-left:.2rem}' +
-        '@media(max-width:1100px){.rc-cbr-stage{grid-template-columns:1fr 1fr;grid-template-rows:auto;width:100%}.rc-cbr-total{grid-column:1/3;grid-row:1}.rc-cbr-bracket{display:none}.rc-cbr-nr,.rc-cbr-reach,.rc-cbr-col-res,.rc-cbr-col-chart{grid-column:span 1}.rc-cbr-col-chart{grid-column:1/3}}';
+        '.rc-cbr-total{width:236px;flex-shrink:0}' +
+        '.rc-cbr-total .rc-cbr-accent{background:#1c2740}' +
+        '.rc-cbr-nr{width:236px}' +
+        '.rc-cbr-nr .rc-cbr-accent{background:#8c3a55}' +
+        '.rc-cbr-nr .rc-cbr-label{color:#8c3a55}' +
+        '.rc-cbr-reach{width:236px;flex-shrink:0}' +
+        '.rc-cbr-reach .rc-cbr-accent{background:#2f95d8}' +
+        '.rc-cbr-reach .rc-cbr-count,.rc-cbr-reach .rc-cbr-label{color:#2f95d8}' +
+        '.rc-cbr-nres .rc-cbr-accent{background:#2f95d8}' +
+        '.rc-cbr-res .rc-cbr-accent{background:#1c2740}' +
+        '.rc-cbr-count{font-size:34px;font-weight:700;line-height:1;color:#1c2740;margin:4px 0 0;font-variant-numeric:tabular-nums}' +
+        '.rc-cbr-total .rc-cbr-count{font-size:48px;margin-top:8px}' +
+        '.rc-cbr-label{font-size:14px;font-weight:600;color:#1c2740;margin-top:10px;line-height:1.3}' +
+        '.rc-cbr-desc{font-size:12px;color:#7b8694;margin-top:8px;line-height:1.5;font-weight:400}' +
+        '.rc-cbr-sm{padding:16px 14px 14px}' +
+        '.rc-cbr-sm .rc-cbr-count{font-size:28px}' +
+        '.rc-cbr-sm .rc-cbr-label{font-size:13px;margin-top:8px}' +
+        '.rc-cbr-sm .rc-cbr-desc{font-size:11px;margin-top:6px}' +
+        '.rc-cbr-brace{width:28px;flex-shrink:0;display:flex;align-items:stretch;padding:6px 4px;box-sizing:border-box;pointer-events:none}' +
+        '.rc-cbr-brace svg{width:100%;height:100%;display:block;overflow:visible}' +
+        '.rc-cbr-brace-sm{align-self:flex-start;height:46%;min-height:72px}' +
+        '.rc-cbr-chart-title{font-size:16px;font-weight:700;color:#1c2740;margin:0 0 10px;text-align:left}' +
+        '.rc-cbr-chart-body{height:210px;position:relative}' +
+        '.rc-cbr-await{margin-top:18px;padding:10px 14px;background:#fffbeb;border:1px solid #f5e6a8;font-size:13px;color:#5b5340;line-height:1.45}' +
+        '.rc-cbr-link{color:#2f95d8;font-weight:600;cursor:pointer;text-decoration:underline}' +
+        '.rc-cbr-findings{display:flex;align-items:flex-start;gap:16px;margin-top:36px}' +
+        '.rc-cbr-findings-label{font-size:13px;font-weight:600;color:#1c2740;writing-mode:vertical-rl;transform:rotate(180deg);flex-shrink:0;letter-spacing:.01em;white-space:nowrap}' +
+        '.rc-cbr-findings-list{margin:0;padding-left:22px;font-size:14px;color:#3d4754;line-height:1.85;list-style:decimal}' +
+        '.rc-cbr-findings-list li{margin:0 0 4px}' +
+        '@media(max-width:1100px){.rc-cbr{padding:24px}.rc-cbr-flow,.rc-cbr-reach-row{flex-wrap:wrap}.rc-cbr-total,.rc-cbr-nr,.rc-cbr-reach{width:100%}.rc-cbr-brace{display:none}.rc-cbr-stack{width:100%}.rc-cbr-chart{flex:1 1 100%;padding-left:0}}';
     document.head.appendChild(s);
 }
 
@@ -2550,8 +2551,7 @@ function rcCallbackKeyFindings(d) {
         findings.push(Math.round(parseFloat(rcPct(d.notReachable, d.total))) + '% of customers were not reachable.');
     }
     if (d.reachable) {
-        var handled = d.resolved + d.notResolved;
-        findings.push(Math.round(parseFloat(rcPct(handled, d.reachable))) + '% of reached customers were calling for TT updates or had already been resolved.');
+        findings.push(Math.round(parseFloat(rcPct(d.resolved, d.reachable))) + '% of reached customers were calling for TT updates or had already been resolved.');
     }
     var topDepts = rcTopNPairs(d.unresolvedByDept, 2);
     if (topDepts.length >= 2) {
@@ -2569,6 +2569,13 @@ function rcTopNPairs(map, n) {
         return (map[b] - map[a]) || a.localeCompare(b);
     });
     return keys.slice(0, n).map(function (k) { return { label: k, count: map[k] }; });
+}
+
+function rcCbrBrace(size) {
+    return '<div class="rc-cbr-brace rc-cbr-brace-' + (size || 'md') + '" aria-hidden="true">' +
+        '<svg viewBox="0 0 22 100" preserveAspectRatio="none">' +
+            '<path d="M16 4 C8 4 7 12 7 22 L7 42 C7 47 5 49 2 50 C5 51 7 53 7 58 L7 78 C7 88 8 96 16 96" fill="none" stroke="#9aa3b0" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>' +
+        '</svg></div>';
 }
 
 function rcCbrTile(id, cls, label, count, desc, filterNode, filterValue, small) {
@@ -2594,20 +2601,23 @@ function rcContactTreeHTML(items) {
             '<h3>Repeated Calls - Callback Report</h3>' +
             '<p>Customers who contacted us more than twice</p>' +
         '</div>' +
-        '<div class="rc-cbr-stage">' +
+        '<div class="rc-cbr-flow">' +
             rcCbrTile('root', 'rc-cbr-total', 'Repeat callers', total, '100% Contacted us more than twice') +
-            '<div class="rc-cbr-bracket rc-cbr-bracket-full" aria-hidden="true"></div>' +
-            rcCbrTile('nr', 'rc-cbr-nr', 'Not Reachable', d.notReachable, rcPct(d.notReachable, total) + '% of repeat customers were not reachable.') +
-            rcCbrTile('reach', 'rc-cbr-reach', 'Reachable', d.reachable, rcPct(d.reachable, total) + '% of repeat customers were reachable.') +
-            '<div class="rc-cbr-bracket rc-cbr-bracket-half" aria-hidden="true"></div>' +
-            '<div class="rc-cbr-col-res">' +
-                rcCbrTile('nres', 'rc-cbr-nres', 'Not Resolved', d.notResolved, nresNote, 'nres', '', true) +
-                rcCbrTile('resolved', 'rc-cbr-res', 'Resolved', d.resolved, rcPct(d.resolved, d.reachable) + '% Cases Resolved', 'resolved', '', true) +
-            '</div>' +
-            '<div class="rc-cbr-bracket rc-cbr-bracket-narrow" aria-hidden="true"></div>' +
-            '<div class="rc-cbr-col-chart">' +
-                '<div class="rc-cbr-chart-title">Unresolved Cases Breakdown</div>' +
-                '<div class="rc-cbr-chart-body"><canvas id="rcChartCallbackBreakdown"></canvas></div>' +
+            '<div class="rc-cbr-right">' +
+                rcCbrTile('nr', 'rc-cbr-nr', 'Not Reachable', d.notReachable, rcPct(d.notReachable, total) + '% of repeat customers were not reachable.') +
+                '<div class="rc-cbr-reach-row">' +
+                    rcCbrTile('reach', 'rc-cbr-reach', 'Reachable', d.reachable, rcPct(d.reachable, total) + '% of repeat customers were reachable.') +
+                    rcCbrBrace('md') +
+                    '<div class="rc-cbr-stack">' +
+                        rcCbrTile('nres', 'rc-cbr-nres', 'Not Resolved', d.notResolved, nresNote, 'nres', '', true) +
+                        rcCbrTile('resolved', 'rc-cbr-res', 'Resolved', d.resolved, rcPct(d.resolved, d.reachable) + '% Cases Resolved', 'resolved', '', true) +
+                    '</div>' +
+                    rcCbrBrace('sm') +
+                    '<div class="rc-cbr-chart">' +
+                        '<div class="rc-cbr-chart-title">Unresolved Cases Breakdown</div>' +
+                        '<div class="rc-cbr-chart-body"><canvas id="rcChartCallbackBreakdown"></canvas></div>' +
+                    '</div>' +
+                '</div>' +
             '</div>' +
         '</div>' +
         (d.awaitingCallback ? '<div class="rc-cbr-await">' + d.awaitingCallback + ' repeat caller(s) awaiting callback capture · ' +
@@ -2638,10 +2648,11 @@ function rcBuildCallbackBreakdownChart(items, treeData) {
             labels: pairs.length ? pairs.map(function (p) { return p.label; }) : ['No unresolved cases'],
             datasets: [{
                 data: pairs.length ? pairs.map(function (p) { return p.count; }) : [0],
-                backgroundColor: '#1890d8',
+                backgroundColor: '#3b7cc4',
                 borderRadius: 0,
-                maxBarThickness: 24,
-                barPercentage: 0.78
+                maxBarThickness: 18,
+                barPercentage: 0.7,
+                categoryPercentage: 0.78
             }]
         },
         options: {
@@ -2663,7 +2674,7 @@ function rcBuildCallbackBreakdownChart(items, treeData) {
             },
             scales: {
                 x: { display: false, beginAtZero: true },
-                y: { grid: { display: false }, ticks: { font: { size: 11, weight: '600' }, color: '#334155' } }
+                y: { grid: { display: false }, ticks: { font: { family: '"Segoe UI", Calibri, sans-serif', size: 12, weight: '400' }, color: '#3d4754' } }
             }
         },
         plugins: [{
@@ -2675,8 +2686,8 @@ function rcBuildCallbackBreakdownChart(items, treeData) {
                 meta.data.forEach(function (bar, idx) {
                     var val = chart.data.datasets[0].data[idx] || 0;
                     ctx.save();
-                    ctx.fillStyle = '#334155';
-                    ctx.font = '600 11px "Segoe UI", Tahoma, sans-serif';
+                    ctx.fillStyle = '#3d4754';
+                    ctx.font = '12px "Segoe UI", Calibri, sans-serif';
                     ctx.textBaseline = 'middle';
                     ctx.fillText(val + ' (' + rcPct(val, tot) + '%)', bar.x + 8, bar.y);
                     ctx.restore();
@@ -3353,9 +3364,7 @@ function rcDashboardMainHTML(dateFiltered, items, s, gridItems) {
             rcRepeatCallersPanelHTML(dateFiltered) +
         '</div>' +
         '<div id="rcChartsSection" style="display:' + (rcChartsBuilt ? 'block' : 'none') + ';margin-top:1rem;">' +
-            '<div class="rc-chart-card rc-chart-wide" style="margin-bottom:1rem;">' +
-                '<div class="rc-chart-body" id="rcContactTreeBody" style="height:auto;min-height:320px;padding:0;">' + rcContactTreeHTML(items) + '</div>' +
-            '</div>' +
+            '<div class="rc-cbr-host" id="rcContactTreeBody">' + rcContactTreeHTML(items) + '</div>' +
             '<div class="rc-chart-grid">' +
             rcTrendChartCardHTML() +
             rcChartCard('Status Breakdown', 'rcChartStatus', 'Pending / in progress / resolved', true) +
