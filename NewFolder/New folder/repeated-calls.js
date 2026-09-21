@@ -18,7 +18,7 @@ var rcCharts        = {};
 var rcGrids         = { dash: null, assign: null, assigned: null, agentQueue: null, agentRecords: null };
 var rcUploadRows    = []; 
 var rcSelectedAgent = null;
-window.RC_MODULE_VERSION = '1.9.13';
+window.RC_MODULE_VERSION = '1.9.14';
 
 var RC_DELETE_ALL_EMAILS = ['tehleel.lone@du.ae', 'ubaid.mir@du.ae'];
 var RC_MIN_REPEAT_CALLS = 3;
@@ -1436,54 +1436,49 @@ function rcInjectStyles() {
         '.rc-ms .multiselect-option:hover{background:var(--bg-hover,rgba(148,163,184,.12))}' +
         '.rc-ms .multiselect-option input[type=checkbox]{margin-right:10px;width:15px;height:15px;cursor:pointer;accent-color:var(--acc)}' +
         '.rc-ms .multiselect-option label{cursor:pointer;flex:1;font-size:.8rem;color:var(--t1);margin:0}' +
-        '.rc-cbr{font-family:"Segoe UI",system-ui,-apple-system,BlinkMacSystemFont,Roboto,Arial,sans-serif;position:relative;padding:32px 36px 28px;background:#fff;border:1px solid #cbd5e1;border-radius:2px;box-shadow:0 1px 3px rgba(15,23,42,.06);min-height:420px;overflow:hidden}' +
-        '.rc-cbr-head{text-align:center;margin-bottom:32px}' +
-        '.rc-cbr-head h3{margin:0;font-size:1.45rem;font-weight:700;color:#111827;letter-spacing:-.01em}' +
-        '.rc-cbr-head p{margin:.55rem 0 0;font-size:.9rem;color:#6b7280;font-weight:400}' +
-        '.rc-cbr-stage{display:flex;flex-direction:row;align-items:center;justify-content:center;gap:0;min-width:960px;padding:4px 0 24px;overflow:visible}' +
-        '.rc-cbr-col{display:flex;flex-direction:column;flex-shrink:0;gap:16px}' +
-        '.rc-cbr-col-total{width:196px}' +
-        '.rc-cbr-col-mid{width:212px}' +
-        '.rc-cbr-col-res{width:198px;gap:12px}' +
-        '.rc-cbr-col-chart{flex:1;min-width:270px;max-width:420px;padding-left:12px}' +
-        '.rc-cbr-bracket{width:26px;flex-shrink:0;display:flex;align-items:center;justify-content:center;overflow:visible;position:relative;z-index:0}' +
-        '.rc-cbr-bracket svg{display:block;overflow:visible}' +
-        '.rc-cbr-bracket-full svg{height:300px;width:26px}' +
-        '.rc-cbr-bracket-half svg{height:148px;width:26px}' +
-        '.rc-cbr-mid-block{display:flex;flex-direction:column;gap:16px;flex-shrink:0}' +
-        '.rc-cbr-reach-row{display:flex;flex-direction:row;align-items:center;gap:0;flex-shrink:0}' +
-        '.rc-cbr-spacer-top{height:154px;flex-shrink:0}' +
-        '.rc-cbr-tile{position:relative;z-index:2;background:#fff;border:1px solid #9ca3af;border-radius:0;padding:16px 12px 14px;text-align:center;cursor:pointer;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;box-shadow:0 1px 2px rgba(0,0,0,.04)}' +
-        '.rc-cbr-tile:hover{box-shadow:0 3px 12px rgba(15,23,42,.1)}' +
-        '.rc-cbr-tile.rc-cbr-active{outline:2px solid #2563eb;outline-offset:0}' +
-        '.rc-cbr-accent{position:absolute;top:0;left:0;right:0;height:3px}' +
-        '.rc-cbr-total{min-height:300px;padding-top:20px;padding-bottom:20px}' +
-        '.rc-cbr-total .rc-cbr-accent{background:#111827}' +
-        '.rc-cbr-nr{min-height:142px}' +
-        '.rc-cbr-nr .rc-cbr-accent{background:#6d28d9}' +
-        '.rc-cbr-reach{min-height:142px;width:212px}' +
-        '.rc-cbr-reach .rc-cbr-accent{background:#0284c7}' +
-        '.rc-cbr-nres{min-height:112px}' +
-        '.rc-cbr-nres .rc-cbr-accent{background:#1d4ed8}' +
-        '.rc-cbr-res{min-height:112px}' +
-        '.rc-cbr-res .rc-cbr-accent{background:#111827}' +
-        '.rc-cbr-count{font-size:2.15rem;font-weight:700;line-height:1.05;color:#111827;margin-top:4px;font-variant-numeric:tabular-nums}' +
-        '.rc-cbr-total .rc-cbr-count{font-size:2.75rem;margin-top:8px}' +
-        '.rc-cbr-label{font-size:.84rem;font-weight:600;color:#111827;margin-top:8px;line-height:1.25}' +
-        '.rc-cbr-desc{font-size:.72rem;color:#4b5563;margin-top:8px;line-height:1.55;font-weight:400}' +
-        '.rc-cbr-total .rc-cbr-desc{font-size:.78rem;color:#6b7280;margin-top:10px}' +
-        '.rc-cbr-tile.rc-cbr-sm .rc-cbr-count{font-size:1.9rem;margin-top:2px}' +
-        '.rc-cbr-tile.rc-cbr-sm .rc-cbr-label{font-size:.78rem;margin-top:6px}' +
-        '.rc-cbr-tile.rc-cbr-sm .rc-cbr-desc{font-size:.67rem;margin-top:6px;line-height:1.45}' +
-        '.rc-cbr-chart-title{font-size:1rem;font-weight:700;color:#111827;margin-bottom:14px;text-align:left}' +
-        '.rc-cbr-chart-body{height:272px;position:relative}' +
-        '.rc-cbr-await{margin-top:10px;padding:10px 14px;background:#fefce8;border:1px solid #fde047;border-radius:2px;font-size:.78rem;color:#374151;line-height:1.45}' +
-        '.rc-cbr-link{color:#1d4ed8;font-weight:600;cursor:pointer;text-decoration:underline}' +
-        '.rc-cbr-findings{display:flex;gap:20px;margin-top:24px;padding:18px 20px;border:1px solid #9ca3af;background:#fff;align-items:flex-start}' +
-        '.rc-cbr-findings-label{font-size:.7rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#111827;writing-mode:vertical-rl;transform:rotate(180deg);flex-shrink:0;padding:6px 0;line-height:1.25}' +
-        '.rc-cbr-findings-list{margin:0;padding-left:1.25rem;font-size:.8rem;color:#374151;line-height:1.7;list-style:decimal}' +
-        '.rc-cbr-findings-list li{margin-bottom:.35rem;padding-left:.15rem}' +
-        '@media(max-width:1100px){.rc-cbr-stage{flex-wrap:wrap;min-width:0;justify-content:flex-start}.rc-cbr-bracket{display:none}.rc-cbr-spacer-top{display:none}.rc-cbr-reach-row{flex-wrap:wrap}.rc-cbr-col-chart{max-width:none;flex:1 1 100%;padding-left:0;margin-top:16px}}';
+        '.rc-cbr{font-family:"Segoe UI",Tahoma,Geneva,Verdana,sans-serif;position:relative;padding:36px 40px 32px;background:#fff;border:1px solid #d1d5db;border-radius:0;min-height:420px}' +
+        '.rc-cbr-head{text-align:center;margin-bottom:36px}' +
+        '.rc-cbr-head h3{margin:0;font-size:1.55rem;font-weight:700;color:#1a2332;letter-spacing:-.015em}' +
+        '.rc-cbr-head p{margin:.6rem 0 0;font-size:.92rem;color:#64748b;font-weight:400}' +
+        '.rc-cbr-stage{display:grid;grid-template-columns:208px 28px 208px 28px 196px 28px minmax(280px,380px);grid-template-rows:minmax(152px,auto) minmax(152px,auto);column-gap:0;row-gap:14px;align-items:stretch;justify-content:center;width:fit-content;max-width:100%;margin:0 auto;padding:0 0 20px}' +
+        '.rc-cbr-tile{position:relative;z-index:1;background:#fff;border:1px solid #bdbdbd;border-radius:0;padding:20px 16px 18px;text-align:center;cursor:pointer;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;box-shadow:none}' +
+        '.rc-cbr-tile:hover{box-shadow:0 2px 8px rgba(26,35,50,.08)}' +
+        '.rc-cbr-tile.rc-cbr-active{outline:2px solid #1890d8;outline-offset:0}' +
+        '.rc-cbr-accent{position:absolute;top:0;left:0;right:0;height:6px}' +
+        '.rc-cbr-total{grid-column:1;grid-row:1/3;align-self:stretch;padding-top:24px;padding-bottom:24px}' +
+        '.rc-cbr-total .rc-cbr-accent{background:#1a2332}' +
+        '.rc-cbr-bracket{width:28px;border:2px solid #888;border-left:none;margin:0 2px;box-sizing:border-box;position:relative;z-index:0}' +
+        '.rc-cbr-bracket-full{grid-column:2;grid-row:1/3;align-self:center;height:calc(100% - 6px);border-radius:0 14px 14px 0}' +
+        '.rc-cbr-bracket-half{grid-column:4;grid-row:2;align-self:center;height:calc(100% - 4px);border-radius:0 12px 12px 0}' +
+        '.rc-cbr-bracket-narrow{grid-column:6;grid-row:2;align-self:start;height:calc(50% - 7px);min-height:72px;border-radius:0 10px 10px 0}' +
+        '.rc-cbr-nr{grid-column:3;grid-row:1}' +
+        '.rc-cbr-nr .rc-cbr-accent{background:#8b2952}' +
+        '.rc-cbr-nr .rc-cbr-label{color:#8b2952}' +
+        '.rc-cbr-reach{grid-column:3;grid-row:2}' +
+        '.rc-cbr-reach .rc-cbr-accent{background:#1890d8}' +
+        '.rc-cbr-reach .rc-cbr-count,.rc-cbr-reach .rc-cbr-label{color:#1890d8}' +
+        '.rc-cbr-col-res{grid-column:5;grid-row:2;display:flex;flex-direction:column;gap:12px;justify-content:center;min-width:0}' +
+        '.rc-cbr-nres .rc-cbr-accent{background:#1890d8}' +
+        '.rc-cbr-res .rc-cbr-accent{background:#1a2332}' +
+        '.rc-cbr-col-chart{grid-column:7;grid-row:2;display:flex;flex-direction:column;justify-content:center;padding:0 0 0 4px;min-width:0}' +
+        '.rc-cbr-count{font-size:2.05rem;font-weight:700;line-height:1.05;color:#1a2332;margin-top:6px;font-variant-numeric:tabular-nums}' +
+        '.rc-cbr-total .rc-cbr-count{font-size:2.9rem;margin-top:10px}' +
+        '.rc-cbr-label{font-size:.88rem;font-weight:700;color:#1a2332;margin-top:10px;line-height:1.25}' +
+        '.rc-cbr-desc{font-size:.74rem;color:#64748b;margin-top:10px;line-height:1.55;font-weight:400}' +
+        '.rc-cbr-total .rc-cbr-desc{font-size:.78rem;color:#64748b;margin-top:12px}' +
+        '.rc-cbr-tile.rc-cbr-sm{padding:16px 14px 14px}' +
+        '.rc-cbr-tile.rc-cbr-sm .rc-cbr-count{font-size:1.95rem;margin-top:4px}' +
+        '.rc-cbr-tile.rc-cbr-sm .rc-cbr-label{font-size:.82rem;margin-top:8px}' +
+        '.rc-cbr-tile.rc-cbr-sm .rc-cbr-desc{font-size:.7rem;margin-top:8px;line-height:1.5}' +
+        '.rc-cbr-chart-title{font-size:1.05rem;font-weight:700;color:#1890d8;margin-bottom:12px;text-align:left;line-height:1.3}' +
+        '.rc-cbr-chart-body{height:268px;position:relative}' +
+        '.rc-cbr-await{margin-top:12px;padding:10px 14px;background:#fefce8;border:1px solid #fde047;border-radius:0;font-size:.78rem;color:#374151;line-height:1.45}' +
+        '.rc-cbr-link{color:#1890d8;font-weight:600;cursor:pointer;text-decoration:underline}' +
+        '.rc-cbr-findings{display:flex;gap:18px;margin-top:28px;padding:20px 22px;border:1px solid #bdbdbd;background:#fff;align-items:flex-start}' +
+        '.rc-cbr-findings-label{font-size:.78rem;font-weight:700;color:#1a2332;writing-mode:vertical-rl;transform:rotate(180deg);flex-shrink:0;padding:4px 0;line-height:1.3;white-space:nowrap}' +
+        '.rc-cbr-findings-list{margin:0;padding-left:1.3rem;font-size:.82rem;color:#374151;line-height:1.75;list-style:decimal}' +
+        '.rc-cbr-findings-list li{margin-bottom:.4rem;padding-left:.2rem}' +
+        '@media(max-width:1100px){.rc-cbr-stage{grid-template-columns:1fr 1fr;grid-template-rows:auto;width:100%}.rc-cbr-total{grid-column:1/3;grid-row:1}.rc-cbr-bracket{display:none}.rc-cbr-nr,.rc-cbr-reach,.rc-cbr-col-res,.rc-cbr-col-chart{grid-column:span 1}.rc-cbr-col-chart{grid-column:1/3}}';
     document.head.appendChild(s);
 }
 
@@ -2552,11 +2547,11 @@ function rcBuildContactTreeData(items) {
 function rcCallbackKeyFindings(d) {
     var findings = [];
     if (d.total) {
-        findings.push(rcPct(d.notReachable, d.total) + '% of customers were not reachable.');
+        findings.push(Math.round(parseFloat(rcPct(d.notReachable, d.total))) + '% of customers were not reachable.');
     }
     if (d.reachable) {
         var handled = d.resolved + d.notResolved;
-        findings.push(rcPct(handled, d.reachable) + '% of reached customers were calling for TT updates or had already been resolved.');
+        findings.push(Math.round(parseFloat(rcPct(handled, d.reachable))) + '% of reached customers were calling for TT updates or had already been resolved.');
     }
     var topDepts = rcTopNPairs(d.unresolvedByDept, 2);
     if (topDepts.length >= 2) {
@@ -2576,13 +2571,6 @@ function rcTopNPairs(map, n) {
     return keys.slice(0, n).map(function (k) { return { label: k, count: map[k] }; });
 }
 
-function rcCbrBracketSvg(tall) {
-    if (tall) {
-        return '<div class="rc-cbr-bracket rc-cbr-bracket-full" aria-hidden="true"><svg viewBox="0 0 26 300" preserveAspectRatio="none"><path d="M2 6 C20 6 22 6 22 150 C22 294 20 294 2 294" fill="none" stroke="#374151" stroke-width="2.2" stroke-linecap="round"/></svg></div>';
-    }
-    return '<div class="rc-cbr-bracket rc-cbr-bracket-half" aria-hidden="true"><svg viewBox="0 0 26 148" preserveAspectRatio="none"><path d="M2 6 C20 6 22 6 22 74 C22 142 20 142 2 142" fill="none" stroke="#374151" stroke-width="2.2" stroke-linecap="round"/></svg></div>';
-}
-
 function rcCbrTile(id, cls, label, count, desc, filterNode, filterValue, small) {
     filterNode = filterNode || id;
     filterValue = filterValue != null ? filterValue : '';
@@ -2600,38 +2588,26 @@ function rcContactTreeHTML(items) {
     var d = rcBuildContactTreeData(items);
     var total = d.total || 0;
     var findings = rcCallbackKeyFindings(d);
-    var nresNote = '';
-    var topDepts = rcTopNPairs(d.unresolvedByDept, 2);
-    if (topDepts.length >= 2 && d.notResolved) {
-        nresNote = rcPct(d.notResolved, d.reachable) + '% of callbacks not resolved. ' + topDepts[0].label + ' and ' + topDepts[1].label + ' are the largest contributors.';
-    } else if (d.notResolved) {
-        nresNote = rcPct(d.notResolved, d.reachable) + '% of reachable · issues not resolved.';
-    }
+    var nresNote = d.reachable ? rcPct(d.notResolved, d.reachable) + '% of reachable customers.' : '';
     return '<div class="rc-cbr" id="rcTreeBoard">' +
         '<div class="rc-cbr-head">' +
-            '<h3>Repeated Calls — Callback Report</h3>' +
+            '<h3>Repeated Calls - Callback Report</h3>' +
             '<p>Customers who contacted us more than twice</p>' +
         '</div>' +
         '<div class="rc-cbr-stage">' +
-            '<div class="rc-cbr-col rc-cbr-col-total">' +
-                rcCbrTile('root', 'rc-cbr-total', 'Repeat callers', total, '100%  Contacted us more than twice') +
+            rcCbrTile('root', 'rc-cbr-total', 'Repeat callers', total, '100% Contacted us more than twice') +
+            '<div class="rc-cbr-bracket rc-cbr-bracket-full" aria-hidden="true"></div>' +
+            rcCbrTile('nr', 'rc-cbr-nr', 'Not Reachable', d.notReachable, rcPct(d.notReachable, total) + '% of repeat customers were not reachable.') +
+            rcCbrTile('reach', 'rc-cbr-reach', 'Reachable', d.reachable, rcPct(d.reachable, total) + '% of repeat customers were reachable.') +
+            '<div class="rc-cbr-bracket rc-cbr-bracket-half" aria-hidden="true"></div>' +
+            '<div class="rc-cbr-col-res">' +
+                rcCbrTile('nres', 'rc-cbr-nres', 'Not Resolved', d.notResolved, nresNote, 'nres', '', true) +
+                rcCbrTile('resolved', 'rc-cbr-res', 'Resolved', d.resolved, rcPct(d.resolved, d.reachable) + '% Cases Resolved', 'resolved', '', true) +
             '</div>' +
-            rcCbrBracketSvg(true) +
-            '<div class="rc-cbr-mid-block">' +
-                rcCbrTile('nr', 'rc-cbr-nr', 'Not Reachable', d.notReachable, rcPct(d.notReachable, total) + '% of repeat customers were not reachable.') +
-                '<div class="rc-cbr-reach-row">' +
-                    rcCbrTile('reach', 'rc-cbr-reach', 'Reachable', d.reachable, rcPct(d.reachable, total) + '% of repeat customers were reachable.') +
-                    rcCbrBracketSvg(false) +
-                    '<div class="rc-cbr-col rc-cbr-col-res">' +
-                        rcCbrTile('nres', 'rc-cbr-nres', 'Not Resolved', d.notResolved, nresNote, 'nres', '', true) +
-                        rcCbrTile('resolved', 'rc-cbr-res', 'Resolved', d.resolved, rcPct(d.resolved, d.reachable) + '% Cases Resolved', 'resolved', '', true) +
-                    '</div>' +
-                    rcCbrBracketSvg(false) +
-                    '<div class="rc-cbr-col rc-cbr-col-chart">' +
-                        '<div class="rc-cbr-chart-title">Unresolved Cases Breakdown</div>' +
-                        '<div class="rc-cbr-chart-body"><canvas id="rcChartCallbackBreakdown"></canvas></div>' +
-                    '</div>' +
-                '</div>' +
+            '<div class="rc-cbr-bracket rc-cbr-bracket-narrow" aria-hidden="true"></div>' +
+            '<div class="rc-cbr-col-chart">' +
+                '<div class="rc-cbr-chart-title">Unresolved Cases Breakdown</div>' +
+                '<div class="rc-cbr-chart-body"><canvas id="rcChartCallbackBreakdown"></canvas></div>' +
             '</div>' +
         '</div>' +
         (d.awaitingCallback ? '<div class="rc-cbr-await">' + d.awaitingCallback + ' repeat caller(s) awaiting callback capture · ' +
@@ -2639,7 +2615,7 @@ function rcContactTreeHTML(items) {
         (d.reachableOpen ? '<div class="rc-cbr-await">' + d.reachableOpen + ' reachable caller(s) awaiting resolution status · ' +
             '<span class="rc-cbr-link" data-rc-node="reach" data-rc-filter-node="reach" role="button">Show in grid</span></div>' : '') +
         '<div class="rc-cbr-findings">' +
-            '<div class="rc-cbr-findings-label">Key<br>Findings</div>' +
+            '<div class="rc-cbr-findings-label">Key Findings</div>' +
             '<ol class="rc-cbr-findings-list">' + findings.map(function (f) { return '<li>' + rcEsc(f) + '</li>'; }).join('') + '</ol>' +
         '</div>' +
     '</div>';
@@ -2662,10 +2638,10 @@ function rcBuildCallbackBreakdownChart(items, treeData) {
             labels: pairs.length ? pairs.map(function (p) { return p.label; }) : ['No unresolved cases'],
             datasets: [{
                 data: pairs.length ? pairs.map(function (p) { return p.count; }) : [0],
-                backgroundColor: '#1e3a8a',
-                borderRadius: 2,
-                maxBarThickness: 22,
-                barPercentage: 0.72
+                backgroundColor: '#1890d8',
+                borderRadius: 0,
+                maxBarThickness: 24,
+                barPercentage: 0.78
             }]
         },
         options: {
@@ -2700,7 +2676,7 @@ function rcBuildCallbackBreakdownChart(items, treeData) {
                     var val = chart.data.datasets[0].data[idx] || 0;
                     ctx.save();
                     ctx.fillStyle = '#334155';
-                    ctx.font = '600 11px Inter, Arial, sans-serif';
+                    ctx.font = '600 11px "Segoe UI", Tahoma, sans-serif';
                     ctx.textBaseline = 'middle';
                     ctx.fillText(val + ' (' + rcPct(val, tot) + '%)', bar.x + 8, bar.y);
                     ctx.restore();
