@@ -18,7 +18,7 @@ var rcCharts        = {};
 var rcGrids         = { dash: null, assign: null, assigned: null, agentQueue: null, agentRecords: null };
 var rcUploadRows    = []; 
 var rcSelectedAgent = null;
-window.RC_MODULE_VERSION = '1.9.7';
+window.RC_MODULE_VERSION = '1.9.12';
 
 var RC_DELETE_ALL_EMAILS = ['tehleel.lone@du.ae', 'ubaid.mir@du.ae'];
 var RC_MIN_REPEAT_CALLS = 3;
@@ -1436,37 +1436,46 @@ function rcInjectStyles() {
         '.rc-ms .multiselect-option:hover{background:var(--bg-hover,rgba(148,163,184,.12))}' +
         '.rc-ms .multiselect-option input[type=checkbox]{margin-right:10px;width:15px;height:15px;cursor:pointer;accent-color:var(--acc)}' +
         '.rc-ms .multiselect-option label{cursor:pointer;flex:1;font-size:.8rem;color:var(--t1);margin:0}' +
-        '.rc-cbr{position:relative;overflow-x:auto;overflow-y:visible;padding:1.5rem 1.25rem 1.25rem;background:var(--bg-card);border:1px solid var(--border);border-radius:14px;box-shadow:var(--cs);min-height:380px}' +
-        '.rc-cbr-svg{position:absolute;left:0;top:0;pointer-events:none;z-index:0;overflow:visible}' +
-        '.rc-cbr-head{text-align:center;margin-bottom:1.5rem;position:relative;z-index:1}' +
-        '.rc-cbr-head h3{margin:0;font-size:1.08rem;font-weight:900;color:var(--t1)}' +
-        '.rc-cbr-head p{margin:.4rem 0 0;font-size:.8rem;color:var(--t3)}' +
-        '.rc-cbr-stage{position:relative;z-index:1;display:grid;grid-template-columns:minmax(140px,170px) minmax(160px,190px) minmax(160px,190px) minmax(240px,1fr);grid-template-rows:auto auto;column-gap:56px;row-gap:36px;align-items:center;min-width:820px;padding:.5rem 0 1rem}' +
-        '.rc-cbr-total{grid-column:1;grid-row:1/3;align-self:center;justify-self:center}' +
-        '.rc-cbr-nr{grid-column:2;grid-row:1;justify-self:stretch}' +
-        '.rc-cbr-reach{grid-column:2;grid-row:2;justify-self:stretch}' +
-        '.rc-cbr-nres{grid-column:3;grid-row:1;justify-self:stretch}' +
-        '.rc-cbr-res{grid-column:3;grid-row:2;justify-self:stretch}' +
-        '.rc-cbr-chart-wrap{grid-column:4;grid-row:1/3;align-self:center;min-width:240px;padding-left:.5rem}' +
-        '.rc-cbr-tile{position:relative;background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:1rem 1rem .85rem;text-align:center;cursor:pointer;transition:transform .15s,box-shadow .15s;box-shadow:0 2px 8px rgba(15,23,42,.06);overflow:hidden;min-height:108px;display:flex;flex-direction:column;justify-content:center}' +
-        '.rc-cbr-tile:hover{transform:translateY(-2px);box-shadow:var(--ch)}' +
-        '.rc-cbr-tile.rc-cbr-active{box-shadow:0 0 0 3px var(--acc),var(--ch)}' +
-        '.rc-cbr-accent{position:absolute;top:0;left:0;right:0;height:5px;background:var(--grad)}' +
+        '.rc-cbr{position:relative;padding:28px 32px 24px;background:#fff;border:1px solid #d1d5db;border-radius:4px;box-shadow:none;min-height:420px}' +
+        '.rc-cbr-head{text-align:center;margin-bottom:28px}' +
+        '.rc-cbr-head h3{margin:0;font-size:1.35rem;font-weight:800;color:#1e293b;letter-spacing:-.02em}' +
+        '.rc-cbr-head p{margin:.5rem 0 0;font-size:.88rem;color:#64748b}' +
+        '.rc-cbr-stage{display:grid;grid-template-columns:200px 22px 215px 22px 185px 22px minmax(260px,1fr);grid-template-rows:142px 142px;column-gap:0;row-gap:14px;align-items:stretch;min-width:980px;margin:0 auto;padding:8px 0 20px}' +
+        '.rc-cbr-total{grid-column:1;grid-row:1/3;align-self:stretch}' +
+        '.rc-cbr-brace-a{grid-column:2;grid-row:1/3;display:flex;align-items:center;justify-content:center;color:#94a3b8;font-size:118px;line-height:.72;font-weight:300;font-family:Georgia,serif;user-select:none;margin:0 -4px}' +
+        '.rc-cbr-nr{grid-column:3;grid-row:1}' +
+        '.rc-cbr-reach{grid-column:3;grid-row:2}' +
+        '.rc-cbr-brace-b{grid-column:4;grid-row:2;display:flex;align-items:center;justify-content:center;color:#94a3b8;font-size:92px;line-height:.72;font-weight:300;font-family:Georgia,serif;user-select:none;margin:0 -4px}' +
+        '.rc-cbr-rescol{grid-column:5;grid-row:2;display:flex;flex-direction:column;gap:14px;justify-content:center;height:100%}' +
+        '.rc-cbr-brace-c{grid-column:6;grid-row:1/3;display:flex;align-items:center;justify-content:center;color:#94a3b8;font-size:92px;line-height:.72;font-weight:300;font-family:Georgia,serif;user-select:none;margin:0 -4px}' +
+        '.rc-cbr-chart-wrap{grid-column:7;grid-row:1/3;align-self:center;padding:0 0 0 8px}' +
+        '.rc-cbr-tile{position:relative;background:#fff;border:1px solid #cbd5e1;border-radius:2px;padding:18px 14px 14px;text-align:center;cursor:pointer;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;height:100%;min-height:0}' +
+        '.rc-cbr-tile:hover{box-shadow:0 2px 10px rgba(15,23,42,.08)}' +
+        '.rc-cbr-tile.rc-cbr-active{outline:2px solid var(--acc);outline-offset:1px}' +
+        '.rc-cbr-accent{position:absolute;top:0;left:0;right:0;height:4px}' +
         '.rc-cbr-total .rc-cbr-accent{background:#1e293b}' +
-        '.rc-cbr-nr .rc-cbr-accent{background:#64748b}' +
+        '.rc-cbr-nr .rc-cbr-accent{background:#7c3aed}' +
         '.rc-cbr-reach .rc-cbr-accent{background:#38bdf8}' +
-        '.rc-cbr-nres .rc-cbr-accent{background:#6366f1}' +
+        '.rc-cbr-nres .rc-cbr-accent{background:#2563eb}' +
         '.rc-cbr-res .rc-cbr-accent{background:#0f172a}' +
-        '.rc-cbr-count{font-size:2rem;font-weight:900;line-height:1;color:var(--t1);margin-top:.2rem}' +
-        '.rc-cbr-total .rc-cbr-count{font-size:2.35rem}' +
-        '.rc-cbr-label{font-size:.76rem;font-weight:800;color:var(--t1);margin-top:.4rem}' +
-        '.rc-cbr-desc{font-size:.68rem;color:var(--t2);margin-top:.5rem;line-height:1.45;font-weight:500}' +
-        '.rc-cbr-total .rc-cbr-desc{font-size:.72rem;color:var(--t3)}' +
-        '.rc-cbr-chart-title{font-size:.82rem;font-weight:800;color:var(--t1);margin-bottom:.65rem;text-align:left}' +
-        '.rc-cbr-chart-body{height:240px;position:relative}' +
-        '.rc-cbr-await{margin-top:.25rem;padding:.6rem .85rem;background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.22);border-radius:8px;font-size:.74rem;color:var(--t2);position:relative;z-index:1}' +
-        '.rc-cbr-link{color:var(--acc);font-weight:700;cursor:pointer;text-decoration:underline}' +
-        '@media(max-width:1100px){.rc-cbr-stage{grid-template-columns:1fr 1fr;min-width:0;column-gap:20px}.rc-cbr-total{grid-column:1/3;grid-row:1}.rc-cbr-nr{grid-column:1;grid-row:2}.rc-cbr-reach{grid-column:2;grid-row:2}.rc-cbr-nres{grid-column:1;grid-row:3}.rc-cbr-res{grid-column:2;grid-row:3}.rc-cbr-chart-wrap{grid-column:1/3;grid-row:4}}';
+        '.rc-cbr-count{font-size:2.4rem;font-weight:800;line-height:1;color:#0f172a;margin-top:6px}' +
+        '.rc-cbr-total .rc-cbr-count{font-size:3rem;margin-top:10px}' +
+        '.rc-cbr-label{font-size:.82rem;font-weight:700;color:#0f172a;margin-top:10px}' +
+        '.rc-cbr-desc{font-size:.72rem;color:#475569;margin-top:10px;line-height:1.5;font-weight:400}' +
+        '.rc-cbr-total .rc-cbr-desc{font-size:.78rem;color:#64748b;margin-top:12px}' +
+        '.rc-cbr-tile.rc-cbr-sm{min-height:118px;padding:14px 12px 12px}' +
+        '.rc-cbr-tile.rc-cbr-sm .rc-cbr-count{font-size:1.85rem;margin-top:4px}' +
+        '.rc-cbr-tile.rc-cbr-sm .rc-cbr-label{font-size:.76rem;margin-top:6px}' +
+        '.rc-cbr-tile.rc-cbr-sm .rc-cbr-desc{font-size:.66rem;margin-top:6px;line-height:1.4}' +
+        '.rc-cbr-chart-title{font-size:.95rem;font-weight:800;color:#1e293b;margin-bottom:12px;text-align:left}' +
+        '.rc-cbr-chart-body{height:268px;position:relative}' +
+        '.rc-cbr-await{margin-top:8px;padding:.55rem .75rem;background:#fffbeb;border:1px solid #fde68a;border-radius:4px;font-size:.74rem;color:#475569}' +
+        '.rc-cbr-link{color:#2563eb;font-weight:700;cursor:pointer;text-decoration:underline}' +
+        '.rc-cbr-findings{display:flex;gap:18px;margin-top:22px;padding-top:18px;border-top:2px solid #cbd5e1;align-items:flex-start}' +
+        '.rc-cbr-findings-label{font-size:.72rem;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:#0f172a;writing-mode:vertical-rl;transform:rotate(180deg);flex-shrink:0;padding:4px 0;line-height:1.2}' +
+        '.rc-cbr-findings-list{margin:0;padding-left:1.2rem;font-size:.78rem;color:#334155;line-height:1.65}' +
+        '.rc-cbr-findings-list li{margin-bottom:.4rem}' +
+        '@media(max-width:1100px){.rc-cbr-stage{grid-template-columns:1fr 1fr;min-width:0}.rc-cbr-brace-a,.rc-cbr-brace-b,.rc-cbr-brace-c{display:none}.rc-cbr-total{grid-column:1/3;grid-row:1}.rc-cbr-nr{grid-column:1;grid-row:2}.rc-cbr-reach{grid-column:2;grid-row:2}.rc-cbr-nres{grid-column:1;grid-row:3}.rc-cbr-res{grid-column:2;grid-row:3}.rc-cbr-chart-wrap{grid-column:1/3;grid-row:4}}';
     document.head.appendChild(s);
 }
 
@@ -1629,7 +1638,7 @@ async function rcFetchAgents() {
 }
 
 async function rcFetchItems(showBusy) {
-    if (RC_DUMMY_MODE) { rcAllItems = rcDummyItems(); return; }
+    if (RC_DUMMY_MODE) { rcAllItems = rcDummyItems(); rcClearPerfCache(); return; }
     if (showBusy) rcShowBusy('Loading records…', 'Fetching from SharePoint');
     try {
         var cols = RC_COLS.map(function (c) { return c.key; }).join(',');
@@ -1641,6 +1650,7 @@ async function rcFetchItems(showBusy) {
         if (!r.ok) throw new Error('Failed to load Repeated Calls (' + r.status + ')');
         var data = await r.json();
         rcAllItems = (data.d.results || []).map(function (it) { return rcNormalizeItem(it); });
+        rcClearPerfCache();
         rcRebuildMsisdnCounts(rcAllItems);
     } finally {
         if (showBusy) rcHideBusy();
@@ -2039,10 +2049,11 @@ function rcApplyQueueFilters(items, f, includeAgent, dateF) {
 }
 
 function rcUniqueRepeatStatusCounts(items) {
+    rcWarmPerfCache(items);
     var unique = rcUniqueRepeatCallers(items);
     var pending = 0, inprogress = 0, completed = 0;
     unique.forEach(function (it) {
-        var st = rcCanonicalUniqueCallerStatus(it.MSISDN, items);
+        var st = rcStatusForItem(it, items);
         if (st === RC_STATUS.PENDING) pending++;
         else if (st === RC_STATUS.INPROGRESS) inprogress++;
         else if (st === RC_STATUS.RESOLVED) completed++;
@@ -2205,7 +2216,7 @@ function rcMapRow(it) {
         callBackStatus: vBlank(it.Call_Back_Status),
         pendingWith: vBlank(it.Pending_With),
         resolutionStatus: vBlank(it.Resolution_Status),
-        rcStatus: rcDisplayStatus(it) || '—',
+        rcStatus: rcStatusForItem(it) || '—',
         assignedTo: v(it.AssignedToName),
         uploadDate: it.UploadDate || null,
         assignmentDate: it.AssignmentDate || null,
@@ -2418,13 +2429,60 @@ function rcSetEditWrapDisplay(wrapId, show) {
     if (el) el.style.display = show ? 'block' : 'none';
 }
 
-function rcGetCallerWorkflowRecord(msisdn, items) {
-    var m = rcMsisdnKey(msisdn);
-    var pool = rcRepeatCallerItems(items).filter(function (it) { return rcMsisdnKey(it) === m; });
-    if (!pool.length) return null;
+var rcPerfCache = { itemsRef: null, records: {}, status: {}, treeData: null };
+
+function rcClearPerfCache() {
+    rcPerfCache = { itemsRef: null, records: {}, status: {}, treeData: null };
+}
+
+function rcBuildMsisdnPoolMap(items) {
+    var map = {};
+    rcRepeatCallerItems(items).forEach(function (it) {
+        var m = rcMsisdnKey(it);
+        if (!m) return;
+        if (!map[m]) map[m] = [];
+        map[m].push(it);
+    });
+    return map;
+}
+
+function rcWorkflowRecordFromPool(pool) {
+    if (!pool || !pool.length) return null;
     var withCb = pool.filter(function (it) { return String(it.Call_Back_Status || '').trim(); });
     if (withCb.length) return rcPickLatestItem(withCb);
     return rcPickRepresentativeCallerRow(pool);
+}
+
+function rcWarmPerfCache(items) {
+    if (rcPerfCache.itemsRef === items && rcPerfCache.treeData) return;
+    rcPerfCache = { itemsRef: items, records: {}, status: {}, treeData: null };
+    var poolMap = rcBuildMsisdnPoolMap(items);
+    Object.keys(poolMap).forEach(function (m) {
+        rcPerfCache.records[m] = rcWorkflowRecordFromPool(poolMap[m]);
+    });
+    rcPerfCache.treeData = rcBuildContactTreeDataFromMaps(poolMap, rcPerfCache.records);
+}
+
+function rcGetCallerWorkflowRecord(msisdn, items) {
+    var m = rcMsisdnKey(msisdn);
+    if (!m) return null;
+    if (rcPerfCache.records[m]) return rcPerfCache.records[m];
+    var pool = rcRepeatCallerItems(items).filter(function (it) { return rcMsisdnKey(it) === m; });
+    if (!pool.length) return null;
+    var rec = rcWorkflowRecordFromPool(pool);
+    rcPerfCache.records[m] = rec;
+    return rec;
+}
+
+function rcStatusForItem(it, items) {
+    items = items || rcAllItems;
+    if (!it) return RC_STATUS.PENDING;
+    if (!rcIsRepeatMsisdn(it.MSISDN)) return rcDisplayStatus(it, items);
+    var m = rcMsisdnKey(it.MSISDN);
+    if (rcPerfCache.status[m]) return rcPerfCache.status[m];
+    var st = rcWorkflowStatusForCaller(m, items);
+    rcPerfCache.status[m] = st;
+    return st;
 }
 
 function rcCallerHasWorkflowDetails(msisdn, items) {
@@ -2438,10 +2496,9 @@ function rcPct(part, whole, digits) {
     return (part / whole * 100).toFixed(digits);
 }
 
-function rcBuildContactTreeData(items) {
-    var unique = rcUniqueRepeatCallers(items);
+function rcBuildContactTreeDataFromMaps(poolMap, recordMap) {
     var data = {
-        total: unique.length,
+        total: 0,
         awaitingCallback: 0,
         notReachable: 0,
         reachable: 0,
@@ -2452,8 +2509,10 @@ function rcBuildContactTreeData(items) {
         pendingWith: {},
         unresolvedByDept: {}
     };
-    unique.forEach(function (it) {
-        var rec = rcGetCallerWorkflowRecord(it.MSISDN, items) || it;
+    Object.keys(poolMap).forEach(function (m) {
+        if (!rcIsRepeatMsisdn(m)) return;
+        data.total++;
+        var rec = recordMap[m] || poolMap[m][0];
         var cb = String(rec.Call_Back_Status || '').trim();
         if (!cb) { data.awaitingCallback++; return; }
         if (rcIsCallbackNotReachable(cb)) { data.notReachable++; return; }
@@ -2477,22 +2536,25 @@ function rcBuildContactTreeData(items) {
     return data;
 }
 
+function rcBuildContactTreeData(items) {
+    rcWarmPerfCache(items);
+    return rcPerfCache.treeData || rcBuildContactTreeDataFromMaps({}, {});
+}
+
 function rcCallbackKeyFindings(d) {
     var findings = [];
     if (d.total) {
-        findings.push(rcPct(d.notReachable, d.total) + '% of repeat customers were not reachable.');
+        findings.push(rcPct(d.notReachable, d.total) + '% of customers were not reachable.');
     }
     if (d.reachable) {
-        findings.push(rcPct(d.resolved, d.reachable) + '% of reachable customers had their issue resolved.');
+        var handled = d.resolved + d.notResolved;
+        findings.push(rcPct(handled, d.reachable) + '% of reached customers were calling for TT updates or had already been resolved.');
     }
     var topDepts = rcTopNPairs(d.unresolvedByDept, 2);
     if (topDepts.length >= 2) {
         findings.push(topDepts[0].label + ' and ' + topDepts[1].label + ' are the largest unresolved contributors.');
     } else if (topDepts.length === 1) {
         findings.push(topDepts[0].label + ' is the largest unresolved contributor.');
-    }
-    if (d.awaitingCallback) {
-        findings.push(d.awaitingCallback + ' repeat caller(s) still need callback status captured (not shown in tree until edited).');
     }
     if (!findings.length) findings.push('No repeat caller data in the current filter view.');
     return findings;
@@ -2506,11 +2568,12 @@ function rcTopNPairs(map, n) {
     return keys.slice(0, n).map(function (k) { return { label: k, count: map[k] }; });
 }
 
-function rcCbrTile(id, cls, label, count, desc, filterNode, filterValue) {
+function rcCbrTile(id, cls, label, count, desc, filterNode, filterValue, small) {
     filterNode = filterNode || id;
     filterValue = filterValue != null ? filterValue : '';
     var active = (rcTreeFilter.node === filterNode && (rcTreeFilter.value || '') === filterValue) ? ' rc-cbr-active' : '';
-    return '<div class="rc-cbr-tile ' + cls + active + '" data-rc-node="' + rcEsc(id) + '" data-rc-filter-node="' + rcEsc(filterNode) + '" data-rc-filter-value="' + rcEsc(filterValue) + '" role="button" title="Click to filter the grid · click again to clear">' +
+    var sm = small ? ' rc-cbr-sm' : '';
+    return '<div class="rc-cbr-tile ' + cls + sm + active + '" data-rc-node="' + rcEsc(id) + '" data-rc-filter-node="' + rcEsc(filterNode) + '" data-rc-filter-value="' + rcEsc(filterValue) + '" role="button" title="Click to filter the grid · click again to clear">' +
         '<div class="rc-cbr-accent"></div>' +
         '<div class="rc-cbr-count">' + rcEsc(String(count)) + '</div>' +
         '<div class="rc-cbr-label">' + rcEsc(label) + '</div>' +
@@ -2521,18 +2584,30 @@ function rcCbrTile(id, cls, label, count, desc, filterNode, filterValue) {
 function rcContactTreeHTML(items) {
     var d = rcBuildContactTreeData(items);
     var total = d.total || 0;
+    var findings = rcCallbackKeyFindings(d);
+    var nresNote = '';
+    var topDepts = rcTopNPairs(d.unresolvedByDept, 2);
+    if (topDepts.length >= 2 && d.notResolved) {
+        nresNote = rcPct(d.notResolved, d.reachable) + '% of callbacks not resolved. ' + topDepts[0].label + ' and ' + topDepts[1].label + ' are the largest contributors.';
+    } else if (d.notResolved) {
+        nresNote = rcPct(d.notResolved, d.reachable) + '% of reachable · issues not resolved.';
+    }
     return '<div class="rc-cbr" id="rcTreeBoard">' +
-        '<svg class="rc-cbr-svg" id="rcTreeSvg" aria-hidden="true"></svg>' +
         '<div class="rc-cbr-head">' +
             '<h3>Repeated Calls — Callback Report</h3>' +
             '<p>Customers who contacted us more than twice</p>' +
         '</div>' +
         '<div class="rc-cbr-stage">' +
-            rcCbrTile('root', 'rc-cbr-total', 'Repeat callers', total, '100% · Contacted us more than twice') +
+            rcCbrTile('root', 'rc-cbr-total', 'Repeat callers', total, '100%  Contacted us more than twice') +
+            '<div class="rc-cbr-brace-a" aria-hidden="true">{</div>' +
             rcCbrTile('nr', 'rc-cbr-nr', 'Not Reachable', d.notReachable, rcPct(d.notReachable, total) + '% of repeat customers were not reachable.') +
             rcCbrTile('reach', 'rc-cbr-reach', 'Reachable', d.reachable, rcPct(d.reachable, total) + '% of repeat customers were reachable.') +
-            rcCbrTile('nres', 'rc-cbr-nres', 'Not Resolved', d.notResolved, rcPct(d.notResolved, d.reachable) + '% of reachable · issues not resolved.') +
-            rcCbrTile('resolved', 'rc-cbr-res', 'Resolved', d.resolved, rcPct(d.resolved, d.reachable) + '% of reachable · cases resolved.') +
+            '<div class="rc-cbr-brace-b" aria-hidden="true">{</div>' +
+            '<div class="rc-cbr-rescol">' +
+                rcCbrTile('nres', 'rc-cbr-nres', 'Not Resolved', d.notResolved, nresNote, 'nres', '', true) +
+                rcCbrTile('resolved', 'rc-cbr-res', 'Resolved', d.resolved, rcPct(d.resolved, d.reachable) + '% Cases Resolved', 'resolved', '', true) +
+            '</div>' +
+            '<div class="rc-cbr-brace-c" aria-hidden="true">{</div>' +
             '<div class="rc-cbr-chart-wrap">' +
                 '<div class="rc-cbr-chart-title">Unresolved Cases Breakdown</div>' +
                 '<div class="rc-cbr-chart-body"><canvas id="rcChartCallbackBreakdown"></canvas></div>' +
@@ -2542,15 +2617,19 @@ function rcContactTreeHTML(items) {
             '<span class="rc-cbr-link" data-rc-node="awaiting" data-rc-filter-node="awaiting" role="button">Show in grid</span></div>' : '') +
         (d.reachableOpen ? '<div class="rc-cbr-await">' + d.reachableOpen + ' reachable caller(s) awaiting resolution status · ' +
             '<span class="rc-cbr-link" data-rc-node="reach" data-rc-filter-node="reach" role="button">Show in grid</span></div>' : '') +
+        '<div class="rc-cbr-findings">' +
+            '<div class="rc-cbr-findings-label">Key<br>Findings</div>' +
+            '<ol class="rc-cbr-findings-list">' + findings.map(function (f) { return '<li>' + rcEsc(f) + '</li>'; }).join('') + '</ol>' +
+        '</div>' +
     '</div>';
 }
 
-function rcBuildCallbackBreakdownChart(items) {
+function rcBuildCallbackBreakdownChart(items, treeData) {
     if (typeof Chart === 'undefined') return;
     var canvas = document.getElementById('rcChartCallbackBreakdown');
     if (!canvas) return;
-    var d = rcBuildContactTreeData(items);
-    var pairs = rcTopNPairs(d.unresolvedByDept, 8);
+    var d = treeData || rcBuildContactTreeData(items);
+    var pairs = rcTopNPairs(d.unresolvedByDept, 6);
     if (rcCharts.callbackBreakdown) {
         try { rcCharts.callbackBreakdown.destroy(); } catch (e) {}
         rcCharts.callbackBreakdown = null;
@@ -2562,15 +2641,17 @@ function rcBuildCallbackBreakdownChart(items) {
             labels: pairs.length ? pairs.map(function (p) { return p.label; }) : ['No unresolved cases'],
             datasets: [{
                 data: pairs.length ? pairs.map(function (p) { return p.count; }) : [0],
-                backgroundColor: rcCssVar('--acc') || '#1e3a5f',
-                borderRadius: 4,
-                maxBarThickness: 26
+                backgroundColor: '#1e40af',
+                borderRadius: 2,
+                maxBarThickness: 22,
+                barPercentage: 0.72
             }]
         },
         options: {
             indexAxis: 'y',
             responsive: true,
             maintainAspectRatio: false,
+            layout: { padding: { right: 72 } },
             plugins: {
                 legend: { display: false },
                 tooltip: {
@@ -2580,13 +2661,31 @@ function rcBuildCallbackBreakdownChart(items) {
                             return n + ' (' + rcPct(n, totalNres || 1) + '%)';
                         }
                     }
-                }
+                },
+                rcBarValueLabels: { total: totalNres }
             },
             scales: {
-                x: { beginAtZero: true, grid: { color: 'rgba(148,163,184,.12)' }, ticks: { precision: 0 } },
-                y: { grid: { display: false } }
+                x: { display: false, beginAtZero: true },
+                y: { grid: { display: false }, ticks: { font: { size: 11, weight: '600' }, color: '#334155' } }
             }
-        }
+        },
+        plugins: [{
+            id: 'rcBarValueLabels',
+            afterDatasetsDraw: function (chart) {
+                var ctx = chart.ctx;
+                var tot = (chart.options.plugins.rcBarValueLabels && chart.options.plugins.rcBarValueLabels.total) || 1;
+                var meta = chart.getDatasetMeta(0);
+                meta.data.forEach(function (bar, idx) {
+                    var val = chart.data.datasets[0].data[idx] || 0;
+                    ctx.save();
+                    ctx.fillStyle = '#334155';
+                    ctx.font = '600 11px Inter, Arial, sans-serif';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(val + ' (' + rcPct(val, tot) + '%)', bar.x + 8, bar.y);
+                    ctx.restore();
+                });
+            }
+        }]
     });
 }
 
@@ -2600,6 +2699,8 @@ function rcTreeAnchor(board, el, side) {
 }
 
 window.rcPaintContactTree = function () {
+    /* Braces are CSS-only — no SVG repaint (faster). */
+    return;
     var board = document.getElementById('rcTreeBoard');
     var svg = document.getElementById('rcTreeSvg');
     if (!board || !svg) return;
@@ -3275,6 +3376,7 @@ function rcRefreshDashboardContent() {
     var dateFiltered = rcApplyDateFilters(base, rcDateFilters);
     rcRebuildMsisdnCounts(dateFiltered);
     var items = rcApplyDashFilters(dateFiltered);
+    rcWarmPerfCache(items);
     var s = rcSummary(items, dateFiltered);
     var gridItems = rcDashboardGridItems(items);
     rcLastChartItems = items;
@@ -3296,8 +3398,7 @@ function rcRefreshDashboardContent() {
         rcBuildDashboardCharts(items, s);
         rcSchedulePaintContactTree();
     } else if (document.getElementById('rcChartCallbackBreakdown')) {
-        rcBuildCallbackBreakdownChart(items);
-        rcSchedulePaintContactTree();
+        requestAnimationFrame(function () { rcBuildCallbackBreakdownChart(items, rcPerfCache.treeData); });
     }
 
     if (typeof lucide !== 'undefined') lucide.createIcons();
@@ -3583,7 +3684,7 @@ function rcBuildDashboardCharts(items, s) {
     var legend = { position: 'bottom', labels: { usePointStyle: true, padding: 16, font: { size: 11, weight: '600' } } };
 
     rcBuildTrendChart(items);
-    rcBuildCallbackBreakdownChart(items);
+    rcBuildCallbackBreakdownChart(items, rcPerfCache.treeData);
 
     var sc = document.getElementById('rcChartStatus');
     if (sc) {
