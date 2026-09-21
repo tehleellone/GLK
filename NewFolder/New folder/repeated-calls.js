@@ -258,16 +258,40 @@ function rcInProgressSiblingIds(msisdn) {
     return rcItemsForMsisdnStatus(msisdn, RC_STATUS.INPROGRESS).map(function (it) { return it.ID; });
 }
 
-function rcCanonicalUniqueCallerStatus(msisdn, items) {
+function rcMsisdnHasAssignment(msisdn, items) {
+    var m = rcMsisdnKey(msisdn);
+    if (!m) return false;
+    return (items || rcAllItems).some(function (it) {
+        return rcMsisdnKey(it) === m && rcIsAssigned(it);
+    });
+}
+
+/** KPI + grid status: driven by assignment + callback workflow — NOT raw RC_Status alone. */
+function rcWorkflowStatusForCaller(msisdn, items) {
+    items = items || rcAllItems;
     var m = rcMsisdnKey(msisdn);
     if (!m) return RC_STATUS.PENDING;
-    var pool = (items || rcAllItems).filter(function (it) { return rcMsisdnKey(it) === m; });
-    if (!pool.length) return RC_STATUS.PENDING;
-    if (pool.some(function (it) { return rcDisplayStatus(it) === RC_STATUS.INPROGRESS; })) {
+    if (!rcMsisdnHasAssignment(m, items)) return RC_STATUS.PENDING;
+
+    var rec = rcGetCallerWorkflowRecord(m, items);
+    if (!rec) return RC_STATUS.INPROGRESS;
+
+    var cb = String(rec.Call_Back_Status || '').trim();
+    if (!cb) return RC_STATUS.INPROGRESS;
+
+    if (rcIsCallbackNotReachable(cb)) return RC_STATUS.RESOLVED;
+
+    if (rcIsCallbackReachable(cb)) {
+        var res = String(rec.Resolution_Status || '').trim();
+        if (rcIsIssueResolved(res)) return RC_STATUS.RESOLVED;
         return RC_STATUS.INPROGRESS;
     }
-    var latest = rcPickLatestItem(pool);
-    return latest ? rcDisplayStatus(latest) : RC_STATUS.PENDING;
+
+    return RC_STATUS.INPROGRESS;
+}
+
+function rcCanonicalUniqueCallerStatus(msisdn, items) {
+    return rcWorkflowStatusForCaller(msisdn, items);
 }
 
 function rcCallerTreeKind(it, items) {
@@ -393,11 +417,21 @@ function rcIsAssigned(it) {
     return !!(it.AssignedToName || it.AssignedToId || (it.Assigned_To && it.Assigned_To.Title));
 }
 
-function rcDisplayStatus(it) {
+function rcDisplayStatus(it, items) {
+    items = items || rcAllItems;
     if (!it) return RC_STATUS.PENDING;
-    if (rcIsTrulyResolved(it)) return RC_STATUS.RESOLVED;
-    if (rcIsAssigned(it)) return RC_STATUS.INPROGRESS;
-    return RC_STATUS.PENDING;
+    if (rcIsRepeatMsisdn(it.MSISDN)) {
+        return rcWorkflowStatusForCaller(it.MSISDN, items);
+    }
+    if (!rcIsAssigned(it)) return RC_STATUS.PENDING;
+    var cb = String(it.Call_Back_Status || '').trim();
+    if (!cb) return RC_STATUS.INPROGRESS;
+    if (rcIsCallbackNotReachable(cb)) return RC_STATUS.RESOLVED;
+    if (rcIsCallbackReachable(cb)) {
+        if (rcIsIssueResolved(String(it.Resolution_Status || ''))) return RC_STATUS.RESOLVED;
+        return RC_STATUS.INPROGRESS;
+    }
+    return RC_STATUS.INPROGRESS;
 }
 
 function rcRepeatCallersList(items) {
@@ -487,12 +521,7 @@ function rcIsResolvedStatus(s) {
 
 function rcIsTrulyResolved(it) {
     if (!it) return false;
-    var hasDate = !!(it.CompletedDate || it.Resolved_Date);
-    var cb = String(it.Call_Back_Status || '').trim();
-    var res = String(it.Resolution_Status || '').trim();
-    if (hasDate && rcIsResolvedStatus(it.RCStatus)) return true;
-    if (rcIsCallbackReachable(cb) && rcIsIssueResolved(res)) return true;
-    return false;
+    return rcDisplayStatus(it) === RC_STATUS.RESOLVED;
 }
 function rcCanonicalStatus(s) {
     if (rcIsPendingStatus(s)) return RC_STATUS.PENDING;
@@ -1407,42 +1436,37 @@ function rcInjectStyles() {
         '.rc-ms .multiselect-option:hover{background:var(--bg-hover,rgba(148,163,184,.12))}' +
         '.rc-ms .multiselect-option input[type=checkbox]{margin-right:10px;width:15px;height:15px;cursor:pointer;accent-color:var(--acc)}' +
         '.rc-ms .multiselect-option label{cursor:pointer;flex:1;font-size:.8rem;color:var(--t1);margin:0}' +
-        '.rc-cbr{position:relative;overflow:auto;padding:1.25rem 1rem 1rem;background:var(--bg-card);border:1px solid var(--border);border-radius:14px;box-shadow:var(--cs);min-height:420px}' +
+        '.rc-cbr{position:relative;overflow-x:auto;overflow-y:visible;padding:1.5rem 1.25rem 1.25rem;background:var(--bg-card);border:1px solid var(--border);border-radius:14px;box-shadow:var(--cs);min-height:380px}' +
         '.rc-cbr-svg{position:absolute;left:0;top:0;pointer-events:none;z-index:0;overflow:visible}' +
-        '.rc-cbr-head{text-align:center;margin-bottom:1.25rem;position:relative;z-index:1}' +
-        '.rc-cbr-head h3{margin:0;font-size:1.05rem;font-weight:900;color:var(--t1);letter-spacing:-.01em}' +
-        '.rc-cbr-head p{margin:.35rem 0 0;font-size:.78rem;color:var(--t3)}' +
-        '.rc-cbr-grid{position:relative;z-index:1;display:flex;align-items:stretch;gap:0;min-width:900px;width:100%}' +
-        '.rc-cbr-bracket{width:28px;flex-shrink:0;align-self:center;border:2px solid var(--border);border-left:none;margin:0 4px}' +
-        '.rc-cbr-bracket-1{height:180px;border-radius:0 12px 12px 0}' +
-        '.rc-cbr-bracket-2{height:140px;border-radius:0 10px 10px 0}' +
-        '.rc-cbr-bracket-3{height:200px;border-radius:0 10px 10px 0;border-color:var(--acc)}' +
-        '.rc-cbr-col{display:flex;flex-direction:column;gap:12px;justify-content:center;min-width:170px}' +
-        '.rc-cbr-tile{position:relative;background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:.85rem .9rem .75rem;text-align:center;cursor:pointer;transition:transform .15s,box-shadow .15s;box-shadow:var(--cs);overflow:hidden}' +
-        '.rc-cbr-tile:hover{transform:translateY(-1px);box-shadow:var(--ch)}' +
+        '.rc-cbr-head{text-align:center;margin-bottom:1.5rem;position:relative;z-index:1}' +
+        '.rc-cbr-head h3{margin:0;font-size:1.08rem;font-weight:900;color:var(--t1)}' +
+        '.rc-cbr-head p{margin:.4rem 0 0;font-size:.8rem;color:var(--t3)}' +
+        '.rc-cbr-stage{position:relative;z-index:1;display:grid;grid-template-columns:minmax(140px,170px) minmax(160px,190px) minmax(160px,190px) minmax(240px,1fr);grid-template-rows:auto auto;column-gap:56px;row-gap:36px;align-items:center;min-width:820px;padding:.5rem 0 1rem}' +
+        '.rc-cbr-total{grid-column:1;grid-row:1/3;align-self:center;justify-self:center}' +
+        '.rc-cbr-nr{grid-column:2;grid-row:1;justify-self:stretch}' +
+        '.rc-cbr-reach{grid-column:2;grid-row:2;justify-self:stretch}' +
+        '.rc-cbr-nres{grid-column:3;grid-row:1;justify-self:stretch}' +
+        '.rc-cbr-res{grid-column:3;grid-row:2;justify-self:stretch}' +
+        '.rc-cbr-chart-wrap{grid-column:4;grid-row:1/3;align-self:center;min-width:240px;padding-left:.5rem}' +
+        '.rc-cbr-tile{position:relative;background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:1rem 1rem .85rem;text-align:center;cursor:pointer;transition:transform .15s,box-shadow .15s;box-shadow:0 2px 8px rgba(15,23,42,.06);overflow:hidden;min-height:108px;display:flex;flex-direction:column;justify-content:center}' +
+        '.rc-cbr-tile:hover{transform:translateY(-2px);box-shadow:var(--ch)}' +
         '.rc-cbr-tile.rc-cbr-active{box-shadow:0 0 0 3px var(--acc),var(--ch)}' +
-        '.rc-cbr-accent{position:absolute;top:0;left:0;right:0;height:4px;background:var(--grad)}' +
-        '.rc-cbr-total{min-width:150px;align-self:center;padding:1.1rem .95rem}' +
+        '.rc-cbr-accent{position:absolute;top:0;left:0;right:0;height:5px;background:var(--grad)}' +
         '.rc-cbr-total .rc-cbr-accent{background:#1e293b}' +
         '.rc-cbr-nr .rc-cbr-accent{background:#64748b}' +
         '.rc-cbr-reach .rc-cbr-accent{background:#38bdf8}' +
         '.rc-cbr-nres .rc-cbr-accent{background:#6366f1}' +
         '.rc-cbr-res .rc-cbr-accent{background:#0f172a}' +
-        '.rc-cbr-count{font-size:1.75rem;font-weight:900;line-height:1;color:var(--t1);margin-top:.15rem}' +
-        '.rc-cbr-total .rc-cbr-count{font-size:2.1rem}' +
-        '.rc-cbr-label{font-size:.72rem;font-weight:800;color:var(--t1);margin-top:.35rem;text-transform:capitalize}' +
-        '.rc-cbr-pct{font-size:.68rem;font-weight:700;color:var(--t2);margin-top:.45rem;line-height:1.35}' +
-        '.rc-cbr-sub{font-size:.62rem;color:var(--t3);margin-top:.15rem;line-height:1.3}' +
-        '.rc-cbr-chart-wrap{flex:1;min-width:220px;display:flex;flex-direction:column;justify-content:center;padding:.25rem .5rem}' +
-        '.rc-cbr-chart-title{font-size:.78rem;font-weight:800;color:var(--t1);margin-bottom:.5rem;text-align:center}' +
-        '.rc-cbr-chart-body{height:220px;position:relative}' +
-        '.rc-cbr-await{margin-top:.75rem;padding:.55rem .75rem;background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.25);border-radius:8px;font-size:.72rem;color:var(--t2);position:relative;z-index:1}' +
+        '.rc-cbr-count{font-size:2rem;font-weight:900;line-height:1;color:var(--t1);margin-top:.2rem}' +
+        '.rc-cbr-total .rc-cbr-count{font-size:2.35rem}' +
+        '.rc-cbr-label{font-size:.76rem;font-weight:800;color:var(--t1);margin-top:.4rem}' +
+        '.rc-cbr-desc{font-size:.68rem;color:var(--t2);margin-top:.5rem;line-height:1.45;font-weight:500}' +
+        '.rc-cbr-total .rc-cbr-desc{font-size:.72rem;color:var(--t3)}' +
+        '.rc-cbr-chart-title{font-size:.82rem;font-weight:800;color:var(--t1);margin-bottom:.65rem;text-align:left}' +
+        '.rc-cbr-chart-body{height:240px;position:relative}' +
+        '.rc-cbr-await{margin-top:.25rem;padding:.6rem .85rem;background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.22);border-radius:8px;font-size:.74rem;color:var(--t2);position:relative;z-index:1}' +
         '.rc-cbr-link{color:var(--acc);font-weight:700;cursor:pointer;text-decoration:underline}' +
-        '.rc-cbr-findings{display:flex;gap:1rem;margin-top:1rem;padding-top:.85rem;border-top:2px solid var(--border);position:relative;z-index:1;align-items:flex-start}' +
-        '.rc-cbr-findings-label{font-size:.62rem;font-weight:900;letter-spacing:.06em;text-transform:uppercase;color:var(--t1);writing-mode:vertical-rl;transform:rotate(180deg);flex-shrink:0;padding:.25rem 0}' +
-        '.rc-cbr-findings-list{margin:0;padding-left:1.15rem;font-size:.72rem;color:var(--t2);line-height:1.55}' +
-        '.rc-cbr-findings-list li{margin-bottom:.35rem}' +
-        '@media(max-width:1100px){.rc-cbr-grid{flex-wrap:wrap;min-width:0}.rc-cbr-bracket{display:none}.rc-cbr-chart-wrap{flex:1 1 100%;min-width:0}}';
+        '@media(max-width:1100px){.rc-cbr-stage{grid-template-columns:1fr 1fr;min-width:0;column-gap:20px}.rc-cbr-total{grid-column:1/3;grid-row:1}.rc-cbr-nr{grid-column:1;grid-row:2}.rc-cbr-reach{grid-column:2;grid-row:2}.rc-cbr-nres{grid-column:1;grid-row:3}.rc-cbr-res{grid-column:2;grid-row:3}.rc-cbr-chart-wrap{grid-column:1/3;grid-row:4}}';
     document.head.appendChild(s);
 }
 
@@ -2482,7 +2506,7 @@ function rcTopNPairs(map, n) {
     return keys.slice(0, n).map(function (k) { return { label: k, count: map[k] }; });
 }
 
-function rcCbrTile(id, cls, label, count, pctText, subText, filterNode, filterValue) {
+function rcCbrTile(id, cls, label, count, desc, filterNode, filterValue) {
     filterNode = filterNode || id;
     filterValue = filterValue != null ? filterValue : '';
     var active = (rcTreeFilter.node === filterNode && (rcTreeFilter.value || '') === filterValue) ? ' rc-cbr-active' : '';
@@ -2490,34 +2514,25 @@ function rcCbrTile(id, cls, label, count, pctText, subText, filterNode, filterVa
         '<div class="rc-cbr-accent"></div>' +
         '<div class="rc-cbr-count">' + rcEsc(String(count)) + '</div>' +
         '<div class="rc-cbr-label">' + rcEsc(label) + '</div>' +
-        (pctText ? '<div class="rc-cbr-pct">' + rcEsc(pctText) + '</div>' : '') +
-        (subText ? '<div class="rc-cbr-sub">' + rcEsc(subText) + '</div>' : '') +
+        (desc ? '<div class="rc-cbr-desc">' + rcEsc(desc) + '</div>' : '') +
         '</div>';
 }
 
 function rcContactTreeHTML(items) {
     var d = rcBuildContactTreeData(items);
     var total = d.total || 0;
-    var findings = rcCallbackKeyFindings(d);
     return '<div class="rc-cbr" id="rcTreeBoard">' +
         '<svg class="rc-cbr-svg" id="rcTreeSvg" aria-hidden="true"></svg>' +
         '<div class="rc-cbr-head">' +
             '<h3>Repeated Calls — Callback Report</h3>' +
             '<p>Customers who contacted us more than twice</p>' +
         '</div>' +
-        '<div class="rc-cbr-grid">' +
-            rcCbrTile('root', 'rc-cbr-total', 'Repeat callers', total, '100%', 'Contacted us more than twice') +
-            '<div class="rc-cbr-bracket rc-cbr-bracket-1"></div>' +
-            '<div class="rc-cbr-col rc-cbr-col-mid">' +
-                rcCbrTile('nr', 'rc-cbr-nr', 'Not Reachable', d.notReachable, rcPct(d.notReachable, total) + '% of repeat customers', 'were not reachable.') +
-                rcCbrTile('reach', 'rc-cbr-reach', 'Reachable', d.reachable, rcPct(d.reachable, total) + '% of repeat customers', 'were reachable.') +
-            '</div>' +
-            '<div class="rc-cbr-bracket rc-cbr-bracket-2"></div>' +
-            '<div class="rc-cbr-col rc-cbr-col-res">' +
-                rcCbrTile('nres', 'rc-cbr-nres', 'Not Resolved', d.notResolved, rcPct(d.notResolved, d.reachable) + '% of reachable', 'issues not resolved.') +
-                rcCbrTile('resolved', 'rc-cbr-res', 'Resolved', d.resolved, rcPct(d.resolved, d.reachable) + '% of reachable', 'cases resolved.') +
-            '</div>' +
-            '<div class="rc-cbr-bracket rc-cbr-bracket-3"></div>' +
+        '<div class="rc-cbr-stage">' +
+            rcCbrTile('root', 'rc-cbr-total', 'Repeat callers', total, '100% · Contacted us more than twice') +
+            rcCbrTile('nr', 'rc-cbr-nr', 'Not Reachable', d.notReachable, rcPct(d.notReachable, total) + '% of repeat customers were not reachable.') +
+            rcCbrTile('reach', 'rc-cbr-reach', 'Reachable', d.reachable, rcPct(d.reachable, total) + '% of repeat customers were reachable.') +
+            rcCbrTile('nres', 'rc-cbr-nres', 'Not Resolved', d.notResolved, rcPct(d.notResolved, d.reachable) + '% of reachable · issues not resolved.') +
+            rcCbrTile('resolved', 'rc-cbr-res', 'Resolved', d.resolved, rcPct(d.resolved, d.reachable) + '% of reachable · cases resolved.') +
             '<div class="rc-cbr-chart-wrap">' +
                 '<div class="rc-cbr-chart-title">Unresolved Cases Breakdown</div>' +
                 '<div class="rc-cbr-chart-body"><canvas id="rcChartCallbackBreakdown"></canvas></div>' +
@@ -2525,11 +2540,8 @@ function rcContactTreeHTML(items) {
         '</div>' +
         (d.awaitingCallback ? '<div class="rc-cbr-await">' + d.awaitingCallback + ' repeat caller(s) awaiting callback capture · ' +
             '<span class="rc-cbr-link" data-rc-node="awaiting" data-rc-filter-node="awaiting" role="button">Show in grid</span></div>' : '') +
-        (d.reachableOpen ? '<div class="rc-cbr-await">' + d.reachableOpen + ' reachable caller(s) awaiting resolution status.</div>' : '') +
-        '<div class="rc-cbr-findings">' +
-            '<div class="rc-cbr-findings-label">Key<br>Findings</div>' +
-            '<ol class="rc-cbr-findings-list">' + findings.map(function (f) { return '<li>' + rcEsc(f) + '</li>'; }).join('') + '</ol>' +
-        '</div>' +
+        (d.reachableOpen ? '<div class="rc-cbr-await">' + d.reachableOpen + ' reachable caller(s) awaiting resolution status · ' +
+            '<span class="rc-cbr-link" data-rc-node="reach" data-rc-filter-node="reach" role="button">Show in grid</span></div>' : '') +
     '</div>';
 }
 
@@ -2614,27 +2626,28 @@ window.rcPaintContactTree = function () {
         if (color === amber) return 'url(#rcArrowHeadAmber)';
         return 'url(#rcArrowHead)';
     }
-    function connect(fromId, toId, color) {
+    function connect(fromId, toId, color, strokeW) {
         var a = node(fromId), b = node(toId);
         if (!a || !b) return;
         color = color || acc;
+        strokeW = strokeW || 4;
         var p1 = rcTreeAnchor(board, a, 'right');
         var p2 = rcTreeAnchor(board, b, 'left');
-        var mx = (p1.x + p2.x) / 2;
+        var mx = p1.x + (p2.x - p1.x) * 0.55;
         var path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
         path.setAttribute('d', 'M ' + p1.x + ' ' + p1.y + ' C ' + mx + ' ' + p1.y + ', ' + mx + ' ' + p2.y + ', ' + p2.x + ' ' + p2.y);
         path.setAttribute('fill', 'none');
         path.setAttribute('stroke', color);
-        path.setAttribute('stroke-width', '3.25');
+        path.setAttribute('stroke-width', String(strokeW));
         path.setAttribute('stroke-linecap', 'round');
         path.setAttribute('marker-end', markerFor(color));
         svg.appendChild(path);
     }
 
-    connect('root', 'nr', slate);
-    connect('root', 'reach', acc);
-    connect('reach', 'resolved', acc2);
-    connect('reach', 'nres', slate);
+    connect('root', 'nr', slate, 4.5);
+    connect('root', 'reach', acc, 4.5);
+    connect('reach', 'nres', slate, 4);
+    connect('reach', 'resolved', acc2, 4);
     var chartWrap = board.querySelector('.rc-cbr-chart-wrap');
     if (chartWrap && node('nres')) {
         var br = board.getBoundingClientRect();
@@ -3226,9 +3239,9 @@ function rcDashboardMainHTML(dateFiltered, items, s, gridItems) {
     return '<div class="top-stats">' +
             rcKpiTile('Repeat Call Volume', s.repeatCalls, 'Total calls from 3+ repeaters', '#ef4444', 'volume') +
             rcKpiTile('Repeat Callers', s.repeatCallers, 'Pending + In Progress + Resolved = ' + statusSum, '#f59e0b', 'callers') +
-            rcKpiTile('Pending', s.pending, 'Unique repeat callers · not assigned', rcStatusColor(RC_STATUS.PENDING), 'pending') +
-            rcKpiTile('In Progress', s.inprogress, 'Unique repeat callers · assigned', rcStatusColor(RC_STATUS.INPROGRESS), 'inprogress') +
-            rcKpiTile('Resolved', s.completed, 'Unique repeat callers · done', rcStatusColor(RC_STATUS.RESOLVED), 'resolved') +
+            rcKpiTile('Pending', s.pending, 'Not assigned to an agent yet', rcStatusColor(RC_STATUS.PENDING), 'pending') +
+            rcKpiTile('In Progress', s.inprogress, 'Assigned · callback/resolution incomplete', rcStatusColor(RC_STATUS.INPROGRESS), 'inprogress') +
+            rcKpiTile('Resolved', s.completed, 'Not reachable OR reachable + issue resolved', rcStatusColor(RC_STATUS.RESOLVED), 'resolved') +
         '</div>' +
         '<div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin:1rem 0;">' +
             '<button type="button" id="rcToggleRepeatBtn" class="export-btn" onclick="rcToggleRepeatCallers()" style="padding:12px 20px;font-size:14px;">' +
