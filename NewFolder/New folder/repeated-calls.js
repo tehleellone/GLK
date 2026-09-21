@@ -219,10 +219,10 @@ function rcDedupeUniqueCallers(items) {
 
 function rcPickRepresentativeCallerRow(pool) {
     if (!pool || !pool.length) return null;
-    var inProg = pool.filter(function (it) { return rcDisplayStatus(it) === RC_STATUS.INPROGRESS; });
-    if (inProg.length) return rcPickLatestItem(inProg);
-    var pending = pool.filter(function (it) { return rcDisplayStatus(it) === RC_STATUS.PENDING; });
-    if (pending.length) return rcPickLatestItem(pending);
+    var withCb = pool.filter(function (it) { return String(it.Call_Back_Status || '').trim(); });
+    if (withCb.length) return rcPickLatestItem(withCb);
+    var assigned = pool.filter(function (it) { return rcIsAssigned(it); });
+    if (assigned.length) return rcPickLatestItem(assigned);
     return rcPickLatestItem(pool);
 }
 
