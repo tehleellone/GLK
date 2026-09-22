@@ -299,6 +299,7 @@ html:fullscreen,html:-webkit-full-screen{
 .content{flex:1;overflow-y:auto;min-width:0;background:var(--bg-content);padding:1.1rem 1.25rem;width:100%;box-sizing:border-box}
 .content.mq-view{padding:1rem 1.25rem;width:100%;max-width:100%}
 .portal-shell.mq-full{max-width:none;width:100%;margin:0}
+#dashboard-view{width:100%;max-width:100%;margin:0;box-sizing:border-box}
 #mobile-qtd-view{width:100%;max-width:100%;margin:0;padding:0;box-sizing:border-box}
 #revenue-rec-view{width:100%;max-width:100%;margin:0;padding:0;box-sizing:border-box}
 .rr-chart-tabs{display:flex;gap:.55rem;flex-wrap:wrap;margin-bottom:1rem}
@@ -5453,8 +5454,8 @@ function glkShowDashboard(){
   glkHideAllMainViews();
   var dv=el('dashboard-view'); if(dv) dv.style.display='block';
   var tn=el('table-nav'); if(tn) tn.style.display='block';
-  var ct=el('content'); if(ct) ct.classList.remove('mq-view');
-  var dc=el('dashboardContent'); if(dc) dc.classList.remove('mq-full');
+  var ct=el('content'); if(ct) ct.classList.add('mq-view');
+  var dc=el('dashboardContent'); if(dc) dc.classList.add('mq-full');
   glkSetActiveNav('navDashboard');
   if(!window._glkPipelineReady){
     glkShowDashboardLoading(window._glkPipelineLoading?'Loading pipeline from SharePoint…':'Loading pipeline from SharePoint…');
@@ -10866,7 +10867,7 @@ function rrShouldLabelPoint(kind,dataIndex,projIdx,lastActIdx,truncateIdx,isCumu
     return true;
   }
   if(isCumulative&&(kind==='forecast'||kind==='forecast-up')){
-    if(anchorIdx>=0&&dataIndex<=anchorIdx) return false;
+    if(anchorIdx>=0&&dataIndex<anchorIdx) return false;
     return true;
   }
   if(kind==='forecast'||kind==='forecast-up'){
@@ -11429,7 +11430,7 @@ function rrKpiCalcRow(label,val,fmt,prefix){
   var cls=prefix==='minus'?' rr-kpi-calc-minus':'';
   return '<div class="rr-kpi-calc-row'+cls+'"><span>'+label+'</span><span>'+p+disp+'</span></div>';
 }
-function rrKpiFixedExcelProj(title,cls,monthLbl,qLbl,parts,addonKey,qAddonKey,totalKey,fmt){
+function rrKpiFixedExcelProj(title,cls,monthLbl,qLbl,parts,addonKey,qAddonKey,totalKey,fmt,isCumulative){
   var unit=fmt==='lines'?' lines':'';
   var addon=parts[addonKey];
   var qAddon=parts[qAddonKey];
@@ -11437,16 +11438,16 @@ function rrKpiFixedExcelProj(title,cls,monthLbl,qLbl,parts,addonKey,qAddonKey,to
   var qTotal=parts[totalKey];
   var h='<div class="rr-kpi-proj rr-kpi-proj-'+cls+'"><div class="rr-kpi-proj-title">'+title+'</div>';
   if(monthTotal!=null){
-    h+='<div class="rr-kpi-proj-hdr">Month'+(monthLbl?' · '+monthLbl:'')+'</div>';
-    h+=rrKpiCalcRow('Actual to date',parts.curAct,fmt,'plain');
+    h+='<div class="rr-kpi-proj-hdr">'+(isCumulative?'YTD month-end':'Month')+(monthLbl?' · '+monthLbl:'')+'</div>';
+    h+=rrKpiCalcRow(isCumulative?'YTD actual to date':'Actual to date',parts.curAct,fmt,'plain');
     h+=rrKpiCalcRow('Current addition',addon,fmt,'plus');
-    h+='<div class="rr-kpi-calc-eq"><span>Month total</span><span>'+rrFmtShort(monthTotal,fmt)+unit+'</span></div>';
+    h+='<div class="rr-kpi-calc-eq"><span>'+(isCumulative?'YTD month-end':'Month total')+'</span><span>'+rrFmtShort(monthTotal,fmt)+unit+'</span></div>';
   }
   if(qTotal!=null){
-    h+='<div class="rr-kpi-proj-hdr">Quarter · '+qLbl+'</div>';
-    h+=rrKpiCalcRow('Quarter to date',parts.qActFull,fmt,'plain');
+    h+='<div class="rr-kpi-proj-hdr">'+(isCumulative?'YTD quarter-end':'Quarter')+' · '+qLbl+'</div>';
+    h+=rrKpiCalcRow(isCumulative?'YTD actual to date':'Actual to date',parts.qActFull,fmt,'plain');
     h+=rrKpiCalcRow('Forecast to quarter-end',qAddon,fmt,'plus');
-    h+='<div class="rr-kpi-calc-eq"><span>Quarter total</span><span>'+rrFmtShort(qTotal,fmt)+unit+'</span></div>';
+    h+='<div class="rr-kpi-calc-eq"><span>'+(isCumulative?'YTD quarter-end':'Quarter total')+'</span><span>'+rrFmtShort(qTotal,fmt)+unit+'</span></div>';
   }
   h+='</div>';
   return h;
@@ -11464,7 +11465,12 @@ function rrKpiProjBlock(title,cls,parts,fmt){
   h+='</div>';
   return h;
 }
-function rrCeoTrendKpis(def,data){
+function rrCumulativeAtMonth(vals,idx){
+  if(!vals||idx<0) return null;
+  var cum=rrCumulativeSeries(vals);
+  return cum[idx]!=null&&!isNaN(cum[idx])?num(cum[idx]):null;
+}
+function rrCeoTrendKpis(def,data,isCumulative){
   if(!data||!data.series) return [];
   var fmt=def.valueFmt;
   var unit=fmt==='lines'?' lines':'';
@@ -11484,31 +11490,51 @@ function rrCeoTrendKpis(def,data){
   var prevActual=null;
   for(var q=0;q<=calQ;q++){
     var isCurrent=(q===calQ);
-    var qAct=isCurrent?rrSumQuarterActual(vals,q,lastActIdx):rrSumQuarter(vals,q);
+    var qEnd=Math.min((q+1)*3-1,vals.length-1);
+    if(isCurrent&&lastActIdx>=0&&lastActIdx<q*3) continue;
+    if(isCurrent&&lastActIdx>=0) qEnd=lastActIdx;
+    var qAct=isCumulative?rrCumulativeAtMonth(vals,qEnd):((isCurrent?rrSumQuarterActual(vals,q,lastActIdx):rrSumQuarter(vals,q)));
     if(qAct==null) continue;
-    var chip=prevActual!=null?rrFmtPctChip(rrPctChange(qAct,prevActual),'vs Q'+q):'';
+    var chip=prevActual!=null?rrFmtPctChip(rrPctChange(qAct,prevActual),(isCumulative?'vs prior milestone':'vs Q'+q)):'';
     var yoyExtra='';
-    if(isCurrent&&prior){
+    if(isCurrent&&prior&&!isCumulative){
       var qPrior=rrSumQuarter(prior.data||[],q);
       if(qPrior!=null){
         var yoy=rrPctChange(qAct,qPrior);
         if(yoy!=null) yoyExtra=' · YoY '+((yoy>=0?'+':'')+yoy.toFixed(1)+'%');
       }
     }
-    var qLbl='Q'+(q+1)+(isCurrent?' <span class="rr-kpi-curr">Current quarter</span>':'');
-    var qNote=isCurrent?'actual to date':'actual';
+    var qLbl='Q'+(q+1)+(isCurrent?' <span class="rr-kpi-curr">'+(isCumulative?'YTD live':'Current quarter')+'</span>':'');
+    var qNote=isCumulative?(isCurrent?'running total':'YTD at quarter-end'):(isCurrent?'actual to date':'actual');
     lines.push('<div class="rr-kpi-line"><span class="rr-kpi-q">'+qLbl+'</span><span class="rr-kpi-amt">'+rrFmtShort(qAct,fmt)+unit+'</span><span class="rr-kpi-note">'+qNote+'</span>'+chip+(yoyExtra?'<span class="rr-kpi-note">'+yoyExtra+'</span>':'')+'</div>');
     prevActual=qAct;
   }
   var projTile=null;
   if(parts&&parts.excelOnly&&(def.id==='fixedMrc'||def.id==='netAddLines')){
     var qLblProj=parts.qLabel||('Q'+(parts.calQ+1));
-    var projHtml='';
-    if(parts.monthMl!=null||parts.quarterMl!=null){
-      projHtml+=rrKpiFixedExcelProj('Most Likely','ml',parts.monthLbl,qLblProj,parts,'mlAddon','qMlAddon','quarterMl',fmt);
+    var projParts=parts;
+    if(isCumulative){
+      projParts=Object.assign({},parts);
+      var cumNow=rrCumulativeAtMonth(vals,lastActIdx);
+      var qStartIdx=calQ*3;
+      var cumQStart=qStartIdx>0?rrCumulativeAtMonth(vals,qStartIdx-1):0;
+      if(cumNow!=null){
+        projParts.curAct=cumNow;
+        projParts.qActFull=cumNow;
+        if(projParts.mlAddon!=null) projParts.monthMl=cumNow+projParts.mlAddon;
+        if(projParts.upAddon!=null) projParts.monthUp=cumNow+projParts.upAddon;
+      }
+      if(cumQStart!=null){
+        if(projParts.quarterMl!=null) projParts.quarterMl=cumQStart+projParts.quarterMl;
+        if(projParts.quarterUp!=null) projParts.quarterUp=cumQStart+projParts.quarterUp;
+      }
     }
-    if(parts.monthUp!=null||parts.quarterUp!=null){
-      projHtml+=rrKpiFixedExcelProj('Upside','up',parts.monthLbl,qLblProj,parts,'upAddon','qUpAddon','quarterUp',fmt);
+    var projHtml='';
+    if(projParts.monthMl!=null||projParts.quarterMl!=null){
+      projHtml+=rrKpiFixedExcelProj('Most Likely','ml',projParts.monthLbl,qLblProj,projParts,'mlAddon','qMlAddon','quarterMl',fmt,isCumulative);
+    }
+    if(projParts.monthUp!=null||parts.quarterUp!=null){
+      projHtml+=rrKpiFixedExcelProj('Upside','up',projParts.monthLbl,qLblProj,projParts,'upAddon','qUpAddon','quarterUp',fmt,isCumulative);
     }
     if(projHtml) projTile={kind:'proj-grid',html:'<div class="rr-kpi-proj-grid">'+projHtml+'</div>'};
   }else if(parts&&parts.qAct!=null){
@@ -11519,20 +11545,31 @@ function rrCeoTrendKpis(def,data){
       lines.push(rrKpiProjBlock('Upside Projection','up',{qAct:parts.qAct,forward:parts.forwardUp,churn:parts.churnUp,total:parts.totalUp,actLabel:parts.actLabel,fwdLabel:parts.fwdLabelUp||parts.fwdLabel,excelOnly:parts.excelOnly},fmt));
     }
   }
-  var tiles=[{kind:'hero',html:'<div class="rr-kpi-label">Quarterly Snapshot · '+['Q1','Q2','Q3','Q4'][calQ]+' live</div><div class="rr-kpi-lines">'+lines.join('')+'</div>'}];
+  var heroLbl=isCumulative
+    ?('YTD Running Total · '+((data.labels&&lastActIdx>=0&&data.labels[lastActIdx])||['Q1','Q2','Q3','Q4'][calQ])+' live')
+    :('Quarterly Snapshot · '+['Q1','Q2','Q3','Q4'][calQ]+' live');
+  var tiles=[{kind:'hero',html:'<div class="rr-kpi-label">'+heroLbl+'</div><div class="rr-kpi-lines">'+lines.join('')+'</div>'}];
   if(projTile) tiles.push(projTile);
   if(lastActIdx>=0&&lastAct.val!=null){
     var monthLbl=(data.labels&&data.labels[lastActIdx])||('Month '+(lastActIdx+1));
-    var prevVal=lastActIdx>0?vals[lastActIdx-1]:null;
-    var momChip=prevVal!=null?rrFmtPctChip(rrPctChange(lastAct.val,prevVal),'MoM'):'';
+    var displayVal=isCumulative?rrCumulativeAtMonth(vals,lastActIdx):lastAct.val;
+    var prevVal=isCumulative?(lastActIdx>0?rrCumulativeAtMonth(vals,lastActIdx-1):null):(lastActIdx>0?vals[lastActIdx-1]:null);
+    var momChip=prevVal!=null&&displayVal!=null?rrFmtPctChip(rrPctChange(displayVal,prevVal),(isCumulative?'vs prior month YTD':'MoM')):'';
     var mlMonth='';
     if(parts&&parts.excelOnly&&(def.id==='fixedMrc'||def.id==='netAddLines')){
-      if(parts.monthMl!=null) mlMonth+=' · ML: <strong style="color:#7c3aed">'+rrFmtShort(parts.monthMl,fmt)+'</strong>';
-      if(parts.monthUp!=null) mlMonth+=' · Upside: <strong style="color:#16a34a">'+rrFmtShort(parts.monthUp,fmt)+'</strong>';
+      var cumNow=displayVal;
+      var mlYtd=(isCumulative&&cumNow!=null&&parts.mlAddon!=null)?cumNow+parts.mlAddon:parts.monthMl;
+      var upYtd=(isCumulative&&cumNow!=null&&parts.upAddon!=null)?cumNow+parts.upAddon:parts.monthUp;
+      if(mlYtd!=null) mlMonth+=' · ML'+(isCumulative?' YTD':'')+': <strong style="color:#7c3aed">'+rrFmtShort(mlYtd,fmt)+'</strong>';
+      if(upYtd!=null) mlMonth+=' · Upside'+(isCumulative?' YTD':'')+': <strong style="color:#16a34a">'+rrFmtShort(upYtd,fmt)+'</strong>';
       if(parts.quarterMl!=null||parts.quarterUp!=null){
+        var qStartIdx=calQ*3;
+        var cumQStart=qStartIdx>0?rrCumulativeAtMonth(vals,qStartIdx-1):0;
+        var qMlYtd=(isCumulative&&cumQStart!=null&&parts.quarterMl!=null)?cumQStart+parts.quarterMl:parts.quarterMl;
+        var qUpYtd=(isCumulative&&cumQStart!=null&&parts.quarterUp!=null)?cumQStart+parts.quarterUp:parts.quarterUp;
         mlMonth+='<div style="font-size:.68rem;margin-top:.25rem;color:var(--t2);">';
-        if(parts.quarterMl!=null) mlMonth+='Q proj ML: <strong style="color:#7c3aed">'+rrFmtShort(parts.quarterMl,fmt)+'</strong> ';
-        if(parts.quarterUp!=null) mlMonth+='Upside: <strong style="color:#16a34a">'+rrFmtShort(parts.quarterUp,fmt)+'</strong>';
+        if(qMlYtd!=null) mlMonth+=(isCumulative?'YTD Q-end ML':'Q proj ML')+': <strong style="color:#7c3aed">'+rrFmtShort(qMlYtd,fmt)+'</strong> ';
+        if(qUpYtd!=null) mlMonth+='Upside: <strong style="color:#16a34a">'+rrFmtShort(qUpYtd,fmt)+'</strong>';
         mlMonth+='</div>';
       }
     }else if(def.id==='fixedMrc'&&fcMl&&fcMl.data[lastActIdx]!=null&&lastAct.val!=null){
@@ -11541,20 +11578,22 @@ function rrCeoTrendKpis(def,data){
     }else if(fcMl&&fcMl.data[lastActIdx]!=null&&fcMl.data[lastActIdx]!==lastAct.val){
       mlMonth=' · ML: <strong style="color:#7c3aed">'+rrFmtShort(fcMl.data[lastActIdx],fmt)+unit+'</strong>';
     }
+    var latestLbl=isCumulative?('YTD Through · '+monthLbl):('Latest Month · '+monthLbl);
+    var latestSub=isCumulative?'Running total'+(momChip?' · '+momChip:'')+mlMonth:'Actual'+(momChip?' · '+momChip:'')+mlMonth;
     tiles.push({
       kind:'compact',
-      html:'<div class="rr-kpi-label">Latest Month · '+monthLbl+'</div>'+
-        '<div class="rr-kpi-val">'+rrFmtShort(lastAct.val,fmt)+unit+'</div>'+
-        '<div class="rr-kpi-sub">Actual'+(momChip?' · '+momChip:'')+mlMonth+'</div>'
+      html:'<div class="rr-kpi-label">'+latestLbl+'</div>'+
+        '<div class="rr-kpi-val">'+rrFmtShort(displayVal,fmt)+unit+'</div>'+
+        '<div class="rr-kpi-sub">'+latestSub+'</div>'
     });
   }
   return tiles;
 }
-function rrComputeKpis(def,data){
+function rrComputeKpis(def,data,isCumulative){
   var kpis=[];
   if(!data||!data.series) return kpis;
   if(def.id==='netAddLines'||def.id==='fixedMrc'){
-    return rrCeoTrendKpis(def,data);
+    return rrCeoTrendKpis(def,data,!!isCumulative);
   }
   if(def.id==='revRecTrend'){
     var s25=data.series.find(function(s){return s.label.indexOf('2025')>=0;});
@@ -11602,10 +11641,10 @@ function rrComputeKpis(def,data){
   }
   return kpis;
 }
-function rrRenderKpis(def,data){
+function rrRenderKpis(def,data,isCumulative){
   var row=el('rrKpiRow');
   if(!row) return;
-  var kpis=rrComputeKpis(def,data);
+  var kpis=rrComputeKpis(def,data,isCumulative);
   if(!kpis.length){ row.innerHTML=''; row.className='rr-kpi-row'; return; }
   var isCeo=def.id==='netAddLines'||def.id==='fixedMrc';
   row.className='rr-kpi-row'+(isCeo?' rr-kpi-row-ceo':'');
@@ -11648,10 +11687,12 @@ function rrApplyCumulativeChartData(data,rawProj,rawMonthly){
   var truncateIdx=rawProj._truncateActualIdx!=null?rawProj._truncateActualIdx:-1;
   var rawActual=(rawMonthly.series||[]).find(function(s){return s.col==='C';});
   if(!rawActual) rawActual=(rawMonthly.series||[]).find(function(s){return rrClassifySeries(s.label)==='actual';});
-  var cumAct=rrCumulativeSeries((rawActual&&rawActual.data)||[]);
-  var anchorIdx=truncateIdx>0?truncateIdx-1:rrLastIdxWithValue(cumAct);
+  var rawActData=(rawActual&&rawActual.data)||[];
+  var cumAct=rrCumulativeSeries(rawActData);
+  var lastActIdx=rrLastIdxWithValue(cumAct);
+  var anchorIdx=lastActIdx;
   var baseCum=anchorIdx>=0&&cumAct[anchorIdx]!=null?num(cumAct[anchorIdx]):0;
-  var projStart=truncateIdx>=0?truncateIdx:anchorIdx+1;
+  var projStart=truncateIdx>=0?truncateIdx:(anchorIdx>=0?anchorIdx+1:0);
 
   copy.series.forEach(function(s){
     var kind=rrSeriesKindFor(s,'');
@@ -11661,18 +11702,21 @@ function rrApplyCumulativeChartData(data,rawProj,rawMonthly){
     if(kind==='prior'){
       out=rrCumulativeSeries(bridged);
     }else if(kind==='actual'){
-      for(var i=0;i<bridged.length;i++){
-        if(truncateIdx>=0&&i>=truncateIdx) continue;
+      for(var i=0;i<=lastActIdx&&i<cumAct.length;i++){
         if(cumAct[i]!=null) out[i]=cumAct[i];
       }
     }else if(kind==='forecast'||kind==='forecast-up'){
-      if(anchorIdx>=0) out[anchorIdx]=baseCum;
+      if(anchorIdx>0&&cumAct[anchorIdx-1]!=null) out[anchorIdx-1]=num(cumAct[anchorIdx-1]);
+      if(anchorIdx>=0&&projStart>anchorIdx) out[anchorIdx]=baseCum;
       var run=baseCum;
       for(var j=projStart;j<bridged.length;j++){
-        if(bridged[j]!=null&&!isNaN(bridged[j])){
-          run+=num(bridged[j]);
-          out[j]=run;
+        if(bridged[j]==null||isNaN(bridged[j])) continue;
+        var increment=num(bridged[j]);
+        if(truncateIdx>=0&&j===truncateIdx&&rawActData[j]!=null&&!isNaN(rawActData[j])){
+          increment=Math.max(0,num(bridged[j])-num(rawActData[j]));
         }
+        run+=increment;
+        out[j]=run;
       }
     }else{
       out=rrCumulativeSeries(bridged);
@@ -11681,6 +11725,7 @@ function rrApplyCumulativeChartData(data,rawProj,rawMonthly){
     s.bridged=out;
   });
   copy._cumulative=true;
+  copy._cumAnchorIdx=anchorIdx;
   return copy;
 }
 function rrFmtMonth(v){
@@ -11970,7 +12015,7 @@ function rrRenderActiveChart(){
     }
   }
   rrRenderLineExplain(def,raw);
-  rrRenderKpis(def,rrTrendRawData(def.id)||raw);
+  rrRenderKpis(def,rrTrendRawData(def.id)||raw,rrTrendHasCumulativeToggle(def.id)&&RR_TREND_CUMULATIVE);
   if(noteEl){
     var churnNote='';
     if(raw&&raw._excelProjectionsOnly){
@@ -12001,7 +12046,7 @@ function rrRenderActiveChart(){
   var isCumulative=!!data._cumulative;
   var projIdx=rrProjectionStartIdx(data.series);
   var lastAct=rrLastActualIdx(data.series);
-  var anchorIdx=isCumulative?(truncateIdx!=null&&truncateIdx>0?truncateIdx-1:lastAct):-1;
+  var anchorIdx=isCumulative?(data._cumAnchorIdx!=null?data._cumAnchorIdx:lastAct):-1;
   if(projBadge) projBadge.style.display=(projIdx>=0&&projIdx>lastAct)?'inline-block':'none';
   var chartSeries=(data.series||[]);
   if(isCumulative&&def.id==='fixedMrc'){
