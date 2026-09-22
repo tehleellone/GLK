@@ -242,13 +242,13 @@ html:fullscreen .ag-tooltip{
 .glk-row-modal-kv{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:.55rem .85rem;font-size:.76rem;}
 .glk-row-modal-kv dt{color:var(--t3);font-weight:700;margin:0;}
 .glk-row-modal-kv dd{margin:0;color:var(--t1);font-weight:600;word-break:break-word;}
-.glk-grid-actions{display:flex;align-items:center;gap:.35rem;height:100%;}
-.glk-grid-eye,.glk-grid-sp{
-  width:28px;height:28px;border-radius:7px;border:1px solid var(--border);background:var(--bg-secondary);
-  display:inline-flex;align-items:center;justify-content:center;cursor:pointer;color:var(--t2);text-decoration:none;
+.glk-grid-actions{display:flex;align-items:center;justify-content:center;height:100%;width:100%;}
+.glk-grid-eye{
+  width:32px;height:32px;border-radius:8px;border:1px solid var(--border);background:var(--bg-secondary);
+  display:inline-flex;align-items:center;justify-content:center;cursor:pointer;color:var(--t2);
 }
-.glk-grid-eye:hover,.glk-grid-sp:hover{border-color:var(--border-s);background:var(--bg-hover);color:var(--acc);}
-.glk-grid-eye svg,.glk-grid-sp svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;}
+.glk-grid-eye:hover{border-color:var(--border-s);background:var(--bg-hover);color:var(--acc);}
+.glk-grid-eye svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;}
 #dashboardContent:fullscreen,#dashboardContent:-webkit-full-screen,
 html:fullscreen,html:-webkit-full-screen{
   width:100%;height:100%;background:var(--bg-body);
@@ -504,9 +504,10 @@ html:fullscreen,html:-webkit-full-screen{
 .stat-label{font-size:.75rem;text-transform:uppercase;letter-spacing:.06em;color:var(--t3);font-weight:700;margin-bottom:.35rem}
 .stat-value{font-size:1.9rem;font-weight:900;line-height:1;color:var(--sc);margin-bottom:.25rem}
 .stat-subtitle{font-size:.76rem;font-weight:600;color:var(--t2)}
-.stat-breakdown{margin-top:.45rem;display:flex;flex-wrap:wrap;gap:.4rem}
-.breakdown-item{display:inline-flex;align-items:center;gap:.2rem;font-size:.7rem}
-.breakdown-label{color:var(--t3)}
+.stat-breakdown{margin-top:.65rem;display:flex;flex-wrap:wrap;gap:.75rem 1.35rem}
+.breakdown-item{display:inline-flex;align-items:baseline;gap:.35rem;font-size:.92rem;font-weight:700}
+.breakdown-label{color:var(--t2);font-weight:700;font-size:.88rem}
+.breakdown-value{color:var(--t1);font-size:1.05rem;font-weight:900}
 .breakdown-value{font-weight:700;color:var(--t2)}
 
 /* ═══════ FILTERS ════════════════════════════════════════════════════════ */
@@ -557,7 +558,7 @@ html:fullscreen,html:-webkit-full-screen{
 
 /* ═══════ HD / AD TILES (= LM TILES from SM) ════════════════════════════ */
 .hd-section,.ad-section{margin-bottom:1rem}
-.hd-grid,.ad-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:.85rem}
+.hd-grid,.ad-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:1rem}
 .lm-tile .lm-progress-section{
   border-top: 1px solid var(--border);
   margin-top:.55rem;
@@ -565,29 +566,34 @@ html:fullscreen,html:-webkit-full-screen{
 }
 .lm-tile{
   background:var(--bg-card);border:1px solid var(--border);border-radius:13px;
-  padding:.9rem 1rem;cursor:pointer;transition:all .2s;box-shadow:var(--cs);
+  padding:1.15rem 1.2rem;min-height:300px;cursor:pointer;transition:all .2s;box-shadow:var(--cs);
   position:relative;overflow:hidden;
 }
 .lm-tile::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--grad)}
 .lm-tile:hover{transform:translateY(-2px);box-shadow:var(--ch);border-color:var(--border-s)}
 .lm-tile.selected{border-color:var(--nab2);background:var(--nab)}
 .lm-header{display:flex;flex-direction:column;gap:.15rem;margin-bottom:.6rem}
-.lm-header h3{font-size:.88rem;font-weight:700;color:var(--t1);line-height:1.2}
-.lm-meta{font-size:.68rem;color:var(--t3)}
-.lm-stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-bottom:.6rem}
-.lm-stat-box{background:var(--bg-secondary);border-radius:7px;padding:.5rem .6rem;border:1px solid var(--border)}
-.lm-stat-label{font-size:.65rem;text-transform:uppercase;color:var(--t3);margin-bottom:.12rem;font-weight:600}
-.lm-stat-value{font-size:1.05rem;font-weight:800;color:var(--sc)}
-.lm-revenue{border-radius:8px;padding:.55rem .7rem;background:var(--grad);color:#fff;margin-bottom:.55rem}
-.lm-revenue-label{font-size:.65rem;text-transform:uppercase;opacity:.82;font-weight:700;margin-bottom:.15rem}
-.lm-revenue-count{font-size:1.05rem;font-weight:900;margin-bottom:.3rem}
-.lm-revenue-breakdown{display:flex;flex-direction:column;gap:.15rem}
+.lm-header h3{font-size:1rem;font-weight:800;color:var(--t1);line-height:1.25}
+.lm-meta{font-size:.74rem;color:var(--t3);font-weight:600}
+.lm-stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:.65rem;margin-bottom:.75rem}
+.lm-stat-box{background:var(--bg-secondary);border-radius:8px;padding:.65rem .75rem;border:1px solid var(--border)}
+.lm-stat-label{font-size:.72rem;text-transform:uppercase;color:var(--t3);margin-bottom:.18rem;font-weight:700}
+.lm-stat-value{font-size:1.25rem;font-weight:900;color:var(--sc)}
+.lm-revenue{border-radius:10px;padding:.85rem .95rem;background:var(--grad);color:#fff;margin-bottom:.65rem}
+.lm-revenue-label{font-size:.72rem;text-transform:uppercase;opacity:.92;font-weight:700;margin-bottom:.2rem}
+.lm-revenue-count{font-size:1.15rem;font-weight:900;margin-bottom:.35rem}
+.lm-status-grid{display:grid;grid-template-columns:1fr 1fr;gap:.55rem .9rem;font-size:.92rem;margin-bottom:.75rem}
+.lm-status-lbl{opacity:.95;font-weight:700;color:#fff}
+.lm-status-val{color:#fff;font-size:1.05rem;font-weight:900}
+.lm-status-val.won{color:#bbf7d0}
+.lm-status-val.lost{color:#fecaca}
+.lm-revenue-breakdown{display:flex;flex-direction:column;gap:.35rem;margin-top:.15rem}
 .lm-revenue-item{display:flex;justify-content:space-between;align-items:center}
-.lm-revenue-item-label{font-size:.66rem;opacity:.8}
-.lm-revenue-item-value{font-size:.72rem;font-weight:700}
+.lm-revenue-item-label{font-size:.82rem;opacity:.95;font-weight:700;color:#fff}
+.lm-revenue-item-value{font-size:1rem;font-weight:800;color:#fff}
 .lm-progress-section{margin-top:.45rem}
 .lm-progress-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:.12rem}
-.lm-progress-label,.lm-progress-value{font-size:.68rem;color:var(--t3)}
+.lm-progress-label,.lm-progress-value{font-size:.76rem;color:var(--t2)}
 .lm-progress-value{font-weight:700}
 .progress-bar{background:var(--bg-secondary);border-radius:20px;height:5px;overflow:hidden;margin-bottom:.4rem}
 .progress-fill{height:100%;border-radius:20px;background:var(--grad);transition:width .5s ease}
@@ -3331,15 +3337,15 @@ function glkTopStatMetricsHtml(grp,isMobile){
     ['TCV',fmt(t.tcv)]
   ];
   return rows.map(function(pair){
-    return '<div style="display:flex;justify-content:space-between;font-size:.82rem;"><span style="color:var(--t3);font-weight:700;">'+pair[0]+'</span><span style="font-weight:800;color:var(--t1);">'+pair[1]+'</span></div>';
+    return '<div style="display:flex;justify-content:space-between;font-size:.86rem;"><span style="color:var(--t2);font-weight:700;">'+pair[0]+'</span><span style="font-weight:800;color:var(--t1);">'+pair[1]+'</span></div>';
   }).join('');
 }
 function glkLmStatusHtml(billed,won,lost,ip){
-  return '<div class="lm-status-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:.35rem .75rem;font-size:.78rem;margin-bottom:.65rem;">'+
-    '<div><span style="color:var(--t3);font-weight:700;">Billed:</span> <strong>'+billed+'</strong></div>'+
-    '<div><span style="color:var(--t3);font-weight:700;">Won:</span> <strong style="color:#16a34a">'+won+'</strong></div>'+
-    '<div><span style="color:var(--t3);font-weight:700;">Lost:</span> <strong style="color:#dc2626">'+lost+'</strong></div>'+
-    '<div><span style="color:var(--t3);font-weight:700;">In progress:</span> <strong>'+ip+'</strong></div></div>';
+  return '<div class="lm-status-grid">'+
+    '<div><span class="lm-status-lbl">Billed:</span> <strong class="lm-status-val">'+billed+'</strong></div>'+
+    '<div><span class="lm-status-lbl">Won:</span> <strong class="lm-status-val won">'+won+'</strong></div>'+
+    '<div><span class="lm-status-lbl">Lost:</span> <strong class="lm-status-val lost">'+lost+'</strong></div>'+
+    '<div><span class="lm-status-lbl">In progress:</span> <strong class="lm-status-val">'+ip+'</strong></div></div>';
 }
 function glkLmMetricBreakdownHtml(bids,isMobile){
   var t=glkTileMetricTotals(bids);
@@ -3977,6 +3983,7 @@ function updateTopStats(){
   }
 
   const total=baseBids.length;
+  const pct=n=>total?((n/total)*100).toFixed(1)+'%':'0%';
 
   const ongoingStatuses=['Lead','Opportunity','Proposed','Won','On Hold'];
   const ongoing=baseBids.filter(b=>ongoingStatuses.includes(b.status));
@@ -4017,9 +4024,9 @@ function updateTopStats(){
       const cnt=grp.length;
       card.innerHTML=`
         <div class="stat-label">${td.label}</div>
-        <div class="stat-value" style="color:${td.color}">${cnt}</div>
-        <div class="stat-subtitle">Count</div>
-        <div style="margin-top:.5rem;display:flex;flex-direction:column;gap:.35rem;">
+        <div class="stat-value" style="color:${td.color}">${pct(cnt)}</div>
+        <div class="stat-subtitle">${cnt} ${td.label.toLowerCase()}</div>
+        <div style="margin-top:.5rem;display:flex;flex-direction:column;gap:.4rem;">
           ${glkTopStatMetricsHtml(grp,isMobile)}
         </div>`;
       card.onclick=()=>toggleStatusTile(td.key);
@@ -5185,19 +5192,22 @@ var GLK_BID_DETAIL_FIELDS=[
   {k:'comments',l:'Comments/Remarks'},{k:'prepaidPostpaid',l:'Pre/Postpaid'},{k:'modified',l:'Modified',date:true}
 ];
 function glkFormatBidDetailVal(bid,field){
-  var v=bid[field.key];
+  var fk=field.k||field.key;
+  var v=bid[fk];
   if(v==null||v==='') return '—';
   if(field.date) return fmtDate(v);
   if(field.money) return fmt(v);
-  if(field.num) return field.key==='gaPoints'?fmtGA(v):fmtLines(v);
+  if(field.num) return fk==='gaPoints'?fmtGA(v):fmtLines(v);
   return String(v);
 }
 function glkCloseBidDetail(){
   var bd=el('glkBidDetailBackdrop');
   if(bd) bd.remove();
 }
+var _glkBidRowCache={};
 function glkOpenBidDetail(bidId){
-  var bid=(ALL_BIDS||[]).find(function(b){return String(b.id)===String(bidId);});
+  var bid=_glkBidRowCache[String(bidId)];
+  if(!bid) bid=(ALL_BIDS||[]).find(function(b){return String(b.id)===String(bidId);});
   if(!bid) bid=getViewBids().find(function(b){return String(b.id)===String(bidId);});
   if(!bid) return;
   glkCloseBidDetail();
@@ -5227,27 +5237,25 @@ window.glkOpenBidDetail=glkOpenBidDetail;
 window.glkCloseBidDetail=glkCloseBidDetail;
 function glkGridActionsRenderer(p){
   var d=p.data; if(!d) return '';
-  var spUrl=mqBidEditUrl(d);
+  _glkBidRowCache[String(d.id)]=d;
   return '<div class="glk-grid-actions">'+
     '<button type="button" class="glk-grid-eye" title="View full record" onclick="event.stopPropagation();glkOpenBidDetail(\''+String(d.id).replace(/'/g,'\\\'')+'\')">'+
       '<svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>'+
-    (spUrl?'<a class="glk-grid-sp" href="'+spUrl+'" target="_blank" rel="noopener" title="Open SharePoint form" onclick="event.stopPropagation()">'+
-      '<svg viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a>':'')+
   '</div>';
 }
 function renderGrid(){
   if(typeof agGrid==='undefined'){ el('myGrid').innerHTML='<div style="padding:20px;color:var(--t3);">AG Grid not loaded.</div>'; return; }
   const data=getViewBids();
   const cols=[
-    {colId:'actions',headerName:'',width:78,pinned:'left',sortable:false,filter:false,suppressHeaderMenuButton:true,cellRenderer:glkGridActionsRenderer,cellStyle:{display:'flex',alignItems:'center'}},
-    glkCol({field:'headDirector',headerName:'Head Director',width:155}),
-    glkCol({field:'accountDirector',headerName:'Account Director',width:155}),
-    glkCol({field:'amName',headerName:'Account Manager',width:145}),
-    glkCol({field:'customerName',headerName:'Customer',width:180}),
-    glkCol({field:'vertical',headerName:'Vertical',width:120}),
-    glkCol({field:'productCategory',headerName:'Product',width:145}),
-    glkCol({field:'productFamily',headerName:'Product Family',width:130}),
-    glkCol({field:'services',headerName:'Services',width:155}),
+    {colId:'actions',headerName:'',width:52,pinned:'left',sortable:false,filter:false,suppressHeaderMenuButton:true,resizable:false,cellRenderer:glkGridActionsRenderer,cellStyle:{display:'flex',alignItems:'center',justifyContent:'center',padding:0}},
+    glkCol({field:'headDirector',headerName:'Head Director',width:170,minWidth:150}),
+    glkCol({field:'accountDirector',headerName:'Account Director',width:170,minWidth:150}),
+    glkCol({field:'amName',headerName:'Account Manager',width:160,minWidth:140}),
+    glkCol({field:'customerName',headerName:'Customer',width:200,minWidth:160}),
+    glkCol({field:'vertical',headerName:'Vertical',width:100,minWidth:80}),
+    glkCol({field:'productCategory',headerName:'Product',width:160,minWidth:120}),
+    glkCol({field:'productFamily',headerName:'Product Family',width:140,minWidth:110}),
+    glkCol({field:'services',headerName:'Services',width:170,minWidth:130}),
     glkCol({field:'status',headerName:'Status',width:115,cellRenderer:function(p){
       var s=p.value||'—',cl=STATUS_WON.includes(s)?'badge-success':STATUS_LOST.includes(s)?'badge-danger':'badge-warning';
       return '<span class="status-badge '+cl+'">'+s+'</span>';
