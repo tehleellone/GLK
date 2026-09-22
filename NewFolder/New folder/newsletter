@@ -1584,9 +1584,9 @@ body[data-theme="dark"] .live-badge,body[data-theme="duralux-dark"] .live-badge{
             </div>
           </div><!-- /rrControlsPanel -->
           <div class="rr-chart-tabs" id="rrChartTabs"></div>
-          <div id="rrNetAddToggleWrap" class="glk-compare-row" style="display:none;margin:.5rem 0 .35rem;">
+          <div id="rrTrendCumulativeWrap" class="glk-compare-row" style="display:none;margin:.5rem 0 .35rem;">
             <label class="glk-compare-toggle">
-              <input type="checkbox" id="rrNetAddCumulative" onchange="rrToggleNetAddCumulative()">
+              <input type="checkbox" id="rrTrendCumulative" onchange="rrToggleTrendCumulative()">
               Accumulated view <span style="font-weight:400;color:var(--t3);">(Jan → Jan+Feb → Jan+Feb+Mar…)</span>
             </label>
           </div>
@@ -11606,7 +11606,10 @@ function rrRenderKpis(def,data){
 let RR_PARSED=null;
 let RR_META=null;
 let RR_ACTIVE_CHART='revRecTrend';
-let RR_NET_ADD_CUMULATIVE=false;
+let RR_TREND_CUMULATIVE=false;
+function rrTrendHasCumulativeToggle(chartId){
+  return chartId==='netAddLines'||chartId==='fixedMrc';
+}
 function rrCumulativeSeries(vals){
   var out=[], sum=0;
   (vals||[]).forEach(function(v){
@@ -11615,18 +11618,54 @@ function rrCumulativeSeries(vals){
   });
   return out;
 }
-window.rrToggleNetAddCumulative=function(){
-  RR_NET_ADD_CUMULATIVE=!!(el('rrNetAddCumulative')&&el('rrNetAddCumulative').checked);
+function rrLastIdxWithValue(arr){
+  for(var i=(arr||[]).length-1;i>=0;i--){ if(arr[i]!=null&&!isNaN(arr[i])) return i; }
+  return -1;
+}
+window.rrToggleTrendCumulative=function(){
+  RR_TREND_CUMULATIVE=!!(el('rrTrendCumulative')&&el('rrTrendCumulative').checked);
   rrRenderActiveChart();
 };
-function rrApplyCumulativeChartData(data){
+window.rrToggleNetAddCumulative=window.rrToggleTrendCumulative;
+function rrApplyCumulativeChartData(data,rawProj,rawMonthly){
   if(!data||!data.series) return data;
+  rawProj=rawProj||data;
+  rawMonthly=rawMonthly||rawProj;
   var copy=rrCloneChartData(data);
+  var truncateIdx=rawProj._truncateActualIdx!=null?rawProj._truncateActualIdx:-1;
+  var rawActual=(rawMonthly.series||[]).find(function(s){return s.col==='C';});
+  if(!rawActual) rawActual=(rawMonthly.series||[]).find(function(s){return rrClassifySeries(s.label)==='actual';});
+  var cumAct=rrCumulativeSeries((rawActual&&rawActual.data)||[]);
+  var anchorIdx=truncateIdx>0?truncateIdx-1:rrLastIdxWithValue(cumAct);
+  var baseCum=anchorIdx>=0&&cumAct[anchorIdx]!=null?num(cumAct[anchorIdx]):0;
+  var projStart=truncateIdx>=0?truncateIdx:anchorIdx+1;
+
   copy.series.forEach(function(s){
-    var src=s.bridged||s.data||[];
-    var cum=rrCumulativeSeries(src);
-    s.data=cum;
-    s.bridged=cum;
+    var kind=rrSeriesKindFor(s,'');
+    var bridged=(s.bridged||s.data||[]).slice();
+    var out=bridged.map(function(){return null;});
+
+    if(kind==='prior'){
+      out=rrCumulativeSeries(bridged);
+    }else if(kind==='actual'){
+      for(var i=0;i<bridged.length;i++){
+        if(truncateIdx>=0&&i>=truncateIdx) continue;
+        if(cumAct[i]!=null) out[i]=cumAct[i];
+      }
+    }else if(kind==='forecast'||kind==='forecast-up'){
+      if(anchorIdx>=0) out[anchorIdx]=baseCum;
+      var run=baseCum;
+      for(var j=projStart;j<bridged.length;j++){
+        if(bridged[j]!=null&&!isNaN(bridged[j])){
+          run+=num(bridged[j]);
+          out[j]=run;
+        }
+      }
+    }else{
+      out=rrCumulativeSeries(bridged);
+    }
+    s.data=out;
+    s.bridged=out;
   });
   copy._cumulative=true;
   return copy;
@@ -11904,15 +11943,15 @@ function rrRenderLineExplain(def,data){
 function rrRenderActiveChart(){
   var def=RR_CHART_DEFS.find(function(d){return d.id===RR_ACTIVE_CHART;})||RR_CHART_DEFS[0];
   var raw=rrChartDataFor(def.id);
-  var toggleWrap=el('rrNetAddToggleWrap');
-  var toggleCb=el('rrNetAddCumulative');
-  if(toggleWrap) toggleWrap.style.display=(def.id==='netAddLines')?'flex':'none';
-  if(toggleCb) toggleCb.checked=RR_NET_ADD_CUMULATIVE;
+  var toggleWrap=el('rrTrendCumulativeWrap')||el('rrNetAddToggleWrap');
+  var toggleCb=el('rrTrendCumulative')||el('rrNetAddCumulative');
+  if(toggleWrap) toggleWrap.style.display=rrTrendHasCumulativeToggle(def.id)?'flex':'none';
+  if(toggleCb) toggleCb.checked=RR_TREND_CUMULATIVE;
   var titleEl=el('rrChartTitle'), subEl=el('rrChartSubtitle'), noteEl=el('rrChartNote'), legEl=el('rrChartLegend'), projBadge=el('rrProjBadge');
-  if(titleEl) titleEl.textContent=def.title+(def.id==='netAddLines'&&RR_NET_ADD_CUMULATIVE?' · Accumulated':'');
+  if(titleEl) titleEl.textContent=def.title+(rrTrendHasCumulativeToggle(def.id)&&RR_TREND_CUMULATIVE?' · Accumulated':'');
   if(subEl){
-    if(def.id==='netAddLines'&&RR_NET_ADD_CUMULATIVE){
-      subEl.textContent='Running total — each month adds to prior months (Jan, Jan+Feb, Jan+Feb+Mar…)';
+    if(rrTrendHasCumulativeToggle(def.id)&&RR_TREND_CUMULATIVE){
+      subEl.textContent='Running total — actuals accumulate month by month; Most Likely / Upside continue from the last actual month into the projection zone.';
     }else{
       subEl.textContent=def.subtitle;
     }
@@ -11940,7 +11979,9 @@ function rrRenderActiveChart(){
     return;
   }
   var data=rrBridgeForecastData(raw,def.id);
-  if(def.id==='netAddLines'&&RR_NET_ADD_CUMULATIVE) data=rrApplyCumulativeChartData(data);
+  if(rrTrendHasCumulativeToggle(def.id)&&RR_TREND_CUMULATIVE){
+    data=rrApplyCumulativeChartData(data,raw,rrTrendRawData(def.id)||raw);
+  }
   var projByMonth=raw._projByMonth||{};
   var truncateIdx=raw._truncateActualIdx!=null?raw._truncateActualIdx:null;
   var c=getChartColors();
