@@ -205,7 +205,7 @@ html:fullscreen,html:-webkit-full-screen{width:100%;height:100%;background:var(-
 .ms-trigger.has-sel{border-color:var(--acc);background:var(--nab);color:var(--acc);font-weight:600;}
 .ms-trigger svg{width:13px;height:13px;stroke:var(--t3);fill:none;stroke-width:2;transition:transform .2s;flex-shrink:0}
 .ms-trigger.open svg{transform:rotate(180deg)}
-.ms-dropdown{position:fixed;background:var(--bg-card);border:1px solid var(--border-s);border-radius:8px;max-height:230px;overflow-y:auto;z-index:99999;box-shadow:0 8px 32px rgba(0,0,0,.28);display:none;min-width:180px;}
+.ms-dropdown{position:fixed;background:var(--bg-card);border:1px solid var(--border-s);border-radius:8px;max-height:230px;overflow-y:auto;z-index:2147483644;box-shadow:0 8px 32px rgba(0,0,0,.28);display:none;min-width:180px;}
 .ms-dropdown.open{display:block}
 .ms-option{padding:8px 14px;display:flex;align-items:center;gap:10px;cursor:pointer;font-size:.82rem;transition:background .15s;}
 .ms-option:hover{background:var(--bg-hover)}
@@ -240,7 +240,7 @@ html:fullscreen,html:-webkit-full-screen{width:100%;height:100%;background:var(-
 .manager-row-stat-lbl{font-size:.62rem;color:var(--t3);text-transform:uppercase}
 .cascade-context{font-size:.76rem;color:var(--t3);font-weight:600;margin:-.35rem 0 .65rem}
 .account-combobox-wrap{position:relative;margin-bottom:1rem}
-.account-combobox-list{position:absolute;left:0;right:0;top:calc(100% + 4px);max-height:280px;overflow-y:auto;background:var(--bg-card);border:1px solid var(--border-s);border-radius:10px;box-shadow:0 8px 32px rgba(0,0,0,.22);z-index:100001;display:none}
+.account-combobox-list{position:absolute;left:0;right:0;top:calc(100% + 4px);max-height:280px;overflow-y:auto;background:var(--bg-card);border:1px solid var(--border-s);border-radius:10px;box-shadow:0 8px 32px rgba(0,0,0,.22);z-index:2147483644;display:none}
 .account-combobox-list.open{display:block}
 .account-combo-option{padding:.65rem .85rem;cursor:pointer;border-bottom:1px solid var(--border);font-size:.82rem}
 .account-combo-option:hover,.account-combo-option.active{background:var(--bg-hover)}
@@ -268,7 +268,10 @@ html:fullscreen,html:-webkit-full-screen{width:100%;height:100%;background:var(-
 .ppt-stack-section{display:flex;flex-direction:column;gap:.65rem;margin-bottom:1.25rem}
 .ppt-stack-section .chart-container{height:380px}
 .ppt-stack-section .ppt-highlights-panel{margin-top:0}
-#historyModal.open{z-index:100002}
+.modal-overlay.open{z-index:2147483646}
+#formViewModal.open,#accountHistoryModal.open{z-index:2147483646}
+#historyModal.open{z-index:2147483647}
+html.occ-fullpage #occLandingFsBtn{z-index:2147483643}
 .ppt-charts-grid .chart-container{height:340px}
 .table-section{background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:1rem 1.1rem;margin-bottom:1rem;box-shadow:var(--cs);}
 .table-header{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.65rem;margin-bottom:.85rem;}
@@ -367,11 +370,9 @@ body[data-theme="dark"] .badge-warning,body[data-theme="magenta-dark"] .badge-wa
 .active-filter-chips{display:flex;flex-wrap:wrap;gap:.4rem;margin-bottom:.65rem;min-height:0}
 .filter-chip{display:inline-flex;align-items:center;gap:.3rem;padding:.22rem .6rem;border-radius:20px;background:var(--nab);border:1px solid var(--nab2);font-size:.72rem;font-weight:600;color:var(--acc);}
 .filter-chip button{background:none;border:none;cursor:pointer;color:var(--acc);font-size:.8rem;line-height:1;padding:0;margin-left:.15rem;}
-.modal-overlay{position:fixed;inset:0;z-index:99998;background:rgba(0,0,0,.55);backdrop-filter:blur(6px);display:none;align-items:center;justify-content:center;padding:1rem;}
+.modal-overlay{position:fixed;inset:0;z-index:2147483646;background:rgba(0,0,0,.55);backdrop-filter:blur(6px);display:none;align-items:center;justify-content:center;padding:1rem;}
 .modal-overlay.open{display:flex}
-#accountHistoryModal{z-index:99998}
-#formViewModal{z-index:100003}
-#historyModal{z-index:100004}
+.ag-popup,.ag-menu,.ag-popup-child{z-index:2147483645!important}
 .chart-hint{font-size:.72rem;color:var(--t3);font-weight:600;margin-top:.35rem}
 .chart-legend-row{display:flex;flex-wrap:wrap;gap:.55rem;margin-top:.45rem;font-size:.72rem;font-weight:700;color:var(--t2)}
 .chart-legend-row span{display:inline-flex;align-items:center;gap:.3rem}
@@ -1139,11 +1140,33 @@ function calcDaysStuck(item){
   return daysBetween(item.created);
 }
 
+function getLastApprovedDate(item){
+  const allSteps = occAllSteps();
+  let lastTs = null;
+  allSteps.forEach(function(s){
+    if(getStepStatus(item, s, allSteps) !== 'approved') return;
+    const ts = getStepTimestamp(item, s, allSteps);
+    if(ts && (!lastTs || ts.getTime() > lastTs.getTime())) lastTs = ts;
+  });
+  if(!lastTs){
+    lastTs = parseOccDate(item.posted || item._raw[F.POSTED] || item.created);
+  }
+  return lastTs;
+}
+
+function getSdApprovalDate(item){
+  const allSteps = occAllSteps();
+  const sd = allSteps.find(function(s){ return s.key==='sd'; });
+  if(!sd || getStepStatus(item, sd, allSteps) !== 'approved') return null;
+  return getStepTimestamp(item, sd, allSteps);
+}
+
 function calcDaysSla(item){
-  if(getPortalStatus(item)!=='Open') return 0;
-  const sd = occAllSteps().find(function(s){ return s.key==='sd'; });
-  const sdTs = sd ? getStepTimestamp(item, sd, occAllSteps()) : null;
-  return sdTs ? daysBetween(sdTs) : daysBetween(item.created);
+  if(getPortalStatus(item) !== 'Closed Approved') return 0;
+  const sdTs = getSdApprovalDate(item);
+  const lastTs = getLastApprovedDate(item);
+  if(!sdTs || !lastTs) return 0;
+  return daysBetween(sdTs, lastTs);
 }
 
 function occSlaBucketKey(days){
@@ -1626,19 +1649,17 @@ function renderActiveChips(){
   if(selChartFilter){ const chip=document.createElement('div'); chip.className='filter-chip'; chip.innerHTML='Chart: <strong>'+(selChartFilter.label||selChartFilter.value)+'</strong><button type="button" onclick="clearChartFilter()">×</button>'; c.appendChild(chip); }
 }
 
-function buildOccTileStats(items, pool){
+function buildOccTileStats(items){
   const openItems = items.filter(i=>i.portalStatus==='Open');
   const approvedItems = items.filter(i=>i.portalStatus==='Closed Approved');
   const rejectedItems = items.filter(i=>i.portalStatus==='Closed Rejected');
   const total = items.length;
   const value = items.reduce((s,i)=>s+i.value,0);
-  const poolN = pool ? pool.length : FILTERED.length;
   return {
     total, value,
     open: openItems.length, openValue: openItems.reduce((s,i)=>s+i.value,0),
     approved: approvedItems.length, approvedValue: approvedItems.reduce((s,i)=>s+i.value,0),
-    rejected: rejectedItems.length, rejectedValue: rejectedItems.reduce((s,i)=>s+i.value,0),
-    contribPct: poolN ? (total/poolN*100).toFixed(1) : 0
+    rejected: rejectedItems.length, rejectedValue: rejectedItems.reduce((s,i)=>s+i.value,0)
   };
 }
 
@@ -1666,8 +1687,6 @@ function occTileHtml(name, meta, stats){
       '<div class="progress-bar"><div class="progress-fill" style="width:'+openPct+'%;background:var(--amber)"></div></div>'+
       '<div class="lm-progress-row"><span class="lm-progress-label">Approved ratio</span><span class="lm-progress-value">'+approvedPct+'%</span></div>'+
       '<div class="progress-bar"><div class="progress-fill" style="width:'+approvedPct+'%"></div></div>'+
-      '<div class="lm-progress-row"><span class="lm-progress-label">Share of view</span><span class="lm-progress-value">'+stats.contribPct+'%</span></div>'+
-      '<div class="progress-bar"><div class="progress-fill" style="width:'+stats.contribPct+'%"></div></div>'+
     '</div>';
 }
 
@@ -1718,7 +1737,7 @@ function renderHDTiles(){
   if(!hds.length){ grid.innerHTML='<p style="color:var(--t3);font-size:.84rem;">No head directors in your scope.</p>'; return; }
   hds.forEach(hd=>{
     const hdItems = FILTERED.filter(i=>i.headDirector===hd);
-    const stats = buildOccTileStats(hdItems, FILTERED);
+    const stats = buildOccTileStats(hdItems);
     const tile = document.createElement('div');
     tile.className = 'lm-tile'+(selHD===hd?' selected':'');
     tile.innerHTML = occTileHtml(hd, 'Head Director', stats);
@@ -1763,7 +1782,7 @@ function renderDirectorGrid(dirs, pool){
   if(!dirs.length){ grid.innerHTML='<p style="color:var(--t3);font-size:.84rem;">No sales directors found.</p>'; return; }
   dirs.forEach(dir=>{
     const dirItems = pool.filter(i=>i.director===dir);
-    const stats = buildOccTileStats(dirItems, pool);
+    const stats = buildOccTileStats(dirItems);
     const tile = document.createElement('div');
     tile.className = 'lm-tile'+(selDirector===dir?' selected':'');
     tile.innerHTML = occTileHtml(dir, 'Sales Director', stats);
@@ -1794,7 +1813,7 @@ function renderAMRows(dir){
   const grid = el('amGrid'); grid.innerHTML='';
   grid.className = 'am-tile-grid';
   ams.forEach(am=>{
-    const stats = buildOccTileStats(am.items, dirItems);
+    const stats = buildOccTileStats(am.items);
     const tile = document.createElement('div');
     tile.className = 'lm-tile'+(selAMTile===am.name?' selected':'');
     tile.innerHTML = occTileHtml(am.name, 'Account Manager · Requestor', stats);
@@ -1912,7 +1931,7 @@ function initGrid(){
     columnDefs:gridColDefs(), rowData:getViewItems(),
     defaultColDef:{sortable:true,filter:true,resizable:true,minWidth:100,wrapHeaderText:true,autoHeaderHeight:true,wrapText:false},
     animateRows:true, pagination:true, paginationPageSize:100, paginationPageSizeSelector:[50,100,250,500],
-    rowHeight:48, headerHeight:56, suppressColumnVirtualisation:true,
+    rowHeight:48, headerHeight:56, suppressColumnVirtualisation:true, popupParent:document.body,
     onGridReady:function(e){ occAutoSizeGridColumns(e.api); },
     onFirstDataRendered:function(e){ occAutoSizeGridColumns(e.api); }
   };
@@ -2125,10 +2144,9 @@ function openFormView(id){
   _formViewItemId = id;
   el('formViewTitle').textContent = item.ref+' · '+item.accountCode;
   el('formViewBody').innerHTML = renderFormViewHtml(item);
-  el('formViewModal').style.zIndex = '100003';
   el('formViewModal').classList.add('open');
 }
-function closeFormView(){ el('formViewModal').classList.remove('open'); el('formViewModal').style.zIndex=''; _formViewItemId=null; }
+function closeFormView(){ el('formViewModal').classList.remove('open'); _formViewItemId=null; }
 
 function occListAllItemsUrl(){
   return SP_SITE.replace(/\/$/,'') + '/Lists/' + encodeURIComponent(SP_OCC_LIST_FOLDER).replace(/%20/g,'%20') + '/AllItems.aspx';
@@ -2158,10 +2176,7 @@ function openOccSharePoint(id){
 }
 
 function openTimelineFromForm(){
-  if(_formViewItemId){
-    openHistoryModal(_formViewItemId);
-    el('historyModal').style.zIndex = '100002';
-  }
+  if(_formViewItemId) openHistoryModal(_formViewItemId);
 }
 
 function openAccountHistorySearch(){
@@ -2227,11 +2242,10 @@ function openHistoryModal(id){
   if(!item) return;
   el('historyModalTitle').textContent = 'OCC Timeline — '+item.ref;
   el('historyModalBody').innerHTML = '<p style="color:var(--t3);padding:1rem;">Loading SharePoint version history…</p>';
-  el('historyModal').style.zIndex = '100002';
   el('historyModal').classList.add('open');
   loadOccItemHistory(item);
 }
-function closeHistoryModal(){ el('historyModal').classList.remove('open'); el('historyModal').style.zIndex = ''; }
+function closeHistoryModal(){ el('historyModal').classList.remove('open'); }
 
 function occStripHtml(html){
   const tmp = document.createElement('div');
@@ -2628,7 +2642,7 @@ function buildPptKeyInsights(items, reportId){
   if(reportId==='sla'){
     const b={'1-14':0,'15-30':0,'30+':0};
     items.forEach(function(i){ const d=i.daysSla||0; if(d<=14)b['1-14']++; else if(d<=30)b['15-30']++; else b['30+']++; });
-    return 'Key Insight: <strong>'+items.length+' open OCCs</strong> by days since Sales Director approval · <strong>'+b['1-14']+'</strong> within 1–14 days · <strong>'+b['30+']+'</strong> over 30 days. Open value: <strong>AED '+fmt(totalValue)+'</strong>.';
+    return 'Key Insight: <strong>'+items.length+' closed approved OCCs</strong> by approval turnaround (last approval − SD approval) · <strong>'+b['1-14']+'</strong> within 1–14 days · <strong>'+b['30+']+'</strong> over 30 days. Value: <strong>AED '+fmt(totalValue)+'</strong>.';
   }
   return 'Key Insight: '+items.length+' OCCs · AED '+fmt(totalValue)+' total value.';
 }
@@ -2920,7 +2934,7 @@ const PPT_REPORTS={
   posted:{ title:'Posted / Approved OCCs for 2026', sub:'Slide 4 · OCC Value & Count Per Reason & Vertical + Highlights' },
   pending:{ title:'Pending OCCs for 2026', sub:'Slide 5 & 9 · Pending charts + approval-level breakdown table' },
   approval:{ title:'OCCs Category as per Approval Level', sub:'Slide 6 · Mid-range (<250K) vs High-value (≥250K) · Abou & Marwan / Diego' },
-  sla:{ title:'OCCs Internal SLA', sub:'Slide 7 · Open OCCs only · days since Sales Director approval (1–14 / 15–30 / 30+)' },
+  sla:{ title:'OCCs Internal SLA', sub:'Slide 7 · Closed Approved only · last approval date − SD approval date (1–14 / 15–30 / 30+ days)' },
   handset:{ title:'OCC — Handset Journey', sub:'Slide 8 · Per Vertical & Per Account Manager · 1M budget / 900K alert' }
 };
 const HANDSET_BUDGET = 1000000;
@@ -2972,7 +2986,7 @@ function getReportItems(reportId){
   if(reportId==='pending') return base.filter(i=>i.portalStatus==='Open');
   if(reportId==='approval') return base;
   if(reportId==='handset') return base.filter(isHandsetItem);
-  if(reportId==='sla') return base.filter(i=>i.portalStatus==='Open');
+  if(reportId==='sla') return base.filter(i=>i.portalStatus==='Closed Approved');
   return base;
 }
 
@@ -3267,13 +3281,13 @@ function renderCurrentReport(){
     const total = data.reduce(function(a,b){return a+b;},0);
     const pcts = data.map(function(v){ return total?Math.round(v/total*100):0; });
     kpi.innerHTML = labels.map(function(l,i){ return pptKpiCard(l, pcts[i]+'%', buckets[l]+' OCCs'); }).join('');
-    setReportInsights('Key Insights: Internal SLA is measured on <strong>open OCCs only</strong> — days elapsed since <strong>Sales Director approval</strong>. Closed Approved / Closed Rejected are excluded.');
-    charts.innerHTML = '<div class="chart-card ppt-slide-full"><div class="chart-title">OCCs Internal SLA — Open / Pending</div><div class="chart-container" style="height:380px"><canvas id="pptChartSLA"></canvas></div></div>';
+    setReportInsights('Key Insights: Internal SLA covers <strong>Closed Approved OCCs only</strong> — days from <strong>Sales Director approval</strong> to the <strong>last approval step</strong> (CCO, Marketing, Pipeline/Salim, etc.). Open and Rejected are excluded.');
+    charts.innerHTML = '<div class="chart-card ppt-slide-full"><div class="chart-title">OCCs Internal SLA — Closed Approved</div><div class="chart-container" style="height:380px"><canvas id="pptChartSLA"></canvas></div></div>';
     extra.innerHTML = '<div class="ppt-highlights-panel ppt-slide-full"><div class="ppt-highlights-title">SLA Summary</div><ul>'+
-      '<li><strong>'+pcts[0]+'%</strong> of open cases are within <strong>1–14 days</strong> since SD approval.</li>'+
-      '<li><strong>'+pcts[1]+'%</strong> of open cases are within <strong>15–30 days</strong> since SD approval.</li>'+
-      '<li><strong>'+pcts[2]+'%</strong> of open cases have been open for <strong>30+ days</strong> since SD approval.</li>'+
-      '</ul><div class="takeaway"><strong>Key Takeaway:</strong> Focus on clearing open OCCs that have been waiting longest since Sales Director approval.</div></div>';
+      '<li><strong>'+pcts[0]+'%</strong> of closed approved cases completed within <strong>1–14 days</strong> after SD approval.</li>'+
+      '<li><strong>'+pcts[1]+'%</strong> of closed approved cases completed within <strong>15–30 days</strong> after SD approval.</li>'+
+      '<li><strong>'+pcts[2]+'%</strong> of closed approved cases took <strong>30+ days</strong> from SD approval to final approval.</li>'+
+      '</ul><div class="takeaway"><strong>Key Takeaway:</strong> Track approval turnaround from SD sign-off to the final approving level on each closed case.</div></div>';
     setTimeout(function(){ pptDonutSLA('pptChartSLA', labels, data, String(total)); }, 60);
     return;
   }
@@ -3437,7 +3451,7 @@ async function exportOccPptPack(){
       buckets[key]++;
     });
     const slaTotal = Object.values(buckets).reduce(function(a,b){ return a+b; }, 0);
-    slideHeader(s7, 'OCCs Internal SLA', 'Open OCCs only · days since Sales Director approval · Total: '+slaTotal);
+    slideHeader(s7, 'OCCs Internal SLA', 'Closed Approved only · last approval date − SD approval date · Total: '+slaTotal);
     if(slaTotal){
       s7.addChart(pptx.ChartType.doughnut, [
         { name:'SLA', labels:Object.keys(buckets), values:Object.values(buckets) }
@@ -3448,7 +3462,7 @@ async function exportOccPptPack(){
       });
       s7.addText('SLA Compliance Summary', { x:5.2, y:1.35, w:4.3, h:0.35, fontSize:12, bold:true, color:C.deep, fontFace:'Arial' });
       s7.addText(pctLines.join('\n'), { x:5.2, y:1.75, w:4.3, h:1.5, fontSize:11, color:C.deep, fontFace:'Arial', bullet:true });
-      s7.addText('Key Takeaway: Monitor open cases open 30+ days since Sales Director approval.', { x:5.2, y:3.4, w:4.3, h:0.8, fontSize:10, italic:true, color:C.muted, fontFace:'Arial' });
+      s7.addText('Key Takeaway: Track closed approved turnaround — final approval date minus Sales Director approval date.', { x:5.2, y:3.4, w:4.3, h:0.8, fontSize:10, italic:true, color:C.muted, fontFace:'Arial' });
     }
 
     // Slide 8 — Handset Journey
