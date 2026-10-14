@@ -838,9 +838,11 @@ body[data-theme="dark"] .badge-warning,body[data-theme="magenta-dark"] .badge-wa
           <div class="report-drill-header">
             <div><div class="report-drill-title" id="reportDrillTitle">OCC records</div><div class="report-drill-meta" id="reportDrillMeta"></div></div>
             <div class="report-drill-actions">
-              <input type="text" class="search-box" id="reportDrillSearch" placeholder="Search grid…" oninput="occReportDrillSearch(this.value)" style="min-width:160px;font-size:.78rem;padding:.35rem .65rem">
-              <button type="button" class="reset-btn" style="padding:.35rem .7rem;font-size:.75rem" onclick="occResetReportDrillSelection()">Reset filter</button>
-              <button type="button" class="toggle-btn" id="reportDrillToggleBtn" onclick="occToggleReportDrillPanel()">Hide details</button>
+              <button type="button" class="toggle-btn" id="reportDrillToggleBtn" onclick="occToggleReportDrillPanel()">Show grid</button>
+              <span id="reportDrillTools" style="display:none;align-items:center;gap:.45rem;flex-wrap:wrap">
+                <input type="text" class="search-box" id="reportDrillSearch" placeholder="Search grid…" oninput="occReportDrillSearch(this.value)" style="min-width:160px;font-size:.78rem;padding:.35rem .65rem">
+                <button type="button" class="reset-btn" style="padding:.35rem .7rem;font-size:.75rem" onclick="occResetReportDrillSelection()">Reset filter</button>
+              </span>
             </div>
           </div>
           <div id="reportDrillBody"><div id="reportDrillGrid" class="ag-theme-alpine" style="height:420px;width:100%"></div></div>
@@ -3823,7 +3825,7 @@ const OCC_PENDING_SLA_DAYS = 14;
 let occHandsetReportMode = 'approved';
 let PPT_CHARTS={};
 let REPORT_GRID_API = null;
-let occReportDrillOpen = true;
+let occReportDrillOpen = false;
 let occReportDrillPool = [];
 let occReportDrillTitleBase = 'Report records';
 let occReportDrillReportId = null;
@@ -3909,9 +3911,19 @@ function occFilterReportDrill(items, type, value){
 function occInitReportDrillAll(items, titleBase){
   occReportDrillPool = items.slice();
   occReportDrillTitleBase = titleBase || 'Report records';
+  occReportDrillOpen = false;
   const rs = el('reportDrillSearch');
   if(rs) rs.value = '';
   occRenderReportDrill(items, occReportDrillTitleBase+' · all records', true);
+}
+
+function occSyncReportDrillPanelUi(){
+  const body = el('reportDrillBody');
+  const btn = el('reportDrillToggleBtn');
+  const tools = el('reportDrillTools');
+  if(body) body.style.display = occReportDrillOpen ? '' : 'none';
+  if(tools) tools.style.display = occReportDrillOpen ? 'inline-flex' : 'none';
+  if(btn) btn.textContent = occReportDrillOpen ? 'Hide grid' : 'Show grid';
 }
 
 function occRenderReportDrill(items, title, skipScroll){
@@ -3921,11 +3933,11 @@ function occRenderReportDrill(items, title, skipScroll){
   set('reportDrillTitle', title || 'OCC records');
   const totalV = items.reduce(function(s,i){ return s+i.value; }, 0);
   const filtered = occReportDrillPool.length && items.length < occReportDrillPool.length;
-  set('reportDrillMeta', items.length+' OCC(s) · AED '+fmt(totalV)+(filtered?' · filtered — Reset filter or Show all for full list':' · search by account, ref, or name')+' · ↗ SharePoint on each row');
-  const body = el('reportDrillBody');
-  if(body) body.style.display = occReportDrillOpen ? '' : 'none';
-  const btn = el('reportDrillToggleBtn');
-  if(btn) btn.textContent = occReportDrillOpen ? 'Hide details' : 'Show details';
+  const hint = occReportDrillOpen
+    ? (filtered?' · filtered — Reset filter for full list':' · search by account, ref, or name')+' · ↗ SharePoint on each row'
+    : ' · Show grid to browse, search, and open SharePoint';
+  set('reportDrillMeta', items.length+' OCC(s) · AED '+fmt(totalV)+hint);
+  occSyncReportDrillPanelUi();
   if(occReportDrillReportId !== currentReportId){
     if(REPORT_GRID_API){ REPORT_GRID_API.destroy(); REPORT_GRID_API = null; }
     occReportDrillReportId = currentReportId;
@@ -3959,16 +3971,17 @@ function occPendingQueueGridSearch(q){
 }
 function occToggleReportDrillPanel(){
   occReportDrillOpen = !occReportDrillOpen;
-  const body = el('reportDrillBody');
-  if(body) body.style.display = occReportDrillOpen ? '' : 'none';
-  const btn = el('reportDrillToggleBtn');
-  if(btn) btn.textContent = occReportDrillOpen ? 'Hide details' : 'Show details';
+  occSyncReportDrillPanelUi();
+  if(occReportDrillOpen && REPORT_GRID_API){
+    setTimeout(function(){ occAutoSizeGridColumns(REPORT_GRID_API); }, 40);
+  }
 }
 function occClearReportDrill(){
   const sec = el('reportDrillSection');
   if(sec) sec.style.display = 'none';
   if(REPORT_GRID_API) REPORT_GRID_API.setGridOption('rowData', []);
   occReportDrillPool = [];
+  occReportDrillOpen = false;
   const rs = el('reportDrillSearch');
   if(rs) rs.value = '';
 }
@@ -3979,6 +3992,7 @@ function occReportDrillClick(poolItems, type, value, title){
   const rs = el('reportDrillSearch');
   if(rs) rs.value = '';
   if(REPORT_GRID_API) REPORT_GRID_API.setGridOption('quickFilterText', '');
+  occReportDrillOpen = true;
   occRenderReportDrill(rows, title);
 }
 
