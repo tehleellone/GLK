@@ -815,7 +815,7 @@ body[data-theme="dark"] .badge-warning,body[data-theme="magenta-dark"] .badge-wa
           <div id="pendingWithDetail" class="pending-with-detail">
             <div id="pendingWithDetailSummary"></div>
             <div class="pending-with-queue-grid-wrap">
-              <div class="queue-grid-title"><span>Open OCC queue</span><span id="pendingWithGridCount" style="font-size:.68rem;font-weight:600;color:var(--t3)"></span></div>
+              <div class="queue-grid-title"><span>Open OCC queue</span><span style="display:flex;align-items:center;gap:.5rem;flex-wrap:wrap"><input type="text" class="search-box" id="pendingWithGridSearch" placeholder="Search grid…" oninput="occPendingQueueGridSearch(this.value)" style="min-width:140px;font-size:.72rem;padding:.3rem .55rem"><span id="pendingWithGridCount" style="font-size:.68rem;font-weight:600;color:var(--t3)"></span></span></div>
               <div id="pendingWithQueueGrid" class="ag-theme-alpine" style="height:460px;width:100%"></div>
             </div>
           </div>
@@ -838,8 +838,9 @@ body[data-theme="dark"] .badge-warning,body[data-theme="magenta-dark"] .badge-wa
           <div class="report-drill-header">
             <div><div class="report-drill-title" id="reportDrillTitle">OCC records</div><div class="report-drill-meta" id="reportDrillMeta"></div></div>
             <div class="report-drill-actions">
+              <input type="text" class="search-box" id="reportDrillSearch" placeholder="Search grid…" oninput="occReportDrillSearch(this.value)" style="min-width:160px;font-size:.78rem;padding:.35rem .65rem">
+              <button type="button" class="reset-btn" style="padding:.35rem .7rem;font-size:.75rem" onclick="occResetReportDrillSelection()">Reset filter</button>
               <button type="button" class="toggle-btn" id="reportDrillToggleBtn" onclick="occToggleReportDrillPanel()">Hide details</button>
-              <button type="button" class="reset-btn" style="padding:.35rem .7rem;font-size:.75rem" onclick="occClearReportDrill()">Clear selection</button>
             </div>
           </div>
           <div id="reportDrillBody"><div id="reportDrillGrid" class="ag-theme-alpine" style="height:420px;width:100%"></div></div>
@@ -1266,14 +1267,20 @@ function calcDaysStuck(item){
   return daysBetween(item.created);
 }
 
+/** Internal SLA end: last approval before monthly CCCO (Head of Enterprise / Pipeline for Salim path). */
 function getLastApprovedDate(item){
   const allSteps = occAllSteps();
   let lastTs = null;
   allSteps.forEach(function(s){
+    if(s.key==='cco') return;
     if(getStepStatus(item, s, allSteps) !== 'approved') return;
     const ts = getStepTimestamp(item, s, allSteps);
     if(ts && (!lastTs || ts.getTime() > lastTs.getTime())) lastTs = ts;
   });
+  if(!lastTs && pipelineStepApproved(item, allSteps)){
+    const p = allSteps.find(function(s){ return s.key==='pipeline'; });
+    if(p) lastTs = getStepTimestamp(item, p, allSteps);
+  }
   if(!lastTs){
     lastTs = parseOccDate(item.posted || item._raw[F.POSTED] || item.created);
   }
@@ -2316,6 +2323,29 @@ function gridColDefs(){
   ].map(occEnhanceCol);
 }
 
+function reportGridColDefs(){
+  const base = gridColDefs();
+  if(currentReportId!=='sla') return base;
+  const out = base.slice();
+  out.splice(out.length - 1, 0,
+    { field:'daysSla', headerName:'SLA days', width:105, minWidth:95, type:'numericColumn', valueFormatter:function(p){ return (p.data && p.data.portalStatus==='Closed Approved') ? (p.value==null?0:p.value) : '—'; } },
+    { field:'slaBucket', headerName:'SLA bucket', width:120, minWidth:105, valueGetter:function(p){ return (p.data && p.data.portalStatus==='Closed Approved') ? occSlaBucketKey(p.data.daysSla||0) : '—'; } }
+  );
+  return out.map(occEnhanceCol);
+}
+
+function occStandardGridOptions(colDefs, rowData){
+  return {
+    columnDefs: colDefs,
+    rowData: rowData,
+    defaultColDef:{ sortable:true, filter:true, resizable:true, minWidth:100, wrapHeaderText:true, autoHeaderHeight:true },
+    animateRows:true, pagination:true, paginationPageSize:50, paginationPageSizeSelector:[25,50,100,250],
+    rowHeight:46, headerHeight:48, popupParent:document.body,
+    onGridReady:function(e){ occAutoSizeGridColumns(e.api); },
+    onFirstDataRendered:function(e){ occAutoSizeGridColumns(e.api); }
+  };
+}
+
 function occAutoSizeGridColumns(api){
   if(!api) return;
   const ids = api.getColumns().filter(function(c){ return c.getColId() !== '_actions'; }).map(function(c){ return c.getColId(); });
@@ -2569,7 +2599,7 @@ function exportReportExcel(){
       title:'SLA bucket summary (matches on-screen chart — count-based %)',
       cols:[{ key:'label', header:'Bucket' }, { key:'count', header:'OCC count', num:true }, { key:'pct', header:'% of total', num:true }],
       rows:summaryRows,
-      metaLines:['Closed Approved only · last approval − SD approval · Total: '+total]
+      metaLines:['Closed Approved only · SD to last approval before CCCO · Total: '+total]
     });
     const slaCols = baseCols.concat([
       { key:'daysSla', header:'SLA days (last appr − SD)', num:true },
@@ -3474,14 +3504,7 @@ function occSyncPendingWithQueueGrid(){
     setTimeout(function(){ occAutoSizeGridColumns(PENDING_WITH_GRID_API); }, 40);
     return;
   }
-  PENDING_WITH_GRID_API = agGrid.createGrid(g, {
-    columnDefs: gridColDefs(),
-    rowData: items,
-    defaultColDef:{ sortable:true, filter:true, resizable:true, minWidth:100, wrapHeaderText:true, autoHeaderHeight:true },
-    animateRows:true, pagination:true, paginationPageSize:50, paginationPageSizeSelector:[25,50,100],
-    rowHeight:46, popupParent:document.body,
-    onGridReady:function(e){ occAutoSizeGridColumns(e.api); }
-  });
+  PENDING_WITH_GRID_API = agGrid.createGrid(g, occStandardGridOptions(gridColDefs(), items));
 }
 
 function renderPendingWithPanel(){
@@ -3791,7 +3814,7 @@ const PPT_REPORTS={
   posted:{ title:'Posted / Approved OCCs for 2026', sub:'Slide 4 · OCC Value & Count Per Reason & Vertical + Highlights' },
   pending:{ title:'Pending OCCs for 2026', sub:'Slide 5 & 9 · Pending charts + approval-level breakdown table' },
   approval:{ title:'OCCs Category as per Approval Level', sub:'Slide 6 · Mid-range (<250K) vs High-value (≥250K) · Abou & Marwan / Diego' },
-  sla:{ title:'OCCs Internal SLA', sub:'Slide 7 · Closed Approved only · last approval date − SD approval date (1–14 / 15–30 / 30+ days)' },
+  sla:{ title:'OCCs Internal SLA', sub:'Slide 7 · Closed Approved · SD to last approval before CCCO (1–14 / 15–30 / 30+ days)' },
   handset:{ title:'OCC — Handset Journey', sub:'Slide 8 · Per Vertical & Per Account Manager · 1M budget / 900K alert' }
 };
 const HANDSET_BUDGET = 1000000;
@@ -3801,6 +3824,9 @@ let occHandsetReportMode = 'approved';
 let PPT_CHARTS={};
 let REPORT_GRID_API = null;
 let occReportDrillOpen = true;
+let occReportDrillPool = [];
+let occReportDrillTitleBase = 'Report records';
+let occReportDrillReportId = null;
 
 function fmtPpt(v){ return fmt(v); }
 
@@ -3846,7 +3872,7 @@ function occReportInfoButton(items){
     '<div class="occ-info-pop">'+occReportScopePopContent(items)+'</div></span>';
 }
 function occSlaKeyInsightsBanner(){
-  return 'Key Insights: <strong>Closed Approved</strong> only · days from <strong>SD sign-off</strong> to <strong>final approval</strong> · buckets <strong>1–14 / 15–30 / 30+</strong> (counts in cards &amp; legend). Not queue wait — see Approval Queue for that.';
+  return 'Key Insights: <strong>Closed Approved</strong> only · <strong>SD sign-off → last step before CCCO</strong> (Head of Enterprise when on path; <strong>Pipeline (Salim)</strong> when later steps are blank) · <strong>CCCO excluded</strong> (monthly batch) · buckets <strong>1–14 / 15–30 / 30+</strong>. Use the grid below to search any account.';
 }
 function occSetReportInsights(html, compact){
   const box = el('pptKeyInsights');
@@ -3869,38 +3895,67 @@ function occFilterReportDrill(items, type, value){
   if(type==='stuckAt') return items.filter(function(i){ return (i.stuckAt||'Unknown')===value; });
   if(type==='approvalTier') return value==='high' ? items.filter(function(i){ return i.value>=CCO_THRESHOLD; }) : items.filter(function(i){ return i.value<CCO_THRESHOLD; });
   if(type==='slaBucket') return items.filter(function(i){ return occSlaBucketKey(i.daysSla||0)===value; });
+  if(type==='month') return items.filter(function(i){
+    const d = i.posted || i.created; if(!d) return false;
+    const dt = new Date(d); if(isNaN(dt)) return false;
+    const mk = dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0');
+    return mk === value;
+  });
   if(type==='handsetField') return items.filter(function(i){ return (i.vertical||'—')===value; });
   if(type==='handsetAm') return items.filter(function(i){ return (i.requestor||'—')===value; });
   return items;
 }
 
-function occRenderReportDrill(items, title){
+function occInitReportDrillAll(items, titleBase){
+  occReportDrillPool = items.slice();
+  occReportDrillTitleBase = titleBase || 'Report records';
+  const rs = el('reportDrillSearch');
+  if(rs) rs.value = '';
+  occRenderReportDrill(items, occReportDrillTitleBase+' · all records', true);
+}
+
+function occRenderReportDrill(items, title, skipScroll){
   const sec = el('reportDrillSection');
   if(!sec) return;
   sec.style.display = '';
   set('reportDrillTitle', title || 'OCC records');
   const totalV = items.reduce(function(s,i){ return s+i.value; }, 0);
-  set('reportDrillMeta', items.length+' OCC(s) · AED '+fmt(totalV)+' · Click SharePoint (↗) on a row to open the list item');
+  const filtered = occReportDrillPool.length && items.length < occReportDrillPool.length;
+  set('reportDrillMeta', items.length+' OCC(s) · AED '+fmt(totalV)+(filtered?' · filtered — Reset filter or Show all for full list':' · search by account, ref, or name')+' · ↗ SharePoint on each row');
   const body = el('reportDrillBody');
   if(body) body.style.display = occReportDrillOpen ? '' : 'none';
   const btn = el('reportDrillToggleBtn');
   if(btn) btn.textContent = occReportDrillOpen ? 'Hide details' : 'Show details';
+  if(occReportDrillReportId !== currentReportId){
+    if(REPORT_GRID_API){ REPORT_GRID_API.destroy(); REPORT_GRID_API = null; }
+    occReportDrillReportId = currentReportId;
+  }
   if(REPORT_GRID_API){
+    REPORT_GRID_API.setGridOption('columnDefs', reportGridColDefs());
     REPORT_GRID_API.setGridOption('rowData', items);
     setTimeout(function(){ if(REPORT_GRID_API) occAutoSizeGridColumns(REPORT_GRID_API); }, 40);
   } else {
     const g = el('reportDrillGrid');
     if(!g) return;
-    REPORT_GRID_API = agGrid.createGrid(g, {
-      columnDefs: gridColDefs(),
-      rowData: items,
-      defaultColDef:{ sortable:true, filter:true, resizable:true, minWidth:100 },
-      animateRows:true, pagination:true, paginationPageSize:50,
-      rowHeight:46, popupParent:document.body,
-      onGridReady:function(e){ occAutoSizeGridColumns(e.api); }
-    });
+    REPORT_GRID_API = agGrid.createGrid(g, occStandardGridOptions(reportGridColDefs(), items));
   }
-  setTimeout(function(){ sec.scrollIntoView({ behavior:'smooth', block:'nearest' }); }, 80);
+  if(!skipScroll) setTimeout(function(){ sec.scrollIntoView({ behavior:'smooth', block:'nearest' }); }, 80);
+}
+
+function occReportDrillSearch(q){
+  if(REPORT_GRID_API) REPORT_GRID_API.setGridOption('quickFilterText', q || '');
+}
+
+function occResetReportDrillSelection(){
+  const rs = el('reportDrillSearch');
+  if(rs) rs.value = '';
+  if(REPORT_GRID_API) REPORT_GRID_API.setGridOption('quickFilterText', '');
+  if(!occReportDrillPool.length) return;
+  occRenderReportDrill(occReportDrillPool, occReportDrillTitleBase+' · all records', true);
+}
+
+function occPendingQueueGridSearch(q){
+  if(PENDING_WITH_GRID_API) PENDING_WITH_GRID_API.setGridOption('quickFilterText', q || '');
 }
 function occToggleReportDrillPanel(){
   occReportDrillOpen = !occReportDrillOpen;
@@ -3913,9 +3968,17 @@ function occClearReportDrill(){
   const sec = el('reportDrillSection');
   if(sec) sec.style.display = 'none';
   if(REPORT_GRID_API) REPORT_GRID_API.setGridOption('rowData', []);
+  occReportDrillPool = [];
+  const rs = el('reportDrillSearch');
+  if(rs) rs.value = '';
 }
+
 function occReportDrillClick(poolItems, type, value, title){
-  const rows = occFilterReportDrill(poolItems, type, value);
+  if(!occReportDrillPool.length) occReportDrillPool = poolItems.slice();
+  const rows = occFilterReportDrill(occReportDrillPool, type, value);
+  const rs = el('reportDrillSearch');
+  if(rs) rs.value = '';
+  if(REPORT_GRID_API) REPORT_GRID_API.setGridOption('quickFilterText', '');
   occRenderReportDrill(rows, title);
 }
 
@@ -4410,6 +4473,7 @@ function renderPostedPendingLayout(items, isPending){
 
 function renderCurrentReport(){
   destroyPptCharts();
+  occClearReportDrill();
   occSyncReportExportBtn();
   const cfg = PPT_REPORTS[currentReportId] || PPT_REPORTS.posted;
   set('pptReportSub', cfg.sub);
@@ -4454,15 +4518,16 @@ function renderCurrentReport(){
             const mk = dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0');
             return mk === k;
           });
-          occReportDrillClick(rows, 'month', lbl, 'Monthly · '+lbl);
+          occReportDrillClick(pool, 'month', k, 'Monthly · '+lbl);
         }
       });
     }, 60);
+    occInitReportDrillAll(items, cfg.title);
     return;
   }
 
-  if(currentReportId==='posted'){ renderPostedPendingLayout(items, false); return; }
-  if(currentReportId==='pending'){ renderPostedPendingLayout(items, true); return; }
+  if(currentReportId==='posted'){ renderPostedPendingLayout(items, false); occInitReportDrillAll(items, cfg.title); return; }
+  if(currentReportId==='pending'){ renderPostedPendingLayout(items, true); occInitReportDrillAll(items, cfg.title); return; }
 
   if(currentReportId==='approval'){
     const low = items.filter(function(i){ return i.value < CCO_THRESHOLD; });
@@ -4488,6 +4553,7 @@ function renderCurrentReport(){
         }
       });
     }, 60);
+    occInitReportDrillAll(items, cfg.title);
     return;
   }
 
@@ -4508,7 +4574,8 @@ function renderCurrentReport(){
       '<li><strong>'+buckets['1-14 Days']+'</strong> OCCs ('+pcts[0]+'%) within <strong>1–14 days</strong> after SD approval.</li>'+
       '<li><strong>'+buckets['15-30 Days']+'</strong> OCCs ('+pcts[1]+'%) within <strong>15–30 days</strong>.</li>'+
       '<li><strong>'+buckets['30+ Days']+'</strong> OCCs ('+pcts[2]+'%) over <strong>30 days</strong>.</li>'+
-      '</ul><div class="takeaway"><strong>Key Takeaway:</strong> Track approval turnaround from SD sign-off to the final approving level on each closed case.</div></div>';
+      '</ul><div class="takeaway"><strong>Key Takeaway:</strong> SD to last approval before CCCO — search any account in the grid below (SLA days &amp; bucket columns).</div></div>';
+    occInitReportDrillAll(items, cfg.title);
     setTimeout(function(){
       pptDonutSLA('pptChartSLA', labels, data, String(total));
       const ch = PPT_CHARTS['pptChartSLA'];
@@ -4559,6 +4626,7 @@ function renderCurrentReport(){
         onBarClick:function(label){ occReportDrillClick(pool, 'handsetAm', label, 'Handset · '+modeLabel+' · AM: '+label); }
       });
     }, 60);
+    occInitReportDrillAll(hsItems, cfg.title);
   }
 }
 
@@ -4949,6 +5017,9 @@ window.renderPendingWithPersonList=renderPendingWithPersonList;
 window.occTogglePendingWithPanel=occTogglePendingWithPanel;
 window.occToggleReportDrillPanel=occToggleReportDrillPanel;
 window.occClearReportDrill=occClearReportDrill;
+window.occResetReportDrillSelection=occResetReportDrillSelection;
+window.occReportDrillSearch=occReportDrillSearch;
+window.occPendingQueueGridSearch=occPendingQueueGridSearch;
 window.toggleSidebar=toggleSidebar;
 window.toggleTheme=toggleTheme;
 window.changeTheme=changeTheme;
